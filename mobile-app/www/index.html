@@ -1085,7 +1085,7 @@ const FID = (() => {
      same-origin '' no longer reaches decision_api.py — point at it explicitly. This is the
      public Render deploy, so it works from any device on any network, not just an emulator
      talking to the dev machine's loopback. */
-  const API = 'https://fidelity-ai-bank.onrender.com';
+  const API = 'https://ai-digital-bank.onrender.com';
   let apiUp = API !== null;
   function sync(rec, extra){
     if (!apiUp) return;
