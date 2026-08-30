@@ -1,12 +1,12 @@
 databases:
-  - name: fidelity-ai-bank-db
+  - name: ai-digital-bank-db
     plan: free
-    databaseName: fidelity
-    user: fidelity
+    databaseName: aidigitalbank
+    user: aidigitalbank
 
 services:
   - type: web
-    name: fidelity-ai-bank
+    name: ai-digital-bank
     runtime: python
     plan: free
     buildCommand: "pip install -r requirements.txt"
@@ -16,6 +16,6 @@ services:
         value: 3.12.10
       - key: DATABASE_URL
         fromDatabase:
-          name: fidelity-ai-bank-db
+          name: ai-digital-bank-db
           property: connectionString
     healthCheckPath: /api/health
