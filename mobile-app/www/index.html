@@ -1076,10 +1076,10 @@ const FID = (() => {
      the control tower reads, and — if a person is needed — the reviewer's queue. Opened as a
      bare file the products still work; they just decide alone. */
   /* Native Android build (Capacitor): the webview is served from its own local origin, so
-     same-origin '' no longer reaches decision_api.py — point at it explicitly. 10.0.2.2 is the
-     Android emulator's alias for the host machine's 127.0.0.1; on a real device replace this
-     with the dev machine's LAN IP, e.g. 'http://192.168.1.23:8765'. */
-  const API = 'http://10.0.2.2:8765';
+     same-origin '' no longer reaches decision_api.py — point at it explicitly. This is the
+     public Render deploy, so it works from any device on any network, not just an emulator
+     talking to the dev machine's loopback. */
+  const API = 'https://fidelity-ai-bank.onrender.com';
   let apiUp = API !== null;
   function sync(rec, extra){
     if (!apiUp) return;
