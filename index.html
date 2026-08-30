@@ -387,18 +387,11 @@ a{color:inherit}
 .navlinks a{font-size:13.5px;font-weight:600;color:var(--slate);text-decoration:none}
 .navlinks a:hover{color:var(--ink)}
 .navcta{margin-left:auto;display:flex;align-items:center;gap:10px}
-.navcta .status{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;
-                 color:var(--grey);margin-right:6px}
-.navcta .dot{width:6px;height:6px;border-radius:50%;background:var(--mist)}
-.navcta .dot.live{background:var(--pos);box-shadow:0 0 0 3px var(--pos-t)}
 .navcta a.ghost{font-size:13.5px;font-weight:700;color:var(--ink);text-decoration:none;padding:9px 6px}
 
 /* -------------------------------------------------------------------- hero */
 .hero{max-width:1180px;margin:0 auto;padding:64px 22px 40px;display:grid;
       grid-template-columns:minmax(0,1fr) min(420px,42%);gap:48px;align-items:center}
-.hero .kick{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;
-            letter-spacing:.09em;text-transform:uppercase;color:var(--orange-d);
-            background:var(--orange-t);padding:7px 13px 7px 10px;border-radius:100px;margin-bottom:18px}
 .hero h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,4.6vw,54px);line-height:1.03;
          letter-spacing:-.04em;color:var(--ink);margin-bottom:18px}
 .hero h1 em{font-style:normal;color:var(--orange-d)}
@@ -442,7 +435,7 @@ a{color:inherit}
 
 /* ------------------------------------------------------------------- how */
 .how{background:var(--jet);color:#fff;position:relative;overflow:hidden}
-.how .lat{position:absolute;inset:0;color:var(--orange-l);opacity:.14;pointer-events:none}
+.how .lattice{color:var(--orange-l);opacity:.14;pointer-events:none}
 .how .in{max-width:1180px;margin:0 auto;padding:70px 22px;position:relative}
 .how .hd{max-width:60ch;margin-bottom:44px}
 .how .eyebrow{color:var(--orange-l)}
@@ -458,7 +451,7 @@ a{color:inherit}
 .ctaband .box{background:linear-gradient(135deg,#1B3F63,var(--jet-2) 55%,var(--jet));
               border-radius:28px;padding:52px;display:grid;grid-template-columns:1fr auto;
               gap:24px;align-items:center;color:#fff;position:relative;overflow:hidden}
-.ctaband .lat{position:absolute;inset:0;color:var(--orange-l);opacity:.16;pointer-events:none}
+.ctaband .lattice{color:var(--orange-l);opacity:.16;pointer-events:none}
 .ctaband h2{font-family:var(--display);font-size:clamp(22px,3vw,30px);letter-spacing:-.03em;
             margin-bottom:8px;position:relative}
 .ctaband p{color:rgba(255,255,255,.72);font-size:14.5px;position:relative}
@@ -473,8 +466,7 @@ footer .col b{display:block;font-size:11.5px;font-weight:700;letter-spacing:.09e
 footer .col a{display:block;font-size:13.5px;color:var(--slate);text-decoration:none;margin-bottom:10px}
 footer .col a:hover{color:var(--orange-d)}
 footer .brand p{color:var(--slate);font-size:13px;line-height:1.6;max-width:32ch;margin-top:12px}
-footer .legal{max-width:1180px;margin:0 auto;padding:0 22px 30px;display:flex;justify-content:space-between;
-              align-items:center;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--grey);
+footer .legal{max-width:1180px;margin:0 auto;padding:0 22px 30px;font-size:12px;color:var(--grey);
               font-family:var(--mono)}
 
 @media (max-width:960px){
@@ -488,7 +480,6 @@ footer .legal{max-width:1180px;margin:0 auto;padding:0 22px 30px;display:flex;ju
 }
 @media (max-width:640px){
   .navlinks{display:none}
-  .navcta .status{display:none}
   footer .in{grid-template-columns:1fr}
 }
 </style>
@@ -1431,7 +1422,6 @@ function page(){
     <a href="reviewer-console.html">For our team</a>
   </div>
   <div class="navcta">
-    <div class="status"><span class="dot" id="dot"></span><span id="mode">checking service…</span></div>
     <a class="ghost" href="web.html">Log in</a>
     <a class="btn" href="web.html">Open an account</a>
   </div>
@@ -1439,11 +1429,8 @@ function page(){
 
 <div class="hero">
   <div>
-    <span class="kick">${I('node',14)} AI Control Tower governs every decision</span>
     <h1>Banking that <em>explains itself</em>.</h1>
-    <p>Every transfer, loan and screen your money goes through is decided by a model with a
-      published confidence floor. Clear it, and you get a plain-language reason. Miss it, and
-      a <b>named person</b> decides instead — never a silent decline.</p>
+    <p>Every automated decision comes with a reason — or a <b>named person</b>, never a silent decline.</p>
     <div class="ctarow">
       <a class="btn primary" href="app.html">${I('airtime',18)} Open the mobile app</a>
       <a class="btn quiet" href="web.html">Explore online banking</a>
@@ -1484,30 +1471,23 @@ function page(){
 <div class="how" id="how">${lattice('lath1')}
   <div class="in">
     <div class="hd"><span class="eyebrow">How decisions work</span>
-      <h2>Three steps, on every automated call</h2>
-      <p class="lede">This is not a policy document — it is what the code actually does, on every
-        payment, loan and chat message.</p></div>
+      <h2>Three steps, every time</h2></div>
     <div class="steps">
       <div class="step"><b class="n">01</b>
-        <h4>A model decides, with a confidence score</h4>
-        <p>Fraud, credit, sanctions, language understanding — each domain has its own model and
-          its own published confidence floor.</p></div>
+        <h4>A model decides</h4>
+        <p>With a published confidence floor.</p></div>
       <div class="step"><b class="n">02</b>
-        <h4>The floor is checked, every time</h4>
-        <p>Clear it, and the action goes through. Miss it — or the outcome is adverse to you —
-          and it never auto-executes.</p></div>
+        <h4>The floor is checked</h4>
+        <p>Below it, or adverse to you, nothing auto-executes.</p></div>
       <div class="step"><b class="n">03</b>
         <h4>You get a reason, or a person</h4>
-        <p>A plain-language explanation ships with every approval. Anything below the floor
-          reaches a named reviewer, tracked against an SLA.</p></div>
+        <p>An explanation, or a named reviewer against an SLA.</p></div>
     </div>
   </div>
 </div>
 
 <div class="ctaband"><div class="box">${lattice('latc1')}
-  <div><h2>See it decide something.</h2>
-    <p>Send GHS 200 to a saved beneficiary, or pay one on a sanctions list — either way,
-      you'll see exactly why.</p></div>
+  <div><h2>See it decide something.</h2></div>
   <div class="ctarow"><a class="btn primary" href="app.html">Open the app</a></div>
 </div></div>
 
@@ -1535,27 +1515,11 @@ function page(){
   </div>
   <div class="legal">
     <span>AI-Digital Bank · prototype, Ghana</span>
-    <span id="svc">checking service…</span>
   </div>
 </footer>`;
 }
 
 document.getElementById('page').innerHTML = page();
-
-(async () => {
-  try {
-    const r = await fetch('/api/health', {cache:'no-store'});
-    if (!r.ok) throw 0;
-    const d = await r.json();
-    document.getElementById('dot').className = 'dot live';
-    document.getElementById('mode').textContent = `service live · ${d.open} in the queue`;
-    document.getElementById('svc').textContent = `decision service live · ${d.open} cases in the queue`;
-  } catch {
-    document.getElementById('mode').textContent = location.protocol === 'file:' ? 'offline files' : 'service not reachable';
-    document.getElementById('svc').textContent = location.protocol === 'file:'
-      ? 'opened as local files — each product decides on its own' : 'decision service not reachable';
-  }
-})();
 </script>
 </body>
 </html>
