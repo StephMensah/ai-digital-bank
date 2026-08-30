@@ -224,10 +224,10 @@
     "supplied": false
   },
   {
-    "slug": "fidelity",
-    "name": "Fidelity",
-    "file": "fidelity.svg",
-    "brandColour": "#F26F1D",
+    "slug": "ai-digital-bank",
+    "name": "AI-Digital Bank",
+    "file": "ai-digital-bank.svg",
+    "brandColour": "#14B8AC",
     "category": "Income",
     "supplied": false
   }

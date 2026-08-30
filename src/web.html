@@ -3,7 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Fidelity Online — digital bank</title>
+<title>AI-Digital Bank Online</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>__UI__</style>
 <style>
 /* ------------------------------------------------------------- web shell */
@@ -121,7 +124,7 @@ table.tbl td:last-child,table.tbl th:last-child{text-align:right}
 <body>
 <div class="app">
   <aside class="side">
-    <div class="brand"><div class="m"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"><path d="M12 3.2 19.4 7.6v8.8L12 20.8 4.6 16.4V7.6L12 3.2Z"/><circle cx="12" cy="12" r="2" fill="#fff" stroke="none"/></svg></div><div class="t">Fidelity <i>Online</i></div></div>
+    <div class="brand"><div class="m"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"><path d="M12 3.2 19.4 7.6v8.8L12 20.8 4.6 16.4V7.6L12 3.2Z"/><circle cx="12" cy="12" r="2" fill="#fff" stroke="none"/></svg></div><div class="t">AI-Digital <i>Bank</i></div></div>
     <div class="ent" id="ent"></div>
     <nav id="nav"></nav>
     <div class="sidefoot">Decision service<br><span id="svc">checking…</span></div>
@@ -218,7 +221,7 @@ function vOverview(){
 
     <div class="grid g2">
       <div class="hero">${lattice('h1')}
-        <div class="label">${I('node',15)} ${S.entity==='personal'?'Total with Fidelity':'Business position'}</div>
+        <div class="label">${I('node',15)} ${S.entity==='personal'?'Total with AI-Digital Bank':'Business position'}</div>
         <div class="bal"><small>GHS</small>${total.toLocaleString('en-GB',{minimumFractionDigits:2})}</div>
         <div class="delta">${I('growth',14)} ${m0(6400)} in this month</div>
         <div style="display:flex;gap:8px;margin-top:20px">
@@ -284,7 +287,7 @@ function bizOverview(e){
 function vTransfers(){
   const e = E();
   return `<div class="phead"><h2>Transfers</h2>
-      <p>Fidelity accounts, any Ghanaian bank by GhIPSS instant, mobile money, or international by SWIFT.
+      <p>AI-Digital Bank accounts, any Ghanaian bank by GhIPSS instant, mobile money, or international by SWIFT.
          Every beneficiary is screened and every payment is checked before it leaves.</p></div>
     <div class="grid g2">
       <div class="surface"><span class="eyebrow">Send to</span>
@@ -335,7 +338,7 @@ function vCards(){
     <div class="grid g2">
       <div>
         <div class="plastic ${S.frozen.physical?'frozen':''}" style="max-width:380px">${lattice('c1')}
-          <div class="brand"><span>FIDELITY</span>${I('node',18)}</div><div class="chipimg"></div>
+          <div class="brand"><span>AI-DIGITAL BANK</span>${I('node',18)}</div><div class="chipimg"></div>
           <div class="pan">${e.card.num}</div>
           <div class="foot"><span>${e.holder.toUpperCase()}</span><span>${e.card.exp} · VISA</span></div></div>
         <div class="chiprow" style="margin-top:14px">
@@ -346,7 +349,7 @@ function vCards(){
       </div>
       <div>
         <div class="plastic virtual ${S.frozen.virtual?'frozen':''}" style="max-width:380px">${lattice('c2')}
-          <div class="brand"><span>FIDELITY</span>${I('node',18)}</div><div class="chipimg"></div>
+          <div class="brand"><span>AI-DIGITAL BANK</span>${I('node',18)}</div><div class="chipimg"></div>
           <div class="pan">4821 •••• •••• 7719</div>
           <div class="foot"><span>MERCHANT LOCK ON</span><span>11/28</span></div></div>
         <div class="chiprow" style="margin-top:14px">
@@ -1162,8 +1165,8 @@ document.addEventListener('keydown', ev => {
   const HERE = (location.pathname || '').split('/').pop() || 'index.html';
   const PRODUCTS = [
     ['index.html','Prototype home','start here'],
-    ['fidelity-app.html','Fidelity app','customer · mobile'],
-    ['fidelity-web.html','Fidelity Online','customer · web'],
+    ['app.html','AI-Digital Bank app','customer · mobile'],
+    ['web.html','AI-Digital Bank Online','customer · web'],
     ['reviewer-console.html','Reviewer console','staff · the queue'],
     ['control-tower.html','AI Control Tower','staff · governance'],
   ];

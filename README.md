@@ -56,7 +56,7 @@ without going back.
 - **control-tower.html** — the operator console. Runs on the JSON snapshot the `export`
   command writes, so every number traces to an engine run. Phase buttons change the
   admission cut-off; clicking a row opens its governance gates, DPIA reference and endpoint.
-- **fidelity-web.html** — internet banking, redesigned as a full digital bank. Personal and
+- **web.html** — internet banking, redesigned as a full digital bank. Personal and
   business entities with their own navigation: overview, transfers and standing orders, bills
   and airtime, cards (physical and virtual), save & invest (goals, fixed deposits, 91–364 day
   treasury bills), borrow, foreign exchange, statements and certificates, support, and a
@@ -67,7 +67,7 @@ without going back.
   was already told, and three outcomes: agree, override, or return for more. Keyboard: `j`/`k`
   to move, `a`/`o`/`r` to decide. An override is the only ground truth these models get from
   production, so the console tracks override rate per model and feeds it back.
-- **fidelity-app.html** — the mobile product. Five tabs with a raised Pay button, a keypad
+- **app.html** — the mobile product. Five tabs with a raised Pay button, a keypad
   amount flow, goal rings, card art with freeze, treasury bills, FX, KYC tiers and limits,
   and the same decision notes. Below 520px the device frame drops and it fills the screen.
 
@@ -88,7 +88,7 @@ a single portable file:
   cheque, coins, banknote, handshake, target, percent.
 - `src/art.js` — nine illustrations built in the strategy deck's language: flat geometry,
   three oranges, two greys, white space doing the work. No raster images, no requests.
-- `src/ui.css` — the consumer design system: warm Ghanaian neutrals, Fidelity orange for
+- `src/ui.css` — the consumer design system: warm Ghanaian neutrals, AI-Digital Bank turquoise for
   action, jade for money in, gold for money set aside; Bricolage Grotesque for figures,
   Hanken Grotesk for text, Geist Mono for references.
 - `src/ds.css` — the older console system, still used by the reviewer console.

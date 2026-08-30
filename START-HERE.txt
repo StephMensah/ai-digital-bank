@@ -1,4 +1,4 @@
-FIDELITY AI-FIRST BANK — prototype
+AI-DIGITAL BANK — prototype
 Strategic AI Banking Framework, built out as running software.
 
 ────────────────────────────────────────────────────────────────────
@@ -9,8 +9,8 @@ QUICKEST LOOK  (no install, no internet needed)
   tablet and laptop widths, and the preview resizes live.
 
   Or open any product on its own:
-    fidelity-app.html        the mobile bank
-    fidelity-web.html        internet banking, personal + business
+    app.html        the mobile bank
+    web.html        internet banking, personal + business
     reviewer-console.html    staff: the escalation queue
     control-tower.html       staff: portfolio and governance
 

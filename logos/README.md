@@ -42,7 +42,7 @@ never looks broken while you are still collecting assets.
 - `netflix.svg` — Netflix (#E50914)
 - `spotify.svg` — Spotify (#1DB954)
 - `mensah-properties.svg` — Mensah Properties (#6D4C41)
-- `fidelity.svg` — Fidelity (#F26F1D)
+- `ai-digital-bank.svg` — AI-Digital Bank (#14B8AC)
 
 ## Rules worth keeping
 

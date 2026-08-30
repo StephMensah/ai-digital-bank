@@ -1,5 +1,5 @@
 /* =========================================================================
-   FIDELITY DIGITAL — design system
+   AI-DIGITAL BANK — design system
    Turquoise for action. White for surface. Grey for structure. Navy used
    deliberately, and only where the money is: the balance card, the
    bank card, the confirm button. Nothing else earns it.
@@ -18,9 +18,9 @@
   --sh-sm:0 1px 2px rgba(14,42,71,.05), 0 8px 22px -14px rgba(14,42,71,.18);
   --sh:0 2px 5px rgba(14,42,71,.05), 0 20px 42px -24px rgba(14,42,71,.24);
   --sh-lg:0 34px 78px -32px rgba(14,42,71,.32);
-  --display:"Calibri","Segoe UI",system-ui,sans-serif;
-  --body:"Calibri","Segoe UI",system-ui,-apple-system,sans-serif;
-  --mono:"Consolas","Calibri",ui-monospace,monospace;
+  --display:"Calibri","Carlito","Segoe UI",system-ui,sans-serif;
+  --body:"Calibri","Carlito","Segoe UI",system-ui,-apple-system,sans-serif;
+  --mono:"Consolas","Calibri","Carlito",ui-monospace,monospace;
   --ease:cubic-bezier(.22,.61,.36,1);
   --hex:polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
 }
@@ -162,7 +162,7 @@ input[type=range]{width:100%;accent-color:var(--orange)}
 .qa button:active{transform:scale(.94)}
 .qa .ic{width:60px;height:60px;display:grid;place-items:center;clip-path:var(--hex);
         background:var(--orange);color:#fff;transition:.16s var(--ease);
-        box-shadow:0 8px 18px -10px rgba(242,111,29,.9)}
+        box-shadow:0 8px 18px -10px rgba(12,133,121,.9)}
 .qa button:hover .ic{background:var(--orange-d);transform:translateY(-2px)}
 .qa .ic.k{background:var(--haze);color:var(--slate)}
 .qa button:hover .ic.k{background:#000}

@@ -4,9 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#15161A">
-<title>Fidelity — digital bank</title>
+<title>AI-Digital Bank</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>/* =========================================================================
-   FIDELITY DIGITAL — design system
+   AI-DIGITAL BANK — design system
    Turquoise for action. White for surface. Grey for structure. Navy used
    deliberately, and only where the money is: the balance card, the
    bank card, the confirm button. Nothing else earns it.
@@ -25,9 +28,9 @@
   --sh-sm:0 1px 2px rgba(14,42,71,.05), 0 8px 22px -14px rgba(14,42,71,.18);
   --sh:0 2px 5px rgba(14,42,71,.05), 0 20px 42px -24px rgba(14,42,71,.24);
   --sh-lg:0 34px 78px -32px rgba(14,42,71,.32);
-  --display:"Calibri","Segoe UI",system-ui,sans-serif;
-  --body:"Calibri","Segoe UI",system-ui,-apple-system,sans-serif;
-  --mono:"Consolas","Calibri",ui-monospace,monospace;
+  --display:"Calibri","Carlito","Segoe UI",system-ui,sans-serif;
+  --body:"Calibri","Carlito","Segoe UI",system-ui,-apple-system,sans-serif;
+  --mono:"Consolas","Calibri","Carlito",ui-monospace,monospace;
   --ease:cubic-bezier(.22,.61,.36,1);
   --hex:polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
 }
@@ -169,7 +172,7 @@ input[type=range]{width:100%;accent-color:var(--orange)}
 .qa button:active{transform:scale(.94)}
 .qa .ic{width:60px;height:60px;display:grid;place-items:center;clip-path:var(--hex);
         background:var(--orange);color:#fff;transition:.16s var(--ease);
-        box-shadow:0 8px 18px -10px rgba(242,111,29,.9)}
+        box-shadow:0 8px 18px -10px rgba(12,133,121,.9)}
 .qa button:hover .ic{background:var(--orange-d);transform:translateY(-2px)}
 .qa .ic.k{background:var(--haze);color:var(--slate)}
 .qa button:hover .ic.k{background:#000}
@@ -417,6 +420,9 @@ body{background:var(--sand)}
 .homebar{flex:none;height:26px;display:grid;place-items:center}
 .homebar i{display:block;width:140px;height:5px;border-radius:3px;background:var(--ink);opacity:.28}
 
+/* balance card + quick actions stay put; everything below them scrolls underneath */
+.stickytop{position:sticky;top:0;z-index:5;background:var(--canvas);padding-top:2px;margin-top:-2px}
+
 .acctstrip{display:flex;gap:8px;overflow-x:auto;margin-top:16px;scroll-snap-type:x proximity;
   -webkit-overflow-scrolling:touch}
 .acctstrip button{flex:none;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);
@@ -473,19 +479,19 @@ body{background:var(--sand)}
 <body>
 <div class="stage">
   <div class="rail">
-    <span class="kick">Fidelity Digital · Ghana</span>
+    <span class="kick">AI-Digital Bank · Ghana</span>
     <h1>A bank with <em>no branch</em>, and nothing missing</h1>
     <p class="lede">Everything the counter used to do — transfers, bills, airtime, cards, cheques, treasury
       bills, foreign exchange, loans, payroll — running on the AI engine, with <b>a plain note behind every
       decision a model makes</b>.</p>
     <div class="feat">
-      <div><b>Move money</b><span>Fidelity, GhIPSS instant, MoMo, SWIFT, standing orders, bulk payroll</span></div>
+      <div><b>Move money</b><span>AI-Digital Bank, GhIPSS instant, MoMo, SWIFT, standing orders, bulk payroll</span></div>
       <div><b>Grow money</b><span>Goal savings, fixed deposits, 91–364 day treasury bills, FX</span></div>
       <div><b>Borrow</b><span>Salary advance, personal loan, overdraft — priced by model, declined only by a person</span></div>
       <div><b>Stay safe</b><span>Card freeze, tier limits, sanctions screening, live fraud step-up</span></div>
     </div>
     <div id="railart" style="margin:30px 0 6px;max-width:420px"></div>
-    <div class="railfoot">Shares core.js with Fidelity Online and the reviewer console.<br>
+    <div class="railfoot">Shares core.js with AI-Digital Bank Online and the reviewer console.<br>
       Below 520px the frame drops and it fills the screen.</div>
   </div>
 
@@ -521,7 +527,7 @@ body{background:var(--sand)}
 </div>
 
 <script>/* =========================================================================
-   FIDELITY ICONS
+   AI-DIGITAL BANK ICONS
    One hand-built set, 24×24, stroke-based, inheriting currentColor so a single
    icon works on white, on grey and on matte black. The block / node / chain
    family carries the distributed-ledger motif that runs through the products.
@@ -697,10 +703,10 @@ function lattice(id = 'lat'){
 }
 
 /* =========================================================================
-   FIDELITY ILLUSTRATIONS
-   Built in the language of the strategy deck: flat geometry, three oranges,
-   two greys, white space doing the work. No black anywhere. Every scene is
-   inline SVG, so it scales, recolours with the theme and costs no request.
+   AI-DIGITAL BANK ILLUSTRATIONS
+   Built in the language of the strategy deck: flat geometry, turquoise and
+   navy, white space doing the work. Every scene is inline SVG, so it scales,
+   recolours with the theme and costs no request.
        ART.goal()      → savings
        ART.welcome()   → the bank itself
    All return a full <svg> sized by its container.
@@ -865,7 +871,7 @@ const ART = (() => {
 })();
 
 /* =========================================================================
-   FIDELITY CUSTOMER CORE
+   AI-DIGITAL BANK CUSTOMER CORE
    Browser port of aibank_engine.py. Every agent keeps the engine contract:
        infer(input) -> { action, confidence, explanation, adverse }
    The wrapper FID.decide() applies the confidence floor, routes adverse
@@ -886,13 +892,13 @@ const FID = (() => {
   const PERSONAL = {
     id:'personal', label:'Personal', holder:'Ama Boateng', since:'2019',
     accounts:[
-      {name:'Everyday account', num:'•••• 3391', balance:4182.60, type:'current'},
+      {name:'Current account', num:'•••• 3391', balance:4182.60, type:'current'},
       {name:'Target savings',   num:'•••• 7742', balance:11500.00, type:'savings'},
     ],
     card:{num:'•••• •••• •••• 3391', exp:'09/29', frozen:false},
     credit:{bureau:648, dti:0.31, income:6400, thinFile:false},
     beneficiaries:[
-      {name:'Kojo Mensah', bank:'Fidelity', acct:'•••• 2210', last:'GHS 200'},
+      {name:'Kojo Mensah', bank:'AI-Digital Bank', acct:'•••• 2210', last:'GHS 200'},
       {name:'MTN MoMo 024 447 8812', bank:'MoMo', acct:'024 447 8812', last:'GHS 50'},
       {name:'Electro World Accra', bank:'GCB', acct:'•••• 9931', last:'GHS 1,240'},
       {name:'Global Marine Ltd', bank:'Correspondent · Dubai', acct:'AE07 •••• 3311', last:'first payment'},
@@ -918,7 +924,7 @@ const FID = (() => {
     credit:{bureau:702, dti:0.24, income:41000, thinFile:true},
     beneficiaries:[
       {name:'Adom Poultry Farms', bank:'CalBank', acct:'•••• 8820', last:'GHS 12,400'},
-      {name:'Payroll — 14 staff', bank:'Fidelity', acct:'batch', last:'GHS 18,900'},
+      {name:'Payroll — 14 staff', bank:'AI-Digital Bank', acct:'batch', last:'GHS 18,900'},
       {name:'Global Marine Ltd', bank:'Correspondent · Dubai', acct:'AE07 •••• 3311', last:'first payment'},
     ],
     transactions:[
@@ -945,7 +951,7 @@ const FID = (() => {
 
   /* ================================================================= agents */
 
-  /* retail.fraud_detection — azureml://fidelity/retail-fraud-lgbm/v3 */
+  /* retail.fraud_detection — azureml://aidigitalbank/retail-fraud-lgbm/v3 */
   function assessPayment(tx){
     const s = seed(tx.to + tx.amount);
     const foreign = /Dubai|Correspondent|AE07/.test(tx.bankLine || '');
@@ -979,7 +985,7 @@ const FID = (() => {
       explanation:`no match above 0.30 (closest ${sim.toFixed(2)})`, adverse:false, similarity:sim};
   }
 
-  /* retail.loan_preapproval / credit.scoring — datarobot://fidelity/thin-file-scorecard/v5 */
+  /* retail.loan_preapproval / credit.scoring — datarobot://aidigitalbank/thin-file-scorecard/v5 */
   function preapprove(amount, profile){
     const pd = Math.max(0.01, Math.min(0.9, (750 - profile.bureau)/900 + profile.dti/3));
     const cap = profile.income * 4;
@@ -995,7 +1001,7 @@ const FID = (() => {
       explanation:`default probability ${(pd*100).toFixed(1)}%, capped at 4× monthly income`};
   }
 
-  /* retail.chatbot — rasa://fidelity/multilingual-nlu/v4 */
+  /* retail.chatbot — rasa://aidigitalbank/multilingual-nlu/v4 */
   const INTENTS = [
     [/balance|how much|sika|akonta|ahe/i, 'balance_enquiry'],
     [/card|block|freeze|lost|stolen/i, 'card_block'],
@@ -1017,7 +1023,7 @@ const FID = (() => {
       explanation:`intent=${intent}, language=${lang}`};
   }
 
-  /* sme.cashflow — prophet://fidelity/sme-cashflow/v1 */
+  /* sme.cashflow — prophet://aidigitalbank/sme-cashflow/v1 */
   function forecastCashflow(entity){
     const s = entity.cashflow || [];
     if (!s.length) return {action:'NO_DATA', confidence:0, adverse:false, trough:0, week:0,
@@ -1031,7 +1037,7 @@ const FID = (() => {
         : 'no financing gap projected over eight weeks'};
   }
 
-  /* sme.doc_verification — tesseract+layoutlm://fidelity/lpo-verify/v2 */
+  /* sme.doc_verification — tesseract+layoutlm://aidigitalbank/lpo-verify/v2 */
   function verifyDocument(filename){
     const legible = /\.pdf$/i.test(filename) && !/blur|scan0|photo/i.test(filename);
     const q = legible ? 0.55 + seed(filename)*0.40 : seed(filename)*0.29;
@@ -1286,7 +1292,7 @@ Object.assign(FID, (() => {
     M(/netflix/i,         'Netflix',             '#E50914', 'NF', 'Subscriptions'),
     M(/spotify/i,         'Spotify',             '#1DB954', 'SP', 'Subscriptions'),
     M(/mensah properties|rent/i,'Mensah Properties','#6D4C41','MP','Housing'),
-    M(/fidelity|settlement|card settlement/i,'Fidelity','#F26F1D','FD','Income'),
+    M(/ai-digital|ai digital|settlement|card settlement/i,'AI-Digital Bank','#14B8AC','AD','Income'),
   ];
 
   /** Resolve a raw transaction description to a known merchant, or synthesise one. */
@@ -1350,7 +1356,7 @@ Object.assign(FID, (() => {
 
   /** Post a real movement. Balances change, the statement grows, and the row
       carries the record the decision layer already wrote. */
-  function post(entity, {merchant:name, amount, account = 0, method = 'Fidelity account',
+  function post(entity, {merchant:name, amount, account = 0, method = 'AI-Digital Bank account',
                          category, status = 'Completed', note = '', hash}){
     const acct = entity.accounts[account];
     const m = merchant_(name);
@@ -1451,6 +1457,9 @@ const S = { entity:'personal', tab:'home', acct:0, lang:'English', frozen:{physi
 const E = () => FID.ENTITIES[S.entity];
 const $ = id => document.getElementById(id);
 const m0 = FID.money0, m2 = FID.money;
+/* privacy: every passive balance/amount display (not a transaction you're actively
+   confirming) goes through this so one toggle hides them all. */
+const hide = s => S.hideBal ? '••••' : s;
 const initials = n => n.split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
 
 function openSheet(html){ $('sheet').innerHTML = `<div class="grab"></div>${html}`;
@@ -1476,8 +1485,8 @@ function txRow(t){
   return `<button class="item" data-tx="${t.id}">${FID.brandTile(t.m)}
     <div class="txt"><b>${FID.merchant(t.m).label}</b>
       <span>${t.d.split(' ').slice(-1)[0]} · ${t.cat}${t.status!=='Completed'?' · '+t.status:''}</span></div>
-    <div class="amt ${t.a>0?'in':''}">${t.a>0?'+':'−'}${m0(Math.abs(t.a))}
-      <small>${m0(t.balanceAfter)}</small></div></button>`;
+    <div class="amt ${t.a>0?'in':''}">${t.a>0?'+':'−'}${hide(m0(Math.abs(t.a)))}
+      <small>${hide(m0(t.balanceAfter))}</small></div></button>`;
 }
 
 function vStatement(){
@@ -1500,9 +1509,9 @@ function vStatement(){
   return `<h3>Statement</h3>
     <div style="display:flex;gap:10px;margin:14px 0 12px">
       <div class="surface" style="flex:1;padding:14px"><span class="eyebrow">Money out</span>
-        <div class="money" style="font-size:19px;margin-top:4px">${m0(spent)}</div></div>
+        <div class="money" style="font-size:19px;margin-top:4px">${hide(m0(spent))}</div></div>
       <div class="surface" style="flex:1;padding:14px"><span class="eyebrow">Money in</span>
-        <div class="money" style="font-size:19px;margin-top:4px;color:var(--pos)">${m0(got)}</div></div>
+        <div class="money" style="font-size:19px;margin-top:4px;color:var(--pos)">${hide(m0(got))}</div></div>
     </div>
     <input id="stmtQ" placeholder="Search a merchant or category" value="${S.stmtQuery||''}"
       style="width:100%;height:48px;padding:0 16px;border-radius:100px;border:1.5px solid var(--line);
@@ -1514,7 +1523,7 @@ function vStatement(){
     ${Object.entries(groups).map(([day, list]) => `
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin:16px 0 2px">
         <span class="eyebrow">${day}</span>
-        <span class="ref">${m0(list.reduce((s,t)=>s+Math.abs(t.a),0))}</span></div>
+        <span class="ref">${hide(m0(list.reduce((s,t)=>s+Math.abs(t.a),0)))}</span></div>
       <div class="surface flush">${list.map(txRow).join('')}</div>`).join('')
       || `<div class="emptystate">${ART.empty()}<b>Nothing matches that</b>
           <p class="sub">Try a different merchant, or clear the filter.</p></div>`}
@@ -1528,12 +1537,12 @@ function txDetail(id){
   openSheet(`<div style="text-align:center;padding:6px 0 2px">
       ${FID.brandTile(t.m, 62, 20)}
       <div class="money" style="font-size:34px;margin:14px 0 4px;color:${t.a>0?'var(--pos)':'var(--ink)'}">
-        ${t.a>0?'+':'−'}${m0(Math.abs(t.a))}</div>
+        ${t.a>0?'+':'−'}${hide(m0(Math.abs(t.a)))}</div>
       <div class="sub">${mm.label}</div>
       <div style="margin-top:10px"><span class="badge ${t.status==='Completed'?'p':'o'}">
         ${I(t.status==='Completed'?'check':'clock',13)} ${t.status}</span></div></div>
     ${note('TRANSACTION RECORD',[['When', t.d],['Category', t.cat],['Method', t.method],
-      ['Reference', t.ref],['Balance after', m0(t.balanceAfter)],['Record', t.hash]],
+      ['Reference', t.ref],['Balance after', hide(m0(t.balanceAfter))],['Record', t.hash]],
       'Kept for seven years. Quote the reference if you ever query this with us or with the merchant.')}
     <div style="display:flex;gap:8px;margin-top:16px">
       <button class="btn quiet" style="flex:1" data-act="close">${I('download',17)} Receipt</button>
@@ -1550,13 +1559,14 @@ function vHome(){
   const target = S.goals.reduce((s,g)=>s+g.target,0);
 
   return `
+  <div class="stickytop">
   <div class="hero">${lattice('h1')}
     <div class="label">${I('node',15)} ${acct.name} · ${e.accounts.length} accounts</div>
     <div class="bal" style="display:flex;align-items:baseline;gap:10px"><span><small>GHS</small>${
       S.hideBal ? '••••••' : acct.balance.toLocaleString('en-GB',{minimumFractionDigits:2})}</span>
       <button data-act="hidebal" aria-label="${S.hideBal?'Show balance':'Hide balance'}" style="background:none;border:0;cursor:pointer;
         color:rgba(255,255,255,.6);padding:4px">${I(S.hideBal?'eyeoff':'eye',18)}</button></div>
-    <div class="delta">${I('growth',14)} ${m0(6400)} in this month</div>
+    <div class="delta">${I('growth',14)} ${hide(m0(6400))} in this month</div>
     <div class="acctstrip">${e.accounts.map((x,i)=>
       `<button data-acct="${i}" aria-pressed="${i===S.acct}">${x.name} · ${
         S.hideBal ? '••••' : m0(x.balance)}</button>`).join('')}
@@ -1564,42 +1574,27 @@ function vHome(){
   </div>
 
   <div class="sect"><div class="qa">
-    ${[['sendmoney','transfer','Send',''],['bills','receipt','Pay bills','k'],['airtime','airtime','Airtime','k'],
-       ['cards','card','Cards','k'],['save','piggy','Save',''],['invest','growth','Invest','k'],
-       ['fx','exchange','Exchange','k'],['allservices','dashboard','All','k']]
-      .map(([k,ic,l,c])=>`<button data-act="${k}"><span class="ic ${c}">${IS(ic,27)}</span><span>${l}</span></button>`).join('')}
+    ${[['sendmoney','transfer','Send'],['bills','receipt','Pay bills'],['airtime','airtime','Airtime'],
+       ['cards','card','Cards'],['save','piggy','Save'],['invest','growth','Invest'],
+       ['fx','exchange','Exchange'],['allservices','dashboard','All']]
+      .map(([k,ic,l])=>`<button data-act="${k}"><span class="ic">${IS(ic,27)}</span><span>${l}</span></button>`).join('')}
   </div></div>
+  </div>
 
   ${S.entity==='business' ? businessStrip(e) : `
   <div class="sect"><div class="hd"><h3>Money set aside</h3><button data-tab="save">Manage</button></div>
     <div class="surface" style="display:flex;align-items:center;gap:16px">
       ${ringSvg(saved/target)}
       <div style="flex:1">
-        <div class="money" style="font-size:22px">${m0(saved)}</div>
-        <div class="tiny">across ${S.goals.length} goals · ${m0(target)} target</div>
+        <div class="money" style="font-size:22px">${hide(m0(saved))}</div>
+        <div class="tiny">across ${S.goals.length} goals · ${hide(m0(target))} target</div>
         <div class="bar" style="margin-top:10px"><i style="width:${(saved/target*100).toFixed(0)}%"></i></div>
       </div></div></div>`}
-
-  ${S.consent.insights && S.entity==='personal' ? `
-  <div class="sect"><div class="surface" style="border-left:3px solid var(--orange);cursor:pointer" data-act="toggleinsight">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-      <div style="display:flex;align-items:center;gap:10px;min-width:0">
-        <span class="badge o">Insight</span>
-        <h4 class="d3" style="font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m0(340)} a month on ride-hailing</h4>
-      </div>
-      <span style="flex:none;color:var(--grey);display:flex;transform:rotate(${S.insightOpen?-90:90}deg);
-        transition:transform .18s var(--ease)">${I('chevron',18)}</span>
-    </div>
-    ${S.insightOpen ? `
-    <p class="sub" style="margin-top:10px">More than 8 in 10 customers on your account type. A monthly transport pass for the Tuesday
-      commute would save about ${m0(95)}.</p>
-    <button class="why" data-note="ins">${I('info',15)} Where this came from</button><div id="note-ins" hidden></div>` : ''}
-  </div></div>` : ''}
 
   <div class="sect"><div class="hd"><h3>Coming up</h3><button data-sheet="standing">Standing orders</button></div>
     <div class="surface flush">${FID.STANDING.map(o=>`
       <div class="item static"><div class="av">${I('repeat',21,2.2)}</div><div class="txt"><b>${o.name}</b>
-        <span>${o.next} · ${o.when}</span></div><div class="amt">${m0(o.amount)}</div></div>`).join('')}
+        <span>${o.next} · ${o.when}</span></div><div class="amt">${hide(m0(o.amount))}</div></div>`).join('')}
     </div></div>
 
   <div class="sect"><div class="hd"><h3>Activity</h3>
@@ -1640,8 +1635,8 @@ function vSave(){
         ${ringSvg(g.saved/g.target, 56)}
         <div style="flex:1;min-width:0">
           <b style="font-size:14.5px;display:flex;align-items:center;gap:7px">${I(g.icon,16)} ${g.name}</b>
-          <div class="money" style="font-size:19px;margin:3px 0">${m0(g.saved)}<span
-            style="font-size:.6em;color:var(--mute);font-weight:600"> / ${m0(g.target)}</span></div>
+          <div class="money" style="font-size:19px;margin:3px 0">${hide(m0(g.saved))}<span
+            style="font-size:.6em;color:var(--mute);font-weight:600"> / ${hide(m0(g.target))}</span></div>
           <div class="tiny">${p.explanation}</div></div>
         <button class="btn quiet sm" data-goal="${g.id}">Add</button>
       </div>`;}).join('')}
@@ -1680,7 +1675,7 @@ function vCards(){
           locked to one merchant.</p></div>
         <div style="width:140px">${ART.cards()}</div></div></div>
     <div class="plastic ${S.frozen.physical?'frozen':''}">${lattice('c1')}
-      <div class="brand"><span>FIDELITY</span>${I('node',18)}</div><div class="chipimg"></div>
+      <div class="brand"><span>AI-DIGITAL BANK</span>${I('node',18)}</div><div class="chipimg"></div>
       <div class="pan">${e.card.num}</div>
       <div class="foot"><span>${e.holder.toUpperCase()}</span><span>${e.card.exp} · VISA</span></div></div>
     <div class="chiprow" style="margin-top:14px">
@@ -1690,7 +1685,7 @@ function vCards(){
 
     <div class="hd" style="margin-top:26px"><h3>Virtual card</h3><span class="badge j">For online</span></div>
     <div class="plastic virtual ${S.frozen.virtual?'frozen':''}">${lattice('c2')}
-      <div class="brand"><span>FIDELITY</span>${I('node',18)}</div><div class="chipimg"></div>
+      <div class="brand"><span>AI-DIGITAL BANK</span>${I('node',18)}</div><div class="chipimg"></div>
       <div class="pan">4821 •••• •••• 7719</div>
       <div class="foot"><span>MERCHANT LOCK ON</span><span>11/28</span></div></div>
     <div class="chiprow" style="margin-top:14px">
@@ -1702,7 +1697,7 @@ function vCards(){
     <div class="surface flush">${e.transactions.filter(t=>t.a<0).map(t=>`
       <div class="item static"><div class="av">${initials(t.m)}</div>
         <div class="txt"><b>${t.m}</b><span>${t.d} · ${FID.categorise(t.m)}</span></div>
-        <div class="amt">−${m0(Math.abs(t.a))}</div></div>`).join('')}</div>
+        <div class="amt">−${hide(m0(Math.abs(t.a)))}</div></div>`).join('')}</div>
 
     <div class="surface" style="margin-top:14px;background:var(--jade-t);box-shadow:none">
       <b style="font-size:14px">Freezing is instant and reversible</b>
@@ -1727,6 +1722,22 @@ function vYou(){
       <div style="flex:1"><b style="font-size:16px">${e.holder}</b>
         <div class="tiny">Customer since ${e.since} · ${e.accounts[0].num}</div></div>
       <span class="badge j">${k.label}</span></div>
+
+    ${S.consent.insights && S.entity==='personal' ? `
+    <div class="sect"><div class="surface" style="border-left:3px solid var(--orange);cursor:pointer" data-act="toggleinsight">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px;min-width:0">
+          <span class="badge o">Insight</span>
+          <h4 class="d3" style="font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${hide(m0(340))} a month on ride-hailing</h4>
+        </div>
+        <span style="flex:none;color:var(--grey);display:flex;transform:rotate(${S.insightOpen?-90:90}deg);
+          transition:transform .18s var(--ease)">${I('chevron',18)}</span>
+      </div>
+      ${S.insightOpen ? `
+      <p class="sub" style="margin-top:10px">More than 8 in 10 customers on your account type. A monthly transport pass for the Tuesday
+        commute would save about ${hide(m0(95))}.</p>
+      <button class="why" data-note="ins">${I('info',15)} Where this came from</button><div id="note-ins" hidden></div>` : ''}
+    </div></div>` : ''}
 
     <div class="sect"><div class="hd"><h3>Your limits</h3></div>
       <div class="surface">
@@ -1760,7 +1771,7 @@ function vYou(){
         </div></div></div>
 
     <div class="sect"><div class="surface flush">
-      ${[['support','headset','Ask Fidelity, or a person'],['branches','pin','Branches and ATMs'],
+      ${[['support','headset','Ask AI-Digital Bank, or a person'],['branches','pin','Branches and ATMs'],
          ['statement','statement','Statements and certificates'],['security','lock','Security and devices'],
          ['switch','exchange','Switch to '+(S.entity==='personal'?"Ama's Kitchen Ltd":'Personal')]]
         .map(([k2,ic,l])=>`<button class="item" data-act="${k2}"><div class="av">${I(ic,19)}</div>
@@ -1849,7 +1860,7 @@ function keypad(){
 
 function openPay(){
   openSheet(`<h3>What are you doing?</h3><div style="margin-top:14px">${[
-      ['sendmoney','send','Send money','Fidelity, other banks, mobile money'],
+      ['sendmoney','send','Send money','AI-Digital Bank, other banks, mobile money'],
       ['bills','bills','Pay a bill','ECG, water, DStv, school fees, GRA'],
       ['airtime','airtime','Airtime & data','MTN, Telecel, AT'],
       ['fx','swap','Buy foreign currency','USD, GBP, EUR, NGN'],
@@ -1862,7 +1873,7 @@ function openPay(){
 function flowWho(){
   const e = E();
   openSheet(`<h3>Send money</h3>
-    <p class="sub" style="margin-bottom:14px">To a Fidelity account, any Ghanaian bank by GhIPSS instant,
+    <p class="sub" style="margin-bottom:14px">To an AI-Digital Bank account, any Ghanaian bank by GhIPSS instant,
       or mobile money.</p>
     <div class="chiprow" style="margin-bottom:8px">
       <button class="chip" aria-pressed="true">Saved</button>
@@ -2161,7 +2172,7 @@ function flowSupport(){
       box-shadow:var(--sh-sm);padding:10px 14px;border-radius:16px 16px 16px 4px;font-size:14px;
       max-width:85%">${m.text}</span></div>`;
   }).join('');
-  openSheet(`<h3>Ask Fidelity</h3>
+  openSheet(`<h3>Ask AI-Digital Bank</h3>
     <div class="chiprow" style="margin:12px 0;flex-wrap:nowrap;overflow-x:auto">${Object.keys(FID.LANG).map(l=>
       `<button class="chip" data-lang="${l}" aria-pressed="${S.lang===l}" style="flex:none">${l}</button>`).join('')}</div>
     ${S.chat.length ? '' : `<div class="artbox sm">${ART.support()}</div>
@@ -2377,7 +2388,7 @@ document.addEventListener('click', ev => {
       <p class="sub">We screen the name against sanctions and PEP lists before you can save it.</p>
       <div class="chiprow" style="margin:16px 0">
         <button class="chip" aria-pressed="true" data-pick="dest">Another bank</button>
-        <button class="chip" data-pick="dest">Fidelity account</button>
+        <button class="chip" data-pick="dest">AI-Digital Bank account</button>
         <button class="chip" data-pick="dest">Mobile money</button></div>
       <label class="field"><span>Account name</span><input placeholder="As it appears at their bank"></label>
       <label class="field"><span>Account number</span><input inputmode="numeric" placeholder="0000000000"></label>
@@ -2444,8 +2455,8 @@ document.addEventListener('keydown', ev => {
   const HERE = (location.pathname || '').split('/').pop() || 'index.html';
   const PRODUCTS = [
     ['index.html','Prototype home','start here'],
-    ['fidelity-app.html','Fidelity app','customer · mobile'],
-    ['fidelity-web.html','Fidelity Online','customer · web'],
+    ['app.html','AI-Digital Bank app','customer · mobile'],
+    ['web.html','AI-Digital Bank Online','customer · web'],
     ['reviewer-console.html','Reviewer console','staff · the queue'],
     ['control-tower.html','AI Control Tower','staff · governance'],
   ];

@@ -1,4 +1,4 @@
-package com.fidelity.aibank;
+package com.aidigitalbank.app;
 
 import com.getcapacitor.BridgeActivity;
 

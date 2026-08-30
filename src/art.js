@@ -1,8 +1,8 @@
 /* =========================================================================
-   FIDELITY ILLUSTRATIONS
-   Built in the language of the strategy deck: flat geometry, three oranges,
-   two greys, white space doing the work. No black anywhere. Every scene is
-   inline SVG, so it scales, recolours with the theme and costs no request.
+   AI-DIGITAL BANK ILLUSTRATIONS
+   Built in the language of the strategy deck: flat geometry, turquoise and
+   navy, white space doing the work. Every scene is inline SVG, so it scales,
+   recolours with the theme and costs no request.
        ART.goal()      → savings
        ART.welcome()   → the bank itself
    All return a full <svg> sized by its container.

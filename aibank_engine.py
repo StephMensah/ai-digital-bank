@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 AI-FIRST BANK ENGINE  -  executable prototype of the Strategic AI Banking Framework
-Fidelity Bank Ghana / McKinsey adaptation (deck dated 27 August 2026)
+AI-Digital Bank Ghana / McKinsey adaptation (deck dated 27 August 2026)
 
 This is a runnable skeleton of the "AI Control Tower" described on slide 14: it holds
 the whole use-case portfolio from slides 9-10, gates every use case through governance
@@ -551,7 +551,7 @@ class Agent:
 
 @agent("retail.fraud_detection")
 class FraudAgent(Agent):
-    endpoint = "azureml://fidelity/retail-fraud-lgbm/v3:score"
+    endpoint = "azureml://aidigitalbank/retail-fraud-lgbm/v3:score"
     confidence_floor = 0.80
     data_categories = ("account", "transaction", "device", "geolocation")
 
@@ -569,7 +569,7 @@ class FraudAgent(Agent):
 
 @agent("retail.personalized_offers")
 class OfferAgent(Agent):
-    endpoint = "azureml://fidelity/personalizer/v2:rank"
+    endpoint = "azureml://aidigitalbank/personalizer/v2:rank"
     confidence_floor = 0.55
     data_categories = ("account", "balance history", "product holding")
 
@@ -582,7 +582,7 @@ class OfferAgent(Agent):
 
 @agent("retail.loan_preapproval")
 class PreApprovalAgent(Agent):
-    endpoint = "datarobot://fidelity/thin-file-scorecard/v5:predict"
+    endpoint = "datarobot://aidigitalbank/thin-file-scorecard/v5:predict"
     confidence_floor = 0.78
     data_categories = ("identity", "income", "credit bureau", "transaction")
 
@@ -600,7 +600,7 @@ class PreApprovalAgent(Agent):
 
 @agent("retail.chatbot")
 class ChatbotAgent(Agent):
-    endpoint = "rasa://fidelity/multilingual-nlu/v4:parse"
+    endpoint = "rasa://aidigitalbank/multilingual-nlu/v4:parse"
     confidence_floor = 0.70
     data_categories = ("identity", "contact", "conversation")
 
@@ -620,7 +620,7 @@ class ChatbotAgent(Agent):
 
 @agent("retail.spending_insights")
 class InsightsAgent(Agent):
-    endpoint = "azureml://fidelity/spend-insights/v1:batch"
+    endpoint = "azureml://aidigitalbank/spend-insights/v1:batch"
     confidence_floor = 0.60
     data_categories = ("transaction", "merchant category")
 
@@ -633,7 +633,7 @@ class InsightsAgent(Agent):
 
 @agent("cx.complaint_resolution")
 class ComplaintAgent(Agent):
-    endpoint = "azure-cognitive://fidelity/complaint-triage/v2"
+    endpoint = "azure-cognitive://aidigitalbank/complaint-triage/v2"
     confidence_floor = 0.72
     data_categories = ("identity", "contact", "complaint text")
 
@@ -646,7 +646,7 @@ class ComplaintAgent(Agent):
 
 @agent("cx.retention")
 class RetentionAgent(Agent):
-    endpoint = "azureml://fidelity/churn-propensity/v3:predict"
+    endpoint = "azureml://aidigitalbank/churn-propensity/v3:predict"
     confidence_floor = 0.68
     data_categories = ("account", "transaction", "service history")
 
@@ -661,7 +661,7 @@ class RetentionAgent(Agent):
 
 @agent("credit.scoring")
 class CreditScoringAgent(Agent):
-    endpoint = "datarobot://fidelity/credit-scorecard/v7:predict"
+    endpoint = "datarobot://aidigitalbank/credit-scorecard/v7:predict"
     confidence_floor = 0.80
     data_categories = ("identity", "income", "credit bureau", "alternative data")
 
@@ -677,7 +677,7 @@ class CreditScoringAgent(Agent):
 
 @agent("credit.risk_pricing")
 class PricingAgent(Agent):
-    endpoint = "azureml://fidelity/risk-based-pricing/v2:score"
+    endpoint = "azureml://aidigitalbank/risk-based-pricing/v2:score"
     confidence_floor = 0.75
     data_categories = ("credit grade", "product", "tenor")
 
@@ -690,7 +690,7 @@ class PricingAgent(Agent):
 
 @agent("credit.early_warning")
 class EarlyWarningAgent(Agent):
-    endpoint = "azureml://fidelity/ews-gradient-boost/v4:predict"
+    endpoint = "azureml://aidigitalbank/ews-gradient-boost/v4:predict"
     confidence_floor = 0.70
     data_categories = ("account", "transaction", "exposure")
     degrades = True   # macro shift makes this the model that drifts first
@@ -705,7 +705,7 @@ class EarlyWarningAgent(Agent):
 
 @agent("credit.collections")
 class CollectionsAgent(Agent):
-    endpoint = "azureml://fidelity/collections-nba/v2:rank"
+    endpoint = "azureml://aidigitalbank/collections-nba/v2:rank"
     confidence_floor = 0.65
     data_categories = ("account", "arrears", "contact history")
 
@@ -720,7 +720,7 @@ class CollectionsAgent(Agent):
 
 @agent("sme.loan_risk")
 class SMEriskAgent(Agent):
-    endpoint = "azureml://fidelity/sme-scorecard-lgbm/v3:predict"
+    endpoint = "azureml://aidigitalbank/sme-scorecard-lgbm/v3:predict"
     confidence_floor = 0.76
     data_categories = ("business identity", "trade data", "transaction")
 
@@ -735,7 +735,7 @@ class SMEriskAgent(Agent):
 
 @agent("sme.doc_verification")
 class DocVerifyAgent(Agent):
-    endpoint = "tesseract+layoutlm://fidelity/lpo-verify/v2"
+    endpoint = "tesseract+layoutlm://aidigitalbank/lpo-verify/v2"
     confidence_floor = 0.85
     data_categories = ("business identity", "document image")
 
@@ -748,7 +748,7 @@ class DocVerifyAgent(Agent):
 
 @agent("sme.cashflow")
 class CashflowAgent(Agent):
-    endpoint = "prophet://fidelity/sme-cashflow/v1:forecast"
+    endpoint = "prophet://aidigitalbank/sme-cashflow/v1:forecast"
     confidence_floor = 0.62
     data_categories = ("business transaction",)
 
@@ -764,7 +764,7 @@ class CashflowAgent(Agent):
 
 @agent("fcc.aml")
 class AMLAgent(Agent):
-    endpoint = "h2o://fidelity/aml-triage/v6:score"
+    endpoint = "h2o://aidigitalbank/aml-triage/v6:score"
     confidence_floor = 0.82
     data_categories = ("identity", "transaction", "counterparty")
 
@@ -794,7 +794,7 @@ class SanctionsAgent(Agent):
 
 @agent("fcc.fraud_ring")
 class FraudRingAgent(Agent):
-    endpoint = "neo4j://fidelity/gds/fraud-community/v2"
+    endpoint = "neo4j://aidigitalbank/gds/fraud-community/v2"
     confidence_floor = 0.74
     data_categories = ("account", "device", "network graph")
 
@@ -808,7 +808,7 @@ class FraudRingAgent(Agent):
 
 @agent("fcc.sar")
 class SARAgent(Agent):
-    endpoint = "azure-openai://fidelity/sar-drafter/v1"
+    endpoint = "azure-openai://aidigitalbank/sar-drafter/v1"
     confidence_floor = 0.70
     data_categories = ("identity", "transaction", "case narrative")
 
@@ -821,7 +821,7 @@ class SARAgent(Agent):
 
 @agent("corp.liquidity")
 class LiquidityAgent(Agent):
-    endpoint = "timegpt://fidelity/corp-liquidity/v2:forecast"
+    endpoint = "timegpt://aidigitalbank/corp-liquidity/v2:forecast"
     confidence_floor = 0.66
     data_categories = ("corporate account", "treasury position")
 
@@ -833,7 +833,7 @@ class LiquidityAgent(Agent):
 
 @agent("corp.trade_fraud")
 class TradeFraudAgent(Agent):
-    endpoint = "neo4j+ocr://fidelity/bol-verify/v1"
+    endpoint = "neo4j+ocr://aidigitalbank/bol-verify/v1"
     confidence_floor = 0.80
     data_categories = ("trade document", "counterparty", "vessel registry")
 
@@ -849,7 +849,7 @@ class TradeFraudAgent(Agent):
 
 @agent("ops.document_processing")
 class DocProcessingAgent(Agent):
-    endpoint = "uipath://fidelity/kyc-stp/v3"
+    endpoint = "uipath://aidigitalbank/kyc-stp/v3"
     confidence_floor = 0.83
     data_categories = ("identity", "document image")
 
@@ -862,7 +862,7 @@ class DocProcessingAgent(Agent):
 
 @agent("tech.aiops")
 class AIOpsAgent(Agent):
-    endpoint = "prometheus+moogsoft://fidelity/aiops/v2"
+    endpoint = "prometheus+moogsoft://aidigitalbank/aiops/v2"
     confidence_floor = 0.70
     data_categories = ("telemetry",)
 
@@ -1039,7 +1039,7 @@ def cmd_dpia(args) -> None:
     ag_cls = AGENT_REGISTRY.get(uc.key)
     print(rule(f"DATA PROTECTION IMPACT ASSESSMENT - {uc.name}"))
     print(f"Reference        : {uc.dpia_ref or 'not required'}")
-    print(f"Controller       : Fidelity Bank Ghana  |  Domain: {DOMAINS[uc.domain].name}")
+    print(f"Controller       : AI-Digital Bank Ghana  |  Domain: {DOMAINS[uc.domain].name}")
     print(f"Processing       : {uc.scenario}")
     print(f"Lawful basis     : {'consent + legitimate interest' if uc.personal_data else 'n/a'}")
     print(f"Data categories  : {', '.join(ag_cls.data_categories) if ag_cls else 'tbd'}")
@@ -1086,7 +1086,7 @@ def cmd_run(args) -> None:
     tower, orch = boot(phase, args.seed)
     start = datetime(2026, 9, 1)
 
-    print(rule("AI-FIRST BANK ENGINE - Fidelity Bank Ghana"))
+    print(rule("AI-FIRST BANK ENGINE - AI-Digital Bank Ghana"))
     print(f"Admission cut-off : Phase {phase.value} - {phase.label} ({phase.window})")
     live = [u for u in USE_CASES.values() if u.admitted]
     print(f"Agents live       : {len(live)}   Registered use cases: {len(USE_CASES)}")
@@ -1206,7 +1206,7 @@ def cmd_export(args) -> None:
         })
 
     snapshot = {
-        "meta": {"bank": "Fidelity Bank Ghana", "currency": CCY, "days": args.days,
+        "meta": {"bank": "AI-Digital Bank Ghana", "currency": CCY, "days": args.days,
                  "phaseCutoff": phase.value, "seed": args.seed,
                  "capacityPerDay": ControlTower.ESCALATION_CAPACITY_PER_DAY,
                  "generated": datetime.now().isoformat(timespec="seconds"),

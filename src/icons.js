@@ -1,5 +1,5 @@
 /* =========================================================================
-   FIDELITY ICONS
+   AI-DIGITAL BANK ICONS
    One hand-built set, 24×24, stroke-based, inheriting currentColor so a single
    icon works on white, on grey and on matte black. The block / node / chain
    family carries the distributed-ledger motif that runs through the products.

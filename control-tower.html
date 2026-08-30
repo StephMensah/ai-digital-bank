@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI Control Tower — Fidelity Bank Ghana</title>
+<title>AI Control Tower — AI-Digital Bank Ghana</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;450;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
 :root{
   --paper:#ECEDEF; --ink:#17181B; --card:#FFFFFF; --hair:#D5D8DC; --muted:#6B7076;
   --orange:#E87722; --burnt:#B4531F; --alert:#C0392B; --clear:#2E7D5B; --wash:#F6F7F8;
-  --sans:"IBM Plex Sans",system-ui,sans-serif;
-  --cond:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif;
-  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --sans:"Calibri","Carlito","Segoe UI",system-ui,sans-serif;
+  --cond:"Calibri","Carlito","Segoe UI",system-ui,sans-serif;
+  --mono:"Consolas","Calibri","Carlito",ui-monospace,monospace;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
@@ -164,7 +164,7 @@ footer{margin-top:60px;border-top:1px solid var(--hair);padding-top:16px;font-si
           <rect x="11" y="17.3" width="12" height="3.4" fill="#fff"/>
           <rect x="11" y="22.6" width="16" height="3.4" fill="#fff"/>
         </svg>
-        <h1>AI Control Tower<span>Fidelity Bank Ghana</span></h1>
+        <h1>AI Control Tower<span>AI-Digital Bank Ghana</span></h1>
       </div>
       <div class="runmeta" id="runmeta"></div>
     </div>
@@ -254,13 +254,13 @@ footer{margin-top:60px;border-top:1px solid var(--hair);padding-top:16px;font-si
 
 <script type="application/json" id="snapshot">{
  "meta": {
-  "bank": "Fidelity Bank Ghana",
+  "bank": "AI-Digital Bank Ghana",
   "currency": "GHS",
   "days": 20,
   "phaseCutoff": 4,
   "seed": 7,
   "capacityPerDay": 120,
-  "generated": "2026-08-27T09:56:47",
+  "generated": "2026-08-30T20:57:40",
   "driftTolerance": 0.06
  },
  "totals": {
@@ -433,7 +433,7 @@ footer{margin-top:60px;border-top:1px solid var(--hair);padding-top:16px;font-si
    "hasAgent": true,
    "admitted": true,
    "blocked": null,
-   "endpoint": "azureml://fidelity/retail-fraud-lgbm/v3:score",
+   "endpoint": "azureml://aidigitalbank/retail-fraud-lgbm/v3:score",
    "decisions": 8400,
    "escalated": 826,
    "stp": 0.9017,
@@ -488,7 +488,7 @@ footer{margin-top:60px;border-top:1px solid var(--hair);padding-top:16px;font-si
    "hasAgent": true,
    "admitted": true,
    "blocked": null,
-   "endpoint": "azureml://fidelity/personalizer/v2:rank",
+   "endpoint": "azureml://aidigitalbank/personalizer/v2:rank",
    "decisions": 2400,
    "escalated": 0,
    "stp": 1.0,
@@ -543,7 +543,7 @@ footer{margin-top:60px;border-top:1px solid var(--hair);padding-top:16px;font-si
    "hasAgent": true,
    "admitted": true,
    "blocked": null,
-   "endpoint": "datarobot://fidelity/thin-file-scorecard/v5:predict",
+   "endpoint": "datarobot://aidigitalbank/thin-file-scorecard/v5:predict",
    "decisions": 1100,
    "escalated": 478,
    "stp": 0.5655,
@@ -598,7 +598,7 @@ footer{margin-top:60px;border-top:1px solid var(--hair);padding-top:16px;font-si
    "hasAgent": true,
    "admitted": true,
    "blocked": null,
-   "endpoint": "azureml://fidelity/spend-insights/v1:batch",
+   "endpoint": "azureml://aidigitalbank/spend-insights/v1:batch",
    "decisions": 1200,
    "escalated": 0,
    "stp": 1.0,
@@ -653,7 +653,7 @@ footer{margin-top:60px;border-top:1px solid var(--hair);padding-top:16px;font-si
    "hasAgent": true,
    "admitted": true,
    "blocked": null,
-   "endpoint": "rasa://fidelity/multilingual-nlu/v4:parse",
+   "endpoint": "rasa://aidigitalbank/multilingual-nlu/v4:parse",
    "decisions": 6000,
    "escalated": 588,
    "stp": 0.902,
@@ -763,7 +763,7 @@ footer{margin-top:60px;border-top:1px solid var(--hair);padding-top:16px;font-si
    "hasAgent": true,
    "admitted": true,
    "blocked": null,
-   "endpoint": "azure-cognitive://fidelity/complaint-triage/v2",
+   "endpoint": "azure-cognitive://aidigitalbank/complaint-triage/v2",
    "decisions": 6000,
    "escalated": 2345,
    "stp": 0.6092,
@@ -873,7 +873,7 @@ footer{margin-top:60px;border-top:1px solid var(--hair);padding-top:16px;font-si
    "hasAgent": true,
    "admitted": true,
    "blocked": null,
-   "endpoint": "azureml://fidelity/churn-propensity/v3:predict",
+   "endpoint": "azureml://aidigitalbank/churn-propensity/v3:predict",
    "decisions": 2400,
    "escalated": 0,
    "stp": 1.0,
@@ -983,7 +983,7 @@ footer{margin-top:60px;border-top:1px solid var(--hair);padding-top:16px;font-si
    "hasAgent": true,
    "admitted": true,
    "blocked": null,
-   "endpoint": "datarobot://fidelity/credit-scorecard/v7:predict",
+   "endpoint": "datarobot://aidigitalbank/credit-scorecard/v7:predict",
    "decisions": 622,
    "escalated": 247,
    "stp": 0.6029,
@@ -1038,7 +1038,7 @@ footer{margin-top:60px;border-top:1px solid var(--hair);padding-top:16px;font-si
    "hasAgent": true,
    "admitted": true,
    "blocked": null,
-   "endpoint": "azureml://fidelity/ews-gradient-boost/v4:predict",
+   "endpoint": "azureml://aidigitalbank/ews-gradient-boost/v4:predict",
    "decisions": 2400,
    "escalated": 846,
    "stp": 0.6475,
@@ -1093,7 +1093,7 @@ footer{margin-top:60px;border-top:1px solid var(--hair);padding-top:16px;font-si
    "hasAgent": true,
    "admitted": true,
    "blocked": null,
-   "endpoint": "azureml://fidelity/risk-based-pricing/v2:score",
+   "endpoint": "azureml://aidigitalbank/risk-based-pricing/v2:score",
    "decisions": 622,
    "escalated": 160,
    "stp": 0.7428,
@@ -1148,7 +1148,7 @@ footer{margin-top:60px;border-top:1px solid var(--hair);padding-top:16px;font-si
    "hasAgent": true,
    "admitted": true,
    "blocked": null,
-   "endpoint": "azureml://fidelity/collections-nba/v2:rank",
+   "endpoint": "azureml://aidigitalbank/collections-nba/v2:rank",
    "decisions": 2400,
    "escalated": 0,
    "stp": 1.0,
@@ -1258,7 +1258,7 @@ footer{margin-top:60px;border-top:1px solid var(--hair);padding-top:16px;font-si
    "hasAgent": true,
    "admitted": true,
    "blocked": null,
-   "endpoint": "azureml://fidelity/sme-scorecard-lgbm/v3:predict",
+   "endpoint": "azureml://aidigitalbank/sme-scorecard-lgbm/v3:predict",
    "decisions": 229,
    "escalated": 131,
    "stp": 0.4279,
@@ -1313,7 +1313,7 @@ footer{margin-top:60px;border-top:1px solid var(--hair);padding-top:16px;font-si
    "hasAgent": true,
    "admitted": true,
    "blocked": null,
-   "endpoint": "tesseract+layoutlm://fidelity/lpo-verify/v2",
+   "endpoint": "tesseract+layoutlm://aidigitalbank/lpo-verify/v2",
    "decisions": 360,
    "escalated": 96,
    "stp": 0.7333,
@@ -1368,7 +1368,7 @@ footer{margin-top:60px;border-top:1px solid var(--hair);padding-top:16px;font-si
    "hasAgent": true,
    "admitted": true,
    "blocked": null,
-   "endpoint": "prophet://fidelity/sme-cashflow/v1:forecast",
+   "endpoint": "prophet://aidigitalbank/sme-cashflow/v1:forecast",
    "decisions": 167,
    "escalated": 0,
    "stp": 1.0,
@@ -1533,7 +1533,7 @@ footer{margin-top:60px;border-top:1px solid var(--hair);padding-top:16px;font-si
    "hasAgent": true,
    "admitted": true,
    "blocked": null,
-   "endpoint": "h2o://fidelity/aml-triage/v6:score",
+   "endpoint": "h2o://aidigitalbank/aml-triage/v6:score",
    "decisions": 8287,
    "escalated": 370,
    "stp": 0.9554,
@@ -1643,7 +1643,7 @@ footer{margin-top:60px;border-top:1px solid var(--hair);padding-top:16px;font-si
    "hasAgent": true,
    "admitted": true,
    "blocked": null,
-   "endpoint": "neo4j://fidelity/gds/fraud-community/v2",
+   "endpoint": "neo4j://aidigitalbank/gds/fraud-community/v2",
    "decisions": 8287,
    "escalated": 859,
    "stp": 0.8963,
@@ -1698,7 +1698,7 @@ footer{margin-top:60px;border-top:1px solid var(--hair);padding-top:16px;font-si
    "hasAgent": true,
    "admitted": true,
    "blocked": null,
-   "endpoint": "azure-openai://fidelity/sar-drafter/v1",
+   "endpoint": "azure-openai://aidigitalbank/sar-drafter/v1",
    "decisions": 200,
    "escalated": 30,
    "stp": 0.85,
@@ -1808,7 +1808,7 @@ footer{margin-top:60px;border-top:1px solid var(--hair);padding-top:16px;font-si
    "hasAgent": true,
    "admitted": true,
    "blocked": null,
-   "endpoint": "timegpt://fidelity/corp-liquidity/v2:forecast",
+   "endpoint": "timegpt://aidigitalbank/corp-liquidity/v2:forecast",
    "decisions": 240,
    "escalated": 0,
    "stp": 1.0,
@@ -1863,7 +1863,7 @@ footer{margin-top:60px;border-top:1px solid var(--hair);padding-top:16px;font-si
    "hasAgent": true,
    "admitted": true,
    "blocked": null,
-   "endpoint": "neo4j+ocr://fidelity/bol-verify/v1",
+   "endpoint": "neo4j+ocr://aidigitalbank/bol-verify/v1",
    "decisions": 160,
    "escalated": 0,
    "stp": 1.0,
@@ -2083,7 +2083,7 @@ footer{margin-top:60px;border-top:1px solid var(--hair);padding-top:16px;font-si
    "hasAgent": true,
    "admitted": true,
    "blocked": null,
-   "endpoint": "uipath://fidelity/kyc-stp/v3",
+   "endpoint": "uipath://aidigitalbank/kyc-stp/v3",
    "decisions": 800,
    "escalated": 205,
    "stp": 0.7438,
@@ -2303,7 +2303,7 @@ footer{margin-top:60px;border-top:1px solid var(--hair);padding-top:16px;font-si
    "hasAgent": true,
    "admitted": true,
    "blocked": null,
-   "endpoint": "prometheus+moogsoft://fidelity/aiops/v2",
+   "endpoint": "prometheus+moogsoft://aidigitalbank/aiops/v2",
    "decisions": 500,
    "escalated": 182,
    "stp": 0.636,

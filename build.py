@@ -11,8 +11,8 @@ art   = (src/"art.js").read_text()
 core  = (src/"core.js").read_text()
 
 TARGETS = [("index.html", "index.html", ui, icons + "\n" + art + "\n" + core),
-           ("web.html", "fidelity-web.html", ui, icons + "\n" + art + "\n" + core),
-           ("app.html", "fidelity-app.html", ui, icons + "\n" + art + "\n" + core),
+           ("web.html", "web.html", ui, icons + "\n" + art + "\n" + core),
+           ("app.html", "app.html", ui, icons + "\n" + art + "\n" + core),
            ("reviewer.html", "reviewer-console.html", ds, core)]
 
 for name, out, css, js in TARGETS:

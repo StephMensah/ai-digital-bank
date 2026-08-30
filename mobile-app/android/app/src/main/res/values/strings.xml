@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Fidelity Bank</string>
-    <string name="title_activity_main">Fidelity Bank</string>
-    <string name="package_name">com.fidelity.aibank</string>
-    <string name="custom_url_scheme">com.fidelity.aibank</string>
+    <string name="app_name">AI-Digital Bank</string>
+    <string name="title_activity_main">AI-Digital Bank</string>
+    <string name="package_name">com.aidigitalbank.app</string>
+    <string name="custom_url_scheme">com.aidigitalbank.app</string>
 </resources>

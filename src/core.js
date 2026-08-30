@@ -1,5 +1,5 @@
 /* =========================================================================
-   FIDELITY CUSTOMER CORE
+   AI-DIGITAL BANK CUSTOMER CORE
    Browser port of aibank_engine.py. Every agent keeps the engine contract:
        infer(input) -> { action, confidence, explanation, adverse }
    The wrapper FID.decide() applies the confidence floor, routes adverse
@@ -20,13 +20,13 @@ const FID = (() => {
   const PERSONAL = {
     id:'personal', label:'Personal', holder:'Ama Boateng', since:'2019',
     accounts:[
-      {name:'Everyday account', num:'•••• 3391', balance:4182.60, type:'current'},
+      {name:'Current account', num:'•••• 3391', balance:4182.60, type:'current'},
       {name:'Target savings',   num:'•••• 7742', balance:11500.00, type:'savings'},
     ],
     card:{num:'•••• •••• •••• 3391', exp:'09/29', frozen:false},
     credit:{bureau:648, dti:0.31, income:6400, thinFile:false},
     beneficiaries:[
-      {name:'Kojo Mensah', bank:'Fidelity', acct:'•••• 2210', last:'GHS 200'},
+      {name:'Kojo Mensah', bank:'AI-Digital Bank', acct:'•••• 2210', last:'GHS 200'},
       {name:'MTN MoMo 024 447 8812', bank:'MoMo', acct:'024 447 8812', last:'GHS 50'},
       {name:'Electro World Accra', bank:'GCB', acct:'•••• 9931', last:'GHS 1,240'},
       {name:'Global Marine Ltd', bank:'Correspondent · Dubai', acct:'AE07 •••• 3311', last:'first payment'},
@@ -52,7 +52,7 @@ const FID = (() => {
     credit:{bureau:702, dti:0.24, income:41000, thinFile:true},
     beneficiaries:[
       {name:'Adom Poultry Farms', bank:'CalBank', acct:'•••• 8820', last:'GHS 12,400'},
-      {name:'Payroll — 14 staff', bank:'Fidelity', acct:'batch', last:'GHS 18,900'},
+      {name:'Payroll — 14 staff', bank:'AI-Digital Bank', acct:'batch', last:'GHS 18,900'},
       {name:'Global Marine Ltd', bank:'Correspondent · Dubai', acct:'AE07 •••• 3311', last:'first payment'},
     ],
     transactions:[
@@ -79,7 +79,7 @@ const FID = (() => {
 
   /* ================================================================= agents */
 
-  /* retail.fraud_detection — azureml://fidelity/retail-fraud-lgbm/v3 */
+  /* retail.fraud_detection — azureml://aidigitalbank/retail-fraud-lgbm/v3 */
   function assessPayment(tx){
     const s = seed(tx.to + tx.amount);
     const foreign = /Dubai|Correspondent|AE07/.test(tx.bankLine || '');
@@ -113,7 +113,7 @@ const FID = (() => {
       explanation:`no match above 0.30 (closest ${sim.toFixed(2)})`, adverse:false, similarity:sim};
   }
 
-  /* retail.loan_preapproval / credit.scoring — datarobot://fidelity/thin-file-scorecard/v5 */
+  /* retail.loan_preapproval / credit.scoring — datarobot://aidigitalbank/thin-file-scorecard/v5 */
   function preapprove(amount, profile){
     const pd = Math.max(0.01, Math.min(0.9, (750 - profile.bureau)/900 + profile.dti/3));
     const cap = profile.income * 4;
@@ -129,7 +129,7 @@ const FID = (() => {
       explanation:`default probability ${(pd*100).toFixed(1)}%, capped at 4× monthly income`};
   }
 
-  /* retail.chatbot — rasa://fidelity/multilingual-nlu/v4 */
+  /* retail.chatbot — rasa://aidigitalbank/multilingual-nlu/v4 */
   const INTENTS = [
     [/balance|how much|sika|akonta|ahe/i, 'balance_enquiry'],
     [/card|block|freeze|lost|stolen/i, 'card_block'],
@@ -151,7 +151,7 @@ const FID = (() => {
       explanation:`intent=${intent}, language=${lang}`};
   }
 
-  /* sme.cashflow — prophet://fidelity/sme-cashflow/v1 */
+  /* sme.cashflow — prophet://aidigitalbank/sme-cashflow/v1 */
   function forecastCashflow(entity){
     const s = entity.cashflow || [];
     if (!s.length) return {action:'NO_DATA', confidence:0, adverse:false, trough:0, week:0,
@@ -165,7 +165,7 @@ const FID = (() => {
         : 'no financing gap projected over eight weeks'};
   }
 
-  /* sme.doc_verification — tesseract+layoutlm://fidelity/lpo-verify/v2 */
+  /* sme.doc_verification — tesseract+layoutlm://aidigitalbank/lpo-verify/v2 */
   function verifyDocument(filename){
     const legible = /\.pdf$/i.test(filename) && !/blur|scan0|photo/i.test(filename);
     const q = legible ? 0.55 + seed(filename)*0.40 : seed(filename)*0.29;
@@ -420,7 +420,7 @@ Object.assign(FID, (() => {
     M(/netflix/i,         'Netflix',             '#E50914', 'NF', 'Subscriptions'),
     M(/spotify/i,         'Spotify',             '#1DB954', 'SP', 'Subscriptions'),
     M(/mensah properties|rent/i,'Mensah Properties','#6D4C41','MP','Housing'),
-    M(/fidelity|settlement|card settlement/i,'Fidelity','#F26F1D','FD','Income'),
+    M(/ai-digital|ai digital|settlement|card settlement/i,'AI-Digital Bank','#14B8AC','AD','Income'),
   ];
 
   /** Resolve a raw transaction description to a known merchant, or synthesise one. */
@@ -484,7 +484,7 @@ Object.assign(FID, (() => {
 
   /** Post a real movement. Balances change, the statement grows, and the row
       carries the record the decision layer already wrote. */
-  function post(entity, {merchant:name, amount, account = 0, method = 'Fidelity account',
+  function post(entity, {merchant:name, amount, account = 0, method = 'AI-Digital Bank account',
                          category, status = 'Completed', note = '', hash}){
     const acct = entity.accounts[account];
     const m = merchant_(name);

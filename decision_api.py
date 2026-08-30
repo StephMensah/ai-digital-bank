@@ -374,16 +374,16 @@ class Handler(SimpleHTTPRequestHandler):
 
 
 INDEX = """<!DOCTYPE html><html><head><meta charset="utf-8">
-<title>Fidelity AI bank — running</title>
+<title>AI-Digital Bank — running</title>
 <style>body{font:15px/1.6 system-ui;max-width:640px;margin:60px auto;padding:0 24px;color:#17181B}
 a{display:block;padding:14px 16px;border:1px solid #E3E5E8;border-radius:10px;margin-bottom:10px;
-  text-decoration:none;color:inherit}a:hover{border-color:#E87722}b{display:block}
+  text-decoration:none;color:inherit}a:hover{border-color:#14B8AC}b{display:block}
 small{color:#71767D}h1{font-size:22px}</style></head><body>
-<h1>Fidelity AI bank — services running</h1>
+<h1>AI-Digital Bank — services running</h1>
 <p><small>Decisions made in the customer products post to this service, escalations land in the
 reviewer queue, and the control tower reads the same audit log.</small></p>
-<a href="/fidelity-web.html"><b>Fidelity Online</b><small>customer · web</small></a>
-<a href="/fidelity-app.html"><b>Fidelity app</b><small>customer · mobile</small></a>
+<a href="/web.html"><b>AI-Digital Bank Online</b><small>customer · web</small></a>
+<a href="/app.html"><b>AI-Digital Bank app</b><small>customer · mobile</small></a>
 <a href="/reviewer-console.html"><b>Reviewer console</b><small>staff · the human line</small></a>
 <a href="/control-tower.html"><b>AI Control Tower</b><small>staff · portfolio and governance</small></a>
 <a href="/api/state"><b>/api/state</b><small>queue, capacity and model-quality signal</small></a>
@@ -394,7 +394,7 @@ def main():
     # PORT is the convention hosts like Render inject; its presence also means the process
     # is running on someone else's box, so bind every interface instead of just loopback.
     on_a_host = "PORT" in os.environ
-    ap = argparse.ArgumentParser(description="Fidelity decision service")
+    ap = argparse.ArgumentParser(description="AI-Digital Bank decision service")
     ap.add_argument("--host", default="0.0.0.0" if on_a_host else "127.0.0.1")
     ap.add_argument("--port", type=int, default=int(os.environ.get("PORT", 8765)))
     ap.add_argument("--seed-queue", type=int, default=12,
@@ -412,7 +412,7 @@ def main():
         seed_queue(a.seed_queue)
 
     srv = ThreadingHTTPServer((a.host, a.port), Handler)
-    print(f"Fidelity decision service on http://{a.host}:{a.port}/")
+    print(f"AI-Digital Bank decision service on http://{a.host}:{a.port}/")
     print(f"  engine imported : {engine is not None}")
     print(f"  database        : {'connected, ' + str(len(STORE.audit)) + ' records restored' if STORE.db else 'in-memory only'}")
     print(f"  queue seeded    : {len(STORE.cases)} cases waiting")

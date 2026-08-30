@@ -3,9 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Fidelity Online — digital bank</title>
+<title>AI-Digital Bank Online</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>/* =========================================================================
-   FIDELITY DIGITAL — design system
+   AI-DIGITAL BANK — design system
    Turquoise for action. White for surface. Grey for structure. Navy used
    deliberately, and only where the money is: the balance card, the
    bank card, the confirm button. Nothing else earns it.
@@ -24,9 +27,9 @@
   --sh-sm:0 1px 2px rgba(14,42,71,.05), 0 8px 22px -14px rgba(14,42,71,.18);
   --sh:0 2px 5px rgba(14,42,71,.05), 0 20px 42px -24px rgba(14,42,71,.24);
   --sh-lg:0 34px 78px -32px rgba(14,42,71,.32);
-  --display:"Calibri","Segoe UI",system-ui,sans-serif;
-  --body:"Calibri","Segoe UI",system-ui,-apple-system,sans-serif;
-  --mono:"Consolas","Calibri",ui-monospace,monospace;
+  --display:"Calibri","Carlito","Segoe UI",system-ui,sans-serif;
+  --body:"Calibri","Carlito","Segoe UI",system-ui,-apple-system,sans-serif;
+  --mono:"Consolas","Calibri","Carlito",ui-monospace,monospace;
   --ease:cubic-bezier(.22,.61,.36,1);
   --hex:polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
 }
@@ -168,7 +171,7 @@ input[type=range]{width:100%;accent-color:var(--orange)}
 .qa button:active{transform:scale(.94)}
 .qa .ic{width:60px;height:60px;display:grid;place-items:center;clip-path:var(--hex);
         background:var(--orange);color:#fff;transition:.16s var(--ease);
-        box-shadow:0 8px 18px -10px rgba(242,111,29,.9)}
+        box-shadow:0 8px 18px -10px rgba(12,133,121,.9)}
 .qa button:hover .ic{background:var(--orange-d);transform:translateY(-2px)}
 .qa .ic.k{background:var(--haze);color:var(--slate)}
 .qa button:hover .ic.k{background:#000}
@@ -483,7 +486,7 @@ table.tbl td:last-child,table.tbl th:last-child{text-align:right}
 <body>
 <div class="app">
   <aside class="side">
-    <div class="brand"><div class="m"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"><path d="M12 3.2 19.4 7.6v8.8L12 20.8 4.6 16.4V7.6L12 3.2Z"/><circle cx="12" cy="12" r="2" fill="#fff" stroke="none"/></svg></div><div class="t">Fidelity <i>Online</i></div></div>
+    <div class="brand"><div class="m"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"><path d="M12 3.2 19.4 7.6v8.8L12 20.8 4.6 16.4V7.6L12 3.2Z"/><circle cx="12" cy="12" r="2" fill="#fff" stroke="none"/></svg></div><div class="t">AI-Digital <i>Bank</i></div></div>
     <div class="ent" id="ent"></div>
     <nav id="nav"></nav>
     <div class="sidefoot">Decision service<br><span id="svc">checking…</span></div>
@@ -513,7 +516,7 @@ table.tbl td:last-child,table.tbl th:last-child{text-align:right}
             transform:translateX(101%);max-height:none;padding:26px 26px 60px"></div>
 
 <script>/* =========================================================================
-   FIDELITY ICONS
+   AI-DIGITAL BANK ICONS
    One hand-built set, 24×24, stroke-based, inheriting currentColor so a single
    icon works on white, on grey and on matte black. The block / node / chain
    family carries the distributed-ledger motif that runs through the products.
@@ -689,10 +692,10 @@ function lattice(id = 'lat'){
 }
 
 /* =========================================================================
-   FIDELITY ILLUSTRATIONS
-   Built in the language of the strategy deck: flat geometry, three oranges,
-   two greys, white space doing the work. No black anywhere. Every scene is
-   inline SVG, so it scales, recolours with the theme and costs no request.
+   AI-DIGITAL BANK ILLUSTRATIONS
+   Built in the language of the strategy deck: flat geometry, turquoise and
+   navy, white space doing the work. Every scene is inline SVG, so it scales,
+   recolours with the theme and costs no request.
        ART.goal()      → savings
        ART.welcome()   → the bank itself
    All return a full <svg> sized by its container.
@@ -857,7 +860,7 @@ const ART = (() => {
 })();
 
 /* =========================================================================
-   FIDELITY CUSTOMER CORE
+   AI-DIGITAL BANK CUSTOMER CORE
    Browser port of aibank_engine.py. Every agent keeps the engine contract:
        infer(input) -> { action, confidence, explanation, adverse }
    The wrapper FID.decide() applies the confidence floor, routes adverse
@@ -878,13 +881,13 @@ const FID = (() => {
   const PERSONAL = {
     id:'personal', label:'Personal', holder:'Ama Boateng', since:'2019',
     accounts:[
-      {name:'Everyday account', num:'•••• 3391', balance:4182.60, type:'current'},
+      {name:'Current account', num:'•••• 3391', balance:4182.60, type:'current'},
       {name:'Target savings',   num:'•••• 7742', balance:11500.00, type:'savings'},
     ],
     card:{num:'•••• •••• •••• 3391', exp:'09/29', frozen:false},
     credit:{bureau:648, dti:0.31, income:6400, thinFile:false},
     beneficiaries:[
-      {name:'Kojo Mensah', bank:'Fidelity', acct:'•••• 2210', last:'GHS 200'},
+      {name:'Kojo Mensah', bank:'AI-Digital Bank', acct:'•••• 2210', last:'GHS 200'},
       {name:'MTN MoMo 024 447 8812', bank:'MoMo', acct:'024 447 8812', last:'GHS 50'},
       {name:'Electro World Accra', bank:'GCB', acct:'•••• 9931', last:'GHS 1,240'},
       {name:'Global Marine Ltd', bank:'Correspondent · Dubai', acct:'AE07 •••• 3311', last:'first payment'},
@@ -910,7 +913,7 @@ const FID = (() => {
     credit:{bureau:702, dti:0.24, income:41000, thinFile:true},
     beneficiaries:[
       {name:'Adom Poultry Farms', bank:'CalBank', acct:'•••• 8820', last:'GHS 12,400'},
-      {name:'Payroll — 14 staff', bank:'Fidelity', acct:'batch', last:'GHS 18,900'},
+      {name:'Payroll — 14 staff', bank:'AI-Digital Bank', acct:'batch', last:'GHS 18,900'},
       {name:'Global Marine Ltd', bank:'Correspondent · Dubai', acct:'AE07 •••• 3311', last:'first payment'},
     ],
     transactions:[
@@ -937,7 +940,7 @@ const FID = (() => {
 
   /* ================================================================= agents */
 
-  /* retail.fraud_detection — azureml://fidelity/retail-fraud-lgbm/v3 */
+  /* retail.fraud_detection — azureml://aidigitalbank/retail-fraud-lgbm/v3 */
   function assessPayment(tx){
     const s = seed(tx.to + tx.amount);
     const foreign = /Dubai|Correspondent|AE07/.test(tx.bankLine || '');
@@ -971,7 +974,7 @@ const FID = (() => {
       explanation:`no match above 0.30 (closest ${sim.toFixed(2)})`, adverse:false, similarity:sim};
   }
 
-  /* retail.loan_preapproval / credit.scoring — datarobot://fidelity/thin-file-scorecard/v5 */
+  /* retail.loan_preapproval / credit.scoring — datarobot://aidigitalbank/thin-file-scorecard/v5 */
   function preapprove(amount, profile){
     const pd = Math.max(0.01, Math.min(0.9, (750 - profile.bureau)/900 + profile.dti/3));
     const cap = profile.income * 4;
@@ -987,7 +990,7 @@ const FID = (() => {
       explanation:`default probability ${(pd*100).toFixed(1)}%, capped at 4× monthly income`};
   }
 
-  /* retail.chatbot — rasa://fidelity/multilingual-nlu/v4 */
+  /* retail.chatbot — rasa://aidigitalbank/multilingual-nlu/v4 */
   const INTENTS = [
     [/balance|how much|sika|akonta|ahe/i, 'balance_enquiry'],
     [/card|block|freeze|lost|stolen/i, 'card_block'],
@@ -1009,7 +1012,7 @@ const FID = (() => {
       explanation:`intent=${intent}, language=${lang}`};
   }
 
-  /* sme.cashflow — prophet://fidelity/sme-cashflow/v1 */
+  /* sme.cashflow — prophet://aidigitalbank/sme-cashflow/v1 */
   function forecastCashflow(entity){
     const s = entity.cashflow || [];
     if (!s.length) return {action:'NO_DATA', confidence:0, adverse:false, trough:0, week:0,
@@ -1023,7 +1026,7 @@ const FID = (() => {
         : 'no financing gap projected over eight weeks'};
   }
 
-  /* sme.doc_verification — tesseract+layoutlm://fidelity/lpo-verify/v2 */
+  /* sme.doc_verification — tesseract+layoutlm://aidigitalbank/lpo-verify/v2 */
   function verifyDocument(filename){
     const legible = /\.pdf$/i.test(filename) && !/blur|scan0|photo/i.test(filename);
     const q = legible ? 0.55 + seed(filename)*0.40 : seed(filename)*0.29;
@@ -1278,7 +1281,7 @@ Object.assign(FID, (() => {
     M(/netflix/i,         'Netflix',             '#E50914', 'NF', 'Subscriptions'),
     M(/spotify/i,         'Spotify',             '#1DB954', 'SP', 'Subscriptions'),
     M(/mensah properties|rent/i,'Mensah Properties','#6D4C41','MP','Housing'),
-    M(/fidelity|settlement|card settlement/i,'Fidelity','#F26F1D','FD','Income'),
+    M(/ai-digital|ai digital|settlement|card settlement/i,'AI-Digital Bank','#14B8AC','AD','Income'),
   ];
 
   /** Resolve a raw transaction description to a known merchant, or synthesise one. */
@@ -1342,7 +1345,7 @@ Object.assign(FID, (() => {
 
   /** Post a real movement. Balances change, the statement grows, and the row
       carries the record the decision layer already wrote. */
-  function post(entity, {merchant:name, amount, account = 0, method = 'Fidelity account',
+  function post(entity, {merchant:name, amount, account = 0, method = 'AI-Digital Bank account',
                          category, status = 'Completed', note = '', hash}){
     const acct = entity.accounts[account];
     const m = merchant_(name);
@@ -1502,7 +1505,7 @@ function vOverview(){
 
     <div class="grid g2">
       <div class="hero">${lattice('h1')}
-        <div class="label">${I('node',15)} ${S.entity==='personal'?'Total with Fidelity':'Business position'}</div>
+        <div class="label">${I('node',15)} ${S.entity==='personal'?'Total with AI-Digital Bank':'Business position'}</div>
         <div class="bal"><small>GHS</small>${total.toLocaleString('en-GB',{minimumFractionDigits:2})}</div>
         <div class="delta">${I('growth',14)} ${m0(6400)} in this month</div>
         <div style="display:flex;gap:8px;margin-top:20px">
@@ -1568,7 +1571,7 @@ function bizOverview(e){
 function vTransfers(){
   const e = E();
   return `<div class="phead"><h2>Transfers</h2>
-      <p>Fidelity accounts, any Ghanaian bank by GhIPSS instant, mobile money, or international by SWIFT.
+      <p>AI-Digital Bank accounts, any Ghanaian bank by GhIPSS instant, mobile money, or international by SWIFT.
          Every beneficiary is screened and every payment is checked before it leaves.</p></div>
     <div class="grid g2">
       <div class="surface"><span class="eyebrow">Send to</span>
@@ -1619,7 +1622,7 @@ function vCards(){
     <div class="grid g2">
       <div>
         <div class="plastic ${S.frozen.physical?'frozen':''}" style="max-width:380px">${lattice('c1')}
-          <div class="brand"><span>FIDELITY</span>${I('node',18)}</div><div class="chipimg"></div>
+          <div class="brand"><span>AI-DIGITAL BANK</span>${I('node',18)}</div><div class="chipimg"></div>
           <div class="pan">${e.card.num}</div>
           <div class="foot"><span>${e.holder.toUpperCase()}</span><span>${e.card.exp} · VISA</span></div></div>
         <div class="chiprow" style="margin-top:14px">
@@ -1630,7 +1633,7 @@ function vCards(){
       </div>
       <div>
         <div class="plastic virtual ${S.frozen.virtual?'frozen':''}" style="max-width:380px">${lattice('c2')}
-          <div class="brand"><span>FIDELITY</span>${I('node',18)}</div><div class="chipimg"></div>
+          <div class="brand"><span>AI-DIGITAL BANK</span>${I('node',18)}</div><div class="chipimg"></div>
           <div class="pan">4821 •••• •••• 7719</div>
           <div class="foot"><span>MERCHANT LOCK ON</span><span>11/28</span></div></div>
         <div class="chiprow" style="margin-top:14px">
@@ -2446,8 +2449,8 @@ document.addEventListener('keydown', ev => {
   const HERE = (location.pathname || '').split('/').pop() || 'index.html';
   const PRODUCTS = [
     ['index.html','Prototype home','start here'],
-    ['fidelity-app.html','Fidelity app','customer · mobile'],
-    ['fidelity-web.html','Fidelity Online','customer · web'],
+    ['app.html','AI-Digital Bank app','customer · mobile'],
+    ['web.html','AI-Digital Bank Online','customer · web'],
     ['reviewer-console.html','Reviewer console','staff · the queue'],
     ['control-tower.html','AI Control Tower','staff · governance'],
   ];

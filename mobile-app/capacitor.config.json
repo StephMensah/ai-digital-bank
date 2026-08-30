@@ -1,6 +1,6 @@
 {
-  "appId": "com.fidelity.aibank",
-  "appName": "Fidelity Bank",
+  "appId": "com.aidigitalbank.app",
+  "appName": "AI-Digital Bank",
   "webDir": "www",
   "server": {
     "cleartext": true,

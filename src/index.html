@@ -3,217 +3,275 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#15161A">
-<title>Fidelity Digital — prototype</title>
+<meta name="theme-color" content="#0E2A47">
+<title>AI-Digital Bank</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>__UI__</style>
 <style>
-body{background:var(--sand);color:var(--ink)}
-.top{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.9);backdrop-filter:blur(14px);
+body{background:var(--white);color:var(--ink)}
+a{color:inherit}
+
+/* --------------------------------------------------------------------- nav */
+.nav{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);
      border-bottom:1px solid var(--line)}
-.top .in{max-width:1420px;margin:0 auto;padding:13px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
-.mark{display:flex;align-items:center;gap:11px}
-.mark .m{width:32px;height:32px;background:var(--orange);display:grid;place-items:center;clip-path:var(--hex)}
-.mark b{font-family:var(--display);font-size:16px;letter-spacing:-.02em;color:var(--ink)}
-.mark span{color:var(--orange);font-weight:700}
-.seg{display:flex;gap:3px;background:var(--haze);border-radius:100px;padding:4px}
-.seg button{background:none;border:0;color:var(--grey);padding:8px 15px;border-radius:100px;font-size:13px;
-            font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:.14s}
-.seg button:hover{color:var(--ink)}
-.seg button[aria-pressed="true"]{background:var(--orange);color:#fff}
-.seg svg{width:16px;height:16px}
-.spacer{margin-left:auto;display:flex;gap:10px;align-items:center}
-.state{font-family:var(--mono);font-size:11.5px;color:var(--grey);display:flex;align-items:center;gap:7px}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--mist)}
-.dot.live{background:#3FBF8F;box-shadow:0 0 0 3px rgba(63,191,143,.18)}
-.openin{background:var(--white);border:1px solid var(--line);color:var(--slate);border-radius:100px;padding:8px 15px;
-        font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;text-decoration:none}
-.openin:hover{border-color:var(--orange);color:var(--orange-d)}
+.nav .in{max-width:1180px;margin:0 auto;padding:16px 22px;display:flex;align-items:center;gap:28px}
+.mark{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;
+      font-size:16.5px;letter-spacing:-.02em;text-decoration:none;color:var(--ink)}
+.mark .m{width:34px;height:34px;background:linear-gradient(135deg,var(--jet-2),var(--jet));
+         display:grid;place-items:center;clip-path:var(--hex);color:var(--orange-l);flex:none}
+.navlinks{display:flex;gap:26px;margin-left:8px}
+.navlinks a{font-size:13.5px;font-weight:600;color:var(--slate);text-decoration:none}
+.navlinks a:hover{color:var(--ink)}
+.navcta{margin-left:auto;display:flex;align-items:center;gap:10px}
+.navcta .status{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;
+                 color:var(--grey);margin-right:6px}
+.navcta .dot{width:6px;height:6px;border-radius:50%;background:var(--mist)}
+.navcta .dot.live{background:var(--pos);box-shadow:0 0 0 3px var(--pos-t)}
+.navcta a.ghost{font-size:13.5px;font-weight:700;color:var(--ink);text-decoration:none;padding:9px 6px}
 
-.hero{max-width:1420px;margin:0 auto;padding:44px 22px 10px}
-.hero h1{font-family:var(--display);font-size:clamp(30px,4.6vw,50px);line-height:1;letter-spacing:-.04em;
-         color:var(--ink);margin-bottom:14px}
-.hero h1 em{font-style:normal;color:var(--orange)}
-.hero p{color:var(--slate);font-size:16px;line-height:1.6;max-width:60ch}
+/* -------------------------------------------------------------------- hero */
+.hero{max-width:1180px;margin:0 auto;padding:64px 22px 40px;display:grid;
+      grid-template-columns:minmax(0,1fr) min(420px,42%);gap:48px;align-items:center}
+.hero .kick{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;
+            letter-spacing:.09em;text-transform:uppercase;color:var(--orange-d);
+            background:var(--orange-t);padding:7px 13px 7px 10px;border-radius:100px;margin-bottom:18px}
+.hero h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,4.6vw,54px);line-height:1.03;
+         letter-spacing:-.04em;color:var(--ink);margin-bottom:18px}
+.hero h1 em{font-style:normal;color:var(--orange-d)}
+.hero p{color:var(--slate);font-size:17px;line-height:1.62;max-width:52ch;margin-bottom:28px}
 .hero p b{color:var(--ink);font-weight:700}
+.hero .ctarow{display:flex;gap:12px;flex-wrap:wrap}
+.hero .art{width:100%}
 
-.surfaces{max-width:1420px;margin:0 auto;padding:26px 22px 0;display:grid;
-          grid-template-columns:repeat(4,1fr);gap:12px}
-.card{background:var(--white);border:1px solid var(--line);border-radius:18px;padding:16px;cursor:pointer;
-      text-align:left;transition:.16s var(--ease);color:inherit}
-.card:hover{border-color:var(--orange);transform:translateY(-2px)}
-.card[aria-pressed="true"]{border-color:var(--orange);background:var(--orange-t)}
-.card .ic{width:40px;height:40px;display:grid;place-items:center;clip-path:var(--hex);
-          background:rgba(242,111,29,.16);color:var(--orange);margin-bottom:12px}
-.card b{display:block;font-size:15px;margin-bottom:4px;color:var(--ink)}
-.card span{font-size:12.5px;color:var(--grey);line-height:1.5;display:block}
-.card .who{margin-top:10px;font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
-           color:var(--orange)}
+/* ----------------------------------------------------------------- trust */
+.trust{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--haze)}
+.trust .in{max-width:1180px;margin:0 auto;padding:26px 22px;display:grid;
+           grid-template-columns:repeat(3,1fr);gap:24px}
+.trust .item{display:flex;gap:13px;align-items:flex-start}
+.trust .ic{flex:none;width:38px;height:38px;border-radius:11px;background:var(--white);
+           display:grid;place-items:center;color:var(--orange-d);box-shadow:var(--sh-xs)}
+.trust b{display:block;font-size:14px;color:var(--ink);margin-bottom:2px}
+.trust span{font-size:12.5px;color:var(--slate);line-height:1.5}
 
-.stagewrap{max-width:1420px;margin:0 auto;padding:26px 22px 60px}
-.frame{background:var(--white);border:1px solid var(--line);border-radius:22px;padding:18px;
-       display:flex;flex-direction:column;align-items:center;gap:14px;overflow:hidden}
-.framebar{width:100%;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.framebar .url{flex:1;min-width:120px;background:var(--haze);border:1px solid var(--line);border-radius:100px;
-  padding:8px 15px;font-family:var(--mono);font-size:11.5px;color:var(--grey);white-space:nowrap;
-  overflow:hidden;text-overflow:ellipsis}
-.framebar .size{font-family:var(--mono);font-size:11.5px;color:var(--grey)}
-.device{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff;
-        transition:width .3s var(--ease),height .3s var(--ease);max-width:100%}
-.device iframe{border:0;display:block;width:100%;height:100%}
-.fallback{padding:26px;text-align:center;color:var(--grey);font-size:13.5px;line-height:1.6}
-.fallback a{color:var(--orange);font-weight:700}
+/* -------------------------------------------------------------- products */
+.section{max-width:1180px;margin:0 auto;padding:70px 22px}
+.section .hd{max-width:64ch;margin-bottom:38px}
+.section .eyebrow{font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+                   color:var(--orange-d);margin-bottom:10px;display:block}
+.section h2{font-family:var(--display);font-weight:700;font-size:clamp(24px,3vw,34px);
+            letter-spacing:-.03em;color:var(--ink);margin-bottom:12px}
+.section .lede{color:var(--slate);font-size:15.5px;line-height:1.6}
 
-.tips{max-width:1420px;margin:0 auto;padding:0 22px 70px}
-.tips h2{font-family:var(--display);font-size:20px;color:var(--ink);margin-bottom:14px;letter-spacing:-.02em}
-.tipgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.tip{background:var(--white);border:1px solid var(--line);border-radius:16px;padding:16px}
-.tip b{display:block;color:var(--ink);font-size:13.5px;margin-bottom:5px}
-.tip span{font-size:12.5px;color:var(--grey);line-height:1.55}
-.tip code{font-family:var(--mono);font-size:11.5px;color:var(--orange-d);background:var(--orange-t);
-          padding:2px 6px;border-radius:5px}
+.products{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.pcard{background:var(--white);border:1px solid var(--line);border-radius:22px;padding:30px;
+       display:flex;flex-direction:column;gap:16px;text-decoration:none;color:inherit;
+       transition:.18s var(--ease)}
+.pcard:hover{border-color:var(--orange);transform:translateY(-3px);box-shadow:var(--sh)}
+.pcard .top{display:flex;justify-content:space-between;align-items:flex-start}
+.pcard .ic{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;
+           background:linear-gradient(135deg,var(--orange-l),var(--orange));color:#fff}
+.pcard .who{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--grey)}
+.pcard h3{font-family:var(--display);font-size:20px;letter-spacing:-.02em;color:var(--ink)}
+.pcard p{color:var(--slate);font-size:13.5px;line-height:1.6}
+.pcard .go{margin-top:auto;display:flex;align-items:center;gap:7px;font-size:13.5px;font-weight:700;
+           color:var(--orange-d)}
 
-@media (max-width:1100px){ .surfaces{grid-template-columns:1fr 1fr} .tipgrid{grid-template-columns:1fr 1fr} }
-@media (max-width:680px){
-  .surfaces{grid-template-columns:1fr} .tipgrid{grid-template-columns:1fr}
-  .hero{padding:30px 16px 6px} .surfaces,.stagewrap,.tips{padding-left:16px;padding-right:16px}
-  .top .in{padding:11px 16px;gap:12px} .seg button{padding:8px 12px;font-size:12.5px}
-  .seg button span{display:none} .frame{padding:12px}
+/* ------------------------------------------------------------------- how */
+.how{background:var(--jet);color:#fff;position:relative;overflow:hidden}
+.how .lat{position:absolute;inset:0;color:var(--orange-l);opacity:.14;pointer-events:none}
+.how .in{max-width:1180px;margin:0 auto;padding:70px 22px;position:relative}
+.how .hd{max-width:60ch;margin-bottom:44px}
+.how .eyebrow{color:var(--orange-l)}
+.how h2{color:#fff}
+.how .lede{color:rgba(255,255,255,.68)}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+.step b.n{display:block;font-family:var(--mono);font-size:12.5px;color:var(--orange-l);margin-bottom:14px}
+.step h4{font-family:var(--display);font-size:17px;margin-bottom:8px;letter-spacing:-.01em}
+.step p{color:rgba(255,255,255,.62);font-size:13.5px;line-height:1.65}
+
+/* ------------------------------------------------------------------- cta */
+.ctaband{max-width:1180px;margin:0 auto;padding:70px 22px}
+.ctaband .box{background:linear-gradient(135deg,#1B3F63,var(--jet-2) 55%,var(--jet));
+              border-radius:28px;padding:52px;display:grid;grid-template-columns:1fr auto;
+              gap:24px;align-items:center;color:#fff;position:relative;overflow:hidden}
+.ctaband .lat{position:absolute;inset:0;color:var(--orange-l);opacity:.16;pointer-events:none}
+.ctaband h2{font-family:var(--display);font-size:clamp(22px,3vw,30px);letter-spacing:-.03em;
+            margin-bottom:8px;position:relative}
+.ctaband p{color:rgba(255,255,255,.72);font-size:14.5px;position:relative}
+.ctaband .ctarow{display:flex;gap:12px;position:relative;flex-wrap:wrap}
+
+/* ---------------------------------------------------------------- footer */
+footer{border-top:1px solid var(--line);background:var(--haze)}
+footer .in{max-width:1180px;margin:0 auto;padding:50px 22px 30px;
+           display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:30px}
+footer .col b{display:block;font-size:11.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+              color:var(--grey);margin-bottom:14px}
+footer .col a{display:block;font-size:13.5px;color:var(--slate);text-decoration:none;margin-bottom:10px}
+footer .col a:hover{color:var(--orange-d)}
+footer .brand p{color:var(--slate);font-size:13px;line-height:1.6;max-width:32ch;margin-top:12px}
+footer .legal{max-width:1180px;margin:0 auto;padding:0 22px 30px;display:flex;justify-content:space-between;
+              align-items:center;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--grey);
+              font-family:var(--mono)}
+
+@media (max-width:960px){
+  .hero{grid-template-columns:1fr;padding-top:40px}
+  .hero .art{max-width:280px;margin:0 auto}
+  .trust .in{grid-template-columns:1fr}
+  .products{grid-template-columns:1fr}
+  .steps{grid-template-columns:1fr;gap:30px}
+  .ctaband .box{grid-template-columns:1fr;text-align:left}
+  footer .in{grid-template-columns:1fr 1fr;gap:26px 20px}
+}
+@media (max-width:640px){
+  .navlinks{display:none}
+  .navcta .status{display:none}
+  footer .in{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
-
-<div class="top"><div class="in">
-  <div class="mark"><div class="m" id="logomark"></div>
-    <b>Fidelity <span>Digital</span></b></div>
-  <div class="seg" id="devices"></div>
-  <div class="spacer">
-    <div class="state"><span class="dot" id="dot"></span><span id="mode">checking service…</span></div>
-    <a class="openin" id="openin" href="fidelity-app.html" target="_blank" rel="noopener">Open full</a>
-  </div>
-</div></div>
-
-<div class="hero"><div class="arthead" style="gap:40px">
-  <div>
-  <h1>Four surfaces, <em>one engine</em></h1>
-  <p>Everything below is live. Send a payment and the balance moves, the statement grows, and if a model
-    declines to decide, the case lands in the reviewer's queue. <b>Resize with the buttons above</b> to see
-    each product at phone, tablet and laptop widths.</p>
-  </div>
-  <div style="width:min(320px,100%)" id="heroart"></div>
-</div></div>
-
-<div class="surfaces" id="surfaces"></div>
-
-<div class="stagewrap"><div class="frame">
-  <div class="framebar">
-    <span class="url" id="url">fidelity-app.html</span>
-    <span class="size" id="size">390 × 844</span>
-  </div>
-  <div class="device" id="device"><iframe id="view" title="Prototype preview"></iframe></div>
-  <div class="fallback" id="fallback" hidden>
-    If the preview stays blank, your browser is blocking local frames.
-    <a id="fallbackLink" href="fidelity-app.html" target="_blank" rel="noopener">Open this surface directly</a>,
-    or serve the folder with <code>python3 decision_api.py</code>.
-  </div>
-</div></div>
-
-<div class="tips">
-  <h2>Worth trying</h2>
-  <div class="tipgrid" id="tips"></div>
-</div>
+<div id="page"></div>
 
 <script>__CORE__</script>
 <script>
-const SURFACES = [
-  {id:'app',      file:'fidelity-app.html',      icon:'airtime', name:'Mobile app',
-   who:'Customer', desc:'Five tabs, keypad payments, goals funded from MoMo or an account, live statement.'},
-  {id:'web',      file:'fidelity-web.html',      icon:'dashboard', name:'Fidelity Online',
-   who:'Customer', desc:'Personal and business banking: transfers, bills, cards, treasury bills, FX, payroll.'},
-  {id:'reviewer', file:'reviewer-console.html',  icon:'stamp',   name:'Reviewer console',
-   who:'Staff',    desc:'The escalation queue, sorted by SLA. Agree, override or return every model decision.'},
-  {id:'tower',    file:'control-tower.html',     icon:'network', name:'AI Control Tower',
-   who:'Staff',    desc:'The whole portfolio, its governance gates, and what the confidence floors cost.'},
-];
+function page(){
+  return `
+<div class="nav"><div class="in">
+  <a class="mark" href="index.html"><span class="m">${I('node',17,2).replace(/currentColor/g,'#fff')}</span>AI-Digital Bank</a>
+  <div class="navlinks">
+    <a href="web.html">Personal</a>
+    <a href="web.html">Business</a>
+    <a href="#how">How decisions work</a>
+    <a href="reviewer-console.html">For our team</a>
+  </div>
+  <div class="navcta">
+    <div class="status"><span class="dot" id="dot"></span><span id="mode">checking service…</span></div>
+    <a class="ghost" href="web.html">Log in</a>
+    <a class="btn" href="web.html">Open an account</a>
+  </div>
+</div></div>
 
-const DEVICES = [
-  {id:'phone',  icon:'airtime', label:'Phone',  w:390,  h:844},
-  {id:'tablet', icon:'atm',     label:'Tablet', w:834,  h:1000},
-  {id:'laptop', icon:'card',    label:'Laptop', w:1280, h:820},
-  {id:'fit',    icon:'dashboard', label:'Fit',  w:0,    h:900},
-];
+<div class="hero">
+  <div>
+    <span class="kick">${I('node',14)} AI Control Tower governs every decision</span>
+    <h1>Banking that <em>explains itself</em>.</h1>
+    <p>Every transfer, loan and screen your money goes through is decided by a model with a
+      published confidence floor. Clear it, and you get a plain-language reason. Miss it, and
+      a <b>named person</b> decides instead — never a silent decline.</p>
+    <div class="ctarow">
+      <a class="btn primary" href="app.html">${I('airtime',18)} Open the mobile app</a>
+      <a class="btn quiet" href="web.html">Explore online banking</a>
+    </div>
+  </div>
+  <div class="art">${ART.welcome()}</div>
+</div>
 
-const TIPS = [
-  ['Watch money actually move','Send GHS 200 to Kojo Mensah in the app. The balance drops, the row appears at the top of the statement with a reference, and the running balance recalculates.'],
-  ['Fund a goal from MoMo','Save › Rent — Dansoman › MTN MoMo. The wallet is debited, not your account. Try GHS 99,999 and it stops, naming the source that is short.'],
-  ['Trip the sanctions screen','Pay Global Marine Ltd. The money never moves and a compliance officer gets the case.'],
-  ['Get declined by a person','Push the loan slider past your limit. No model declines you — it names a credit officer and gives a reference.'],
-  ['Hit the language floor','Ask about a loan in Ga or Hausa. Below 0.70 confidence it hands to a person and says why. Ask your balance in Twi and it answers.'],
-  ['See both sides of one queue','Escalate something in the app, then open the reviewer console. With the service running it appears within four seconds.'],
-];
+<div class="trust"><div class="in">
+  <div class="item"><div class="ic">${I('scales',19)}</div>
+    <div><b>44 AI use cases, one governance gate</b><span>Nothing reaches a customer without a DPIA reference and an explainer.</span></div></div>
+  <div class="item"><div class="ic">${I('user',19)}</div>
+    <div><b>A person, never a silent decline</b><span>Below the confidence floor, or against you, a named colleague takes it.</span></div></div>
+  <div class="item"><div class="ic">${I('chain',19)}</div>
+    <div><b>One audit trail, four surfaces</b><span>The app, online banking, the reviewer queue and the control tower read the same log.</span></div></div>
+</div></div>
 
-let surface = SURFACES[0], device = DEVICES[0];
-const $ = id => document.getElementById(id);
+<div class="section">
+  <div class="hd"><span class="eyebrow">Where to go</span>
+    <h2>Two products, one account</h2>
+    <p class="lede">Everything here is live — send a payment and the balance actually moves.</p></div>
+  <div class="products">
+    <a class="pcard" href="app.html">
+      <div class="top"><div class="ic">${IS('airtime',26)}</div><span class="who">Customer · mobile</span></div>
+      <h3>The mobile app</h3>
+      <p>Five tabs, a keypad payment flow, goals funded from mobile money or an account, card
+        freeze, treasury bills, FX and a decision note behind every screen.</p>
+      <span class="go">Open the app ${I('chevron',15)}</span></a>
+    <a class="pcard" href="web.html">
+      <div class="top"><div class="ic">${IS('dashboard',26)}</div><span class="who">Customer · web</span></div>
+      <h3>Online banking</h3>
+      <p>Personal and business banking side by side — payroll with maker-checker, invoices,
+        cash flow, treasury bills and a full statement, all in the browser.</p>
+      <span class="go">Open online banking ${I('chevron',15)}</span></a>
+  </div>
+</div>
 
-$('logomark').innerHTML = I('node', 18, 2).replace('currentColor', '#fff');
+<div class="how" id="how">${lattice('lath1')}
+  <div class="in">
+    <div class="hd"><span class="eyebrow">How decisions work</span>
+      <h2>Three steps, on every automated call</h2>
+      <p class="lede">This is not a policy document — it is what the code actually does, on every
+        payment, loan and chat message.</p></div>
+    <div class="steps">
+      <div class="step"><b class="n">01</b>
+        <h4>A model decides, with a confidence score</h4>
+        <p>Fraud, credit, sanctions, language understanding — each domain has its own model and
+          its own published confidence floor.</p></div>
+      <div class="step"><b class="n">02</b>
+        <h4>The floor is checked, every time</h4>
+        <p>Clear it, and the action goes through. Miss it — or the outcome is adverse to you —
+          and it never auto-executes.</p></div>
+      <div class="step"><b class="n">03</b>
+        <h4>You get a reason, or a person</h4>
+        <p>A plain-language explanation ships with every approval. Anything below the floor
+          reaches a named reviewer, tracked against an SLA.</p></div>
+    </div>
+  </div>
+</div>
 
-function paint(){
-  $('surfaces').innerHTML = SURFACES.map(s => `
-    <button class="card" data-s="${s.id}" aria-pressed="${s.id===surface.id}">
-      <div class="ic">${I(s.icon,20)}</div>
-      <b>${s.name}</b><span>${s.desc}</span>
-      <span class="who">${s.who}</span></button>`).join('');
+<div class="ctaband"><div class="box">${lattice('latc1')}
+  <div><h2>See it decide something.</h2>
+    <p>Send GHS 200 to a saved beneficiary, or pay one on a sanctions list — either way,
+      you'll see exactly why.</p></div>
+  <div class="ctarow"><a class="btn primary" href="app.html">Open the app</a></div>
+</div></div>
 
-  $('devices').innerHTML = DEVICES.map(d => `
-    <button data-d="${d.id}" aria-pressed="${d.id===device.id}">${I(d.icon,16)}<span>${d.label}</span></button>`).join('');
-
-  const w = device.w || Math.min(window.innerWidth - 90, 1420);
-  const box = $('device');
-  box.style.width  = w + 'px';
-  box.style.height = Math.min(device.h, window.innerHeight * 0.82) + 'px';
-  $('url').textContent  = surface.file;
-  $('size').textContent = `${w} × ${Math.round(Math.min(device.h, window.innerHeight * 0.82))}`;
-  $('openin').setAttribute('href', surface.file);
-  $('fallbackLink').setAttribute('href', surface.file);
-  if ($('view').getAttribute('src') !== surface.file) $('view').setAttribute('src', surface.file);
-
-  $('tips').innerHTML = TIPS.map(([t,d]) => `<div class="tip"><b>${t}</b><span>${d}</span></div>`).join('');
+<footer>
+  <div class="in">
+    <div class="col brand">
+      <a class="mark" href="index.html"><span class="m" style="width:28px;height:28px">${I('node',14).replace(/currentColor/g,'#fff')}</span>AI-Digital Bank</a>
+      <p>An AI-first bank prototype: the governance, the audit trail and the human line are
+        real code, not a deck.</p>
+    </div>
+    <div class="col"><b>Bank with us</b>
+      <a href="app.html">Mobile app</a>
+      <a href="web.html">Personal banking</a>
+      <a href="web.html">Business banking</a>
+    </div>
+    <div class="col"><b>Trust</b>
+      <a href="#how">How decisions work</a>
+      <a href="web.html">Security &amp; privacy</a>
+      <a href="control-tower.html">AI Control Tower</a>
+    </div>
+    <div class="col"><b>For our team</b>
+      <a href="reviewer-console.html">Reviewer console</a>
+      <a href="control-tower.html">Governance &amp; portfolio</a>
+    </div>
+  </div>
+  <div class="legal">
+    <span>AI-Digital Bank · prototype, Ghana</span>
+    <span id="svc">checking service…</span>
+  </div>
+</footer>`;
 }
 
-document.addEventListener('click', e => {
-  const el = e.target.closest('[data-s],[data-d]');
-  if (!el) return;
-  if (el.dataset.s) surface = SURFACES.find(s => s.id === el.dataset.s);
-  if (el.dataset.d) device  = DEVICES.find(d => d.id === el.dataset.d);
-  paint();
-});
-addEventListener('resize', () => { if (!device.w) paint(); });
+document.getElementById('page').innerHTML = page();
 
-/* is the decision service up? then the four surfaces share one queue */
 (async () => {
   try {
     const r = await fetch('/api/health', {cache:'no-store'});
     if (!r.ok) throw 0;
     const d = await r.json();
-    $('dot').className = 'dot live';
-    $('mode').textContent = `service live · ${d.open} in the queue`;
+    document.getElementById('dot').className = 'dot live';
+    document.getElementById('mode').textContent = `service live · ${d.open} in the queue`;
+    document.getElementById('svc').textContent = `decision service live · ${d.open} cases in the queue`;
   } catch {
-    $('dot').className = 'dot';
-    $('mode').textContent = location.protocol === 'file:'
-      ? 'offline files · each surface decides alone'
-      : 'service not reachable';
+    document.getElementById('mode').textContent = location.protocol === 'file:' ? 'offline files' : 'service not reachable';
+    document.getElementById('svc').textContent = location.protocol === 'file:'
+      ? 'opened as local files — each product decides on its own' : 'decision service not reachable';
   }
 })();
-
-/* if a frame refuses to load locally, offer the direct link instead */
-$('view').addEventListener('error', () => { $('fallback').hidden = false; });
-setTimeout(() => {
-  try { if (!$('view').contentDocument && location.protocol === 'file:') $('fallback').hidden = false; }
-  catch { $('fallback').hidden = false; }
-}, 1800);
-
-document.getElementById('heroart').innerHTML = ART.welcome();
-paint();
 </script>
 </body>
 </html>
