@@ -1,26 +1,26 @@
 /* =========================================================================
    FIDELITY DIGITAL — design system
-   Smart gold for action. White for surface. Grey for structure. Matte black
-   used deliberately, and only where the money is: the balance card, the
+   Turquoise for action. White for surface. Grey for structure. Navy used
+   deliberately, and only where the money is: the balance card, the
    bank card, the confirm button. Nothing else earns it.
    ========================================================================= */
 :root{
   --ink:#333A42;         --slate:#5A626C;      --grey:#858D97;    --mist:#AAB2BC;
   --line:#E7EBEF;        --line-2:#F1F4F6;     --haze:#F6F8F9;
   --canvas:#FAFBFC;      --white:#FFFFFF;      --sand:#FFF9F4;
-  --jet:#15161A;         --jet-2:#232428;      /* the matte black surfaces */
-  --orange:#B8952E;      --orange-d:#8F7220;   --orange-l:#D9BE72;   /* smart gold */
-  --orange-t:#F8F1DC;    --orange-t2:#EFE3B8;
+  --jet:#0E2A47;         --jet-2:#163A5E;      /* the navy surfaces */
+  --orange:#14B8AC;      --orange-d:#0C8579;   --orange-l:#5FE4D6;   /* turquoise */
+  --orange-t:#E3FAF6;    --orange-t2:#C6F3EB;
   --pos:#2E9C78;        --pos-t:#E9F6F1;
   --neg:#E0574A;        --neg-t:#FDEDEB;
   --r-xl:26px; --r-lg:20px; --r:14px; --r-sm:10px;
-  --sh-xs:0 1px 2px rgba(93,74,54,.06);
-  --sh-sm:0 1px 2px rgba(93,74,54,.05), 0 8px 22px -14px rgba(93,74,54,.18);
-  --sh:0 2px 5px rgba(93,74,54,.05), 0 20px 42px -24px rgba(93,74,54,.24);
-  --sh-lg:0 34px 78px -32px rgba(93,74,54,.32);
-  --display:"Bricolage Grotesque","Manrope",system-ui,sans-serif;
-  --body:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --mono:"Geist Mono","IBM Plex Mono",ui-monospace,monospace;
+  --sh-xs:0 1px 2px rgba(14,42,71,.06);
+  --sh-sm:0 1px 2px rgba(14,42,71,.05), 0 8px 22px -14px rgba(14,42,71,.18);
+  --sh:0 2px 5px rgba(14,42,71,.05), 0 20px 42px -24px rgba(14,42,71,.24);
+  --sh-lg:0 34px 78px -32px rgba(14,42,71,.32);
+  --display:"Calibri","Segoe UI",system-ui,sans-serif;
+  --body:"Calibri","Segoe UI",system-ui,-apple-system,sans-serif;
+  --mono:"Consolas","Calibri",ui-monospace,monospace;
   --ease:cubic-bezier(.22,.61,.36,1);
   --hex:polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
 }
@@ -54,13 +54,13 @@ svg.ico{display:block;flex:none}
 
 /* the balance card — matte black, node lattice, one smart-gold light source */
 .hero{position:relative;color:#fff;border-radius:var(--r-xl);padding:24px;overflow:hidden;
-      background:linear-gradient(135deg,#2E2F33 0%,var(--jet-2) 48%,var(--jet) 100%);
-      box-shadow:0 22px 46px -22px rgba(0,0,0,.55)}
+      background:linear-gradient(135deg,#1B3F63 0%,var(--jet-2) 55%,var(--jet) 100%);
+      box-shadow:0 22px 46px -22px rgba(9,23,39,.5)}
 .hero .lattice{color:var(--orange-l);opacity:.22;pointer-events:none;
   -webkit-mask-image:radial-gradient(120% 100% at 88% 4%,#000 0%,transparent 66%);
   mask-image:radial-gradient(120% 100% at 88% 4%,#000 0%,transparent 66%)}
 .hero::after{content:"";position:absolute;width:250px;height:250px;right:-96px;top:-120px;border-radius:50%;
-  background:radial-gradient(circle,rgba(184,149,46,.4),transparent 66%);pointer-events:none}
+  background:radial-gradient(circle,rgba(20,184,172,.4),transparent 66%);pointer-events:none}
 .hero > *{position:relative;z-index:1}
 .hero .label{font-size:12.5px;color:var(--orange-l);display:flex;align-items:center;gap:8px}
 .hero .bal{font-family:var(--display);font-weight:700;font-size:clamp(32px,8.4vw,42px);
@@ -103,7 +103,7 @@ svg.ico{display:block;flex:none}
 .tabbar .fab{position:relative;top:-18px}
 .tabbar .fab b{width:56px;height:56px;border-radius:20px;margin-bottom:2px;color:#fff;
   background:linear-gradient(135deg,var(--orange-l),var(--orange));
-  box-shadow:0 14px 26px -12px rgba(143,114,32,.55)}
+  box-shadow:0 14px 26px -12px rgba(12,133,121,.55)}
 
 /* --------------------------------------------------------------- controls */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;font-weight:700;font-size:15px;
@@ -112,12 +112,12 @@ svg.ico{display:block;flex:none}
      cursor:pointer;letter-spacing:-.01em;
      transition:transform .12s var(--ease),background .15s,box-shadow .18s}
 .btn:hover{background:linear-gradient(135deg,var(--orange),var(--orange-d));
-  box-shadow:0 12px 26px -12px rgba(143,114,32,.65)}
+  box-shadow:0 12px 26px -12px rgba(12,133,121,.65)}
 .btn:active{transform:scale(.976)}
-/* the confirm button — the third place matte black earns its keep */
+/* the confirm button — the third place navy earns its keep */
 .btn.primary{background:linear-gradient(135deg,var(--jet-2),var(--jet));
-  box-shadow:0 12px 26px -12px rgba(0,0,0,.6)}
-.btn.primary:hover{background:linear-gradient(135deg,#2c2d31,#000)}
+  box-shadow:0 12px 26px -12px rgba(9,23,39,.55)}
+.btn.primary:hover{background:linear-gradient(135deg,#1B3F63,var(--jet))}
 .btn.quiet{background:var(--white);color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line)}
 .btn.quiet:hover{background:var(--haze);box-shadow:inset 0 0 0 1.5px var(--mist)}
 .btn.danger{background:var(--neg);box-shadow:0 12px 26px -14px rgba(224,87,74,.7)}
@@ -249,14 +249,14 @@ input[type=range]{width:100%;accent-color:var(--orange)}
 
 /* ------------------------------------------------------------ bank card */
 .plastic{position:relative;aspect-ratio:1.586;border-radius:20px;padding:20px;color:#fff;overflow:hidden;
-         background:linear-gradient(140deg,#2E2F33,var(--jet-2) 46%,var(--jet) 100%);
-         box-shadow:0 20px 44px -22px rgba(0,0,0,.5);display:flex;flex-direction:column}
+         background:linear-gradient(140deg,#1B3F63,var(--jet-2) 46%,var(--jet) 100%);
+         box-shadow:0 20px 44px -22px rgba(9,23,39,.45);display:flex;flex-direction:column}
 .plastic .lattice{color:var(--orange-l);opacity:.2}
 .plastic::after{content:"";position:absolute;width:210px;height:210px;right:-84px;bottom:-116px;
-  border-radius:50%;background:radial-gradient(circle,rgba(184,149,46,.36),transparent 68%)}
+  border-radius:50%;background:radial-gradient(circle,rgba(20,184,172,.36),transparent 68%)}
 .plastic.virtual{background:linear-gradient(150deg,#FFFFFF,#F3F5F7 78%);color:var(--ink)}
 .plastic.virtual .lattice{color:var(--orange);opacity:.22}
-.plastic.virtual::after{background:radial-gradient(circle,rgba(184,149,46,.22),transparent 68%)}
+.plastic.virtual::after{background:radial-gradient(circle,rgba(20,184,172,.22),transparent 68%)}
 .plastic.virtual .foot{color:var(--grey)}
 .plastic.frozen{filter:grayscale(.9) brightness(1.04);opacity:.72}
 .plastic > *{position:relative;z-index:1}

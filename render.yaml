@@ -1,11 +1,21 @@
+databases:
+  - name: fidelity-ai-bank-db
+    plan: free
+    databaseName: fidelity
+    user: fidelity
+
 services:
   - type: web
     name: fidelity-ai-bank
     runtime: python
     plan: free
-    buildCommand: "true"
+    buildCommand: "pip install -r requirements.txt"
     startCommand: "python3 decision_api.py --seed-queue 12"
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.10
+      - key: DATABASE_URL
+        fromDatabase:
+          name: fidelity-ai-bank-db
+          property: connectionString
     healthCheckPath: /api/health

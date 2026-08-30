@@ -10,10 +10,14 @@ it. This service is the shared spine.
                                                     |
                                                     +--> audit log --> control tower
 
-Standard library only, no dependencies, single process, in-memory. Run it and open
+Standard library only for local use — no setup, no dependencies, in-memory. Run it and open
 http://localhost:8765/ — the same HTML files work with or without it, but with it the
 escalation a customer triggers appears in the reviewer's queue within a second, and the
 reviewer's override comes back as a model-quality signal.
+
+Set DATABASE_URL (Postgres) and every write also lands there, so a restart — a redeploy,
+a free-tier host waking from idle — comes back with the same queue and audit log instead
+of an empty one. Needs psycopg2-binary; without DATABASE_URL nothing changes.
 
     python3 decision_api.py [--port 8765] [--seed-queue 12]
 """
@@ -33,6 +37,23 @@ try:
     import aibank_engine as engine
 except Exception:                                    # service still runs without the engine
     engine = None
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
+try:
+    import psycopg2
+    import psycopg2.extras
+except Exception:                                     # service still runs without Postgres
+    psycopg2 = None
+
+
+def db_connect():
+    """None unless both DATABASE_URL and psycopg2 are available — every caller already
+    treats 'no database' as a normal, supported mode, not an error."""
+    if not (DATABASE_URL and psycopg2):
+        return None
+    conn = psycopg2.connect(DATABASE_URL, sslmode="require")
+    conn.autocommit = True
+    return conn
 
 CAPACITY_PER_DAY = 120
 
@@ -78,7 +99,10 @@ def now() -> datetime:
 
 
 class Store:
-    """Everything the three products share, behind one lock."""
+    """Everything the three products share, behind one lock. self.cases/audit/resolved are
+    the working copy every read is served from; when a database is configured, writes also
+    go there and __init__ reloads from it, so state survives a restart instead of an
+    in-memory dict resetting to empty."""
 
     def __init__(self) -> None:
         self.lock = threading.Lock()
@@ -86,6 +110,50 @@ class Store:
         self.audit: list[dict] = []
         self.resolved: list[dict] = []
         self.seq = 4400
+        self.db = db_connect()
+        if self.db:
+            self._migrate()
+            self._load()
+
+    # -- database ---------------------------------------------------------------
+    def _migrate(self) -> None:
+        with self.db.cursor() as cur:
+            cur.execute("CREATE TABLE IF NOT EXISTS audit "
+                        "(id BIGSERIAL PRIMARY KEY, ref TEXT UNIQUE NOT NULL, data JSONB NOT NULL)")
+            cur.execute("CREATE TABLE IF NOT EXISTS cases (ref TEXT PRIMARY KEY, data JSONB NOT NULL)")
+            cur.execute("CREATE TABLE IF NOT EXISTS resolved "
+                        "(id BIGSERIAL PRIMARY KEY, ref TEXT UNIQUE NOT NULL, data JSONB NOT NULL)")
+
+    def _load(self) -> None:
+        with self.db.cursor() as cur:
+            cur.execute("SELECT data FROM audit ORDER BY id")
+            self.audit = [r[0] for r in cur.fetchall()]
+            cur.execute("SELECT ref, data FROM cases")
+            self.cases = {r[0]: r[1] for r in cur.fetchall()}
+            cur.execute("SELECT data FROM resolved ORDER BY id")
+            self.resolved = [r[0] for r in cur.fetchall()]
+        nums = [int(r["ref"].split("-")[1]) for r in self.audit if str(r.get("ref", "")).startswith("DEC-")]
+        self.seq = max(nums) if nums else 4400
+
+    def _persist(self, table: str, ref: str, data: dict) -> None:
+        if not self.db:
+            return
+        try:
+            with self.db.cursor() as cur:
+                cur.execute(f"INSERT INTO {table} (ref, data) VALUES (%s, %s) "
+                            f"ON CONFLICT (ref) DO UPDATE SET data = EXCLUDED.data",
+                            (ref, psycopg2.extras.Json(data)))
+        except Exception as e:                        # a DB hiccup shouldn't take the API down
+            print(f"  db write failed ({table}/{ref}): {e}")
+
+    def _delete(self, table: str, ref: str) -> None:
+        if not self.db:
+            return
+        try:
+            with self.db.cursor() as cur:
+                cur.execute(f"DELETE FROM {table} WHERE ref = %s", (ref,))
+        except Exception as e:
+            print(f"  db delete failed ({table}/{ref}): {e}")
 
     # -- writes ---------------------------------------------------------------
     def record(self, d: dict) -> dict:
@@ -108,10 +176,11 @@ class Store:
                 "evidence": d.get("evidence") or {},
             }
             self.audit.append(rec)
+            self._persist("audit", rec["ref"], rec)
             if rec["review"]:
                 kind = KIND_OF.get(rec["useCase"], "credit_adjudication")
                 sla = SLA[kind]
-                self.cases[rec["ref"]] = {
+                case = {
                     **rec,
                     "kind": kind,
                     "queue": QUEUES[kind],
@@ -120,6 +189,8 @@ class Store:
                     "slaMinutes": sla,
                     "status": "open",
                 }
+                self.cases[rec["ref"]] = case
+                self._persist("cases", rec["ref"], case)
             return rec
 
     def resolve(self, ref: str, outcome: str, note: str, reviewer: str) -> dict | None:
@@ -137,6 +208,8 @@ class Store:
             case["minutesToClose"] = round((now() - opened).total_seconds() / 60, 1)
             case["breachedSla"] = case["minutesToClose"] > case["slaMinutes"]
             self.resolved.append(case)
+            self._delete("cases", ref)
+            self._persist("resolved", ref, case)
             return case
 
     # -- reads ----------------------------------------------------------------
@@ -270,7 +343,7 @@ class Handler(SimpleHTTPRequestHandler):
                  "phase": u.phase.value, "quadrant": u.quadrant, "hasAgent": u.has_agent}
                 for u in engine.USE_CASES.values()]})
         if p.path == "/api/health":
-            return self._send({"ok": True, "engine": engine is not None,
+            return self._send({"ok": True, "engine": engine is not None, "database": STORE.db is not None,
                                "open": len(STORE.cases), "audit": len(STORE.audit)})
         if p.path == "/":
             self.path = "/index.html"
@@ -333,12 +406,15 @@ def main():
     if not idx.exists():          # the built prototype hub wins if it is present
         idx.write_text(INDEX)
 
-    if a.seed_queue:
+    # a restored store already has its overnight backlog — reseeding on top of it would
+    # duplicate cases every time this process restarts (a redeploy, an idle host waking up)
+    if a.seed_queue and not STORE.cases and not STORE.audit:
         seed_queue(a.seed_queue)
 
     srv = ThreadingHTTPServer((a.host, a.port), Handler)
     print(f"Fidelity decision service on http://{a.host}:{a.port}/")
     print(f"  engine imported : {engine is not None}")
+    print(f"  database        : {'connected, ' + str(len(STORE.audit)) + ' records restored' if STORE.db else 'in-memory only'}")
     print(f"  queue seeded    : {len(STORE.cases)} cases waiting")
     print("  ctrl-c to stop\n")
     try:
