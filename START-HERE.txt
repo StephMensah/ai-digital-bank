@@ -1,0 +1,62 @@
+FIDELITY AI-FIRST BANK — prototype
+Strategic AI Banking Framework, built out as running software.
+
+────────────────────────────────────────────────────────────────────
+QUICKEST LOOK  (no install, no internet needed)
+────────────────────────────────────────────────────────────────────
+  Double-click  index.html
+  It is the prototype hub: pick a surface, switch between phone,
+  tablet and laptop widths, and the preview resizes live.
+
+  Or open any product on its own:
+    fidelity-app.html        the mobile bank
+    fidelity-web.html        internet banking, personal + business
+    reviewer-console.html    staff: the escalation queue
+    control-tower.html       staff: portfolio and governance
+
+────────────────────────────────────────────────────────────────────
+EVERYTHING CONNECTED  (needs Python 3.10+, nothing else)
+────────────────────────────────────────────────────────────────────
+  python3 decision_api.py
+  → http://localhost:8765/
+
+  Now the four surfaces share one queue. Escalate something in the
+  app and it reaches the reviewer's console within four seconds.
+
+────────────────────────────────────────────────────────────────────
+THE ENGINE ITSELF
+────────────────────────────────────────────────────────────────────
+  python3 aibank_engine.py run --days 5 --phase 2
+  python3 aibank_engine.py portfolio
+  python3 aibank_engine.py roadmap
+  python3 aibank_engine.py dpia retail.chatbot
+  python3 aibank_engine.py export
+
+────────────────────────────────────────────────────────────────────
+WORTH TRYING IN THE APP
+────────────────────────────────────────────────────────────────────
+  · Send GHS 200 to Kojo Mensah — the balance moves, the statement
+    grows, the running balance recalculates.
+  · Pay Global Marine Ltd — sanctions hold, money never leaves.
+  · Send GHS 15,000 — stopped by your Tier 2 limit before any model
+    runs.
+  · Save › Rent — Dansoman › MTN MoMo — fund a goal from mobile
+    money instead of your account.
+  · Push the loan slider past your limit — no model declines you; a
+    named credit officer decides.
+  · Ask about a loan in Ga or Hausa — below the accuracy floor it
+    hands to a person and says why.
+
+────────────────────────────────────────────────────────────────────
+TWO THINGS TO KNOW BEFORE ANY EXTERNAL DEMO
+────────────────────────────────────────────────────────────────────
+  1. Every model is a stub. Agent.infer() declares the endpoint it
+     should call; replace its body and that agent is live. Governance,
+     escalation, audit and value tracking need no changes.
+  2. The Twi strings were written by me, not a speaker. Have branch
+     staff in Kumasi or Tamale review them first.
+
+  Merchant logos are generated brand tiles, not real assets — see
+  logos/README.md for how to drop licensed ones in.
+
+Full documentation: README.md

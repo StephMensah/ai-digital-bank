@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reviewer console — Fidelity Bank Ghana</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;450;500;600;700&display=swap" rel="stylesheet">
+<style>/* =========================================================================
+   FIDELITY CUSTOMER DESIGN SYSTEM
+   One token set and one component vocabulary across web and app, so the two
+   products read as one bank. Orange is signal, never decoration.
+   ========================================================================= */
+:root{
+  --orange:#E87722; --burnt:#B4531F; --ink:#17181B; --slate:#22242A;
+  --paper:#F6F7F8; --card:#FFFFFF; --hair:#E3E5E8; --muted:#71767D;
+  --clear:#2E7D5B; --alert:#C0392B; --amber:#B4531F;
+  --slip:#FAF6EC; --slipink:#4A4335; --slipline:#C9BFA6;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  --cond:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,monospace;
+  --r:12px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:var(--sans);font-size:15px;line-height:1.5;color:var(--ink);
+     background:var(--paper);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{margin:0}
+button,input,select,textarea{font-family:inherit;font-size:inherit}
+:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+
+/* ---------------------------------------------------------------- type */
+.eyebrow{font-family:var(--cond);font-weight:700;font-size:10.5px;letter-spacing:.17em;
+         text-transform:uppercase;color:var(--muted)}
+.display{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:-.005em;line-height:1}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.lead{font-size:14px;color:#4A4E55;line-height:1.55;margin:0}
+.small{font-size:12.5px;color:var(--muted)}
+
+/* --------------------------------------------------------------- cards */
+.card{background:var(--card);border:1px solid var(--hair);border-radius:var(--r);padding:18px}
+.card + .card{margin-top:14px}
+.card h4{font-size:15px;font-weight:600;margin:6px 0 6px}
+.card p{margin:0;font-size:13.5px;color:#4A4E55;line-height:1.55}
+.card.flag{border-left:3px solid var(--alert)}
+.card.good{border-left:3px solid var(--clear)}
+.card.pend{border-left:3px solid var(--orange)}
+.card.dark{background:var(--ink);color:#fff;border-color:var(--ink)}
+.card.dark p{color:#A9AEB6}
+
+/* ------------------------------------------------------------ controls */
+.btn{font-weight:600;font-size:13.5px;padding:10px 16px;border-radius:9px;border:1px solid var(--ink);
+     background:var(--ink);color:#fff;cursor:pointer;transition:.12s}
+.btn:hover{background:#000}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.ghost:hover{background:#F0F1F3}
+.btn.warn{background:var(--alert);border-color:var(--alert)}
+.btn.orange{background:var(--orange);border-color:var(--orange)}
+.btn.sm{padding:7px 12px;font-size:12.5px}
+.btn:disabled{opacity:.4;cursor:default}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+
+.field{display:block;margin-bottom:12px}
+.field span{display:block;font-family:var(--cond);font-weight:700;font-size:10.5px;letter-spacing:.14em;
+            text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.field input,.field select{width:100%;padding:10px 12px;border:1px solid var(--hair);
+     border-radius:9px;background:#fff}
+input[type=range]{width:100%;accent-color:var(--orange)}
+
+.sw{flex:none;width:44px;height:25px;border-radius:20px;background:#CDD1D6;border:0;position:relative;
+    cursor:pointer;transition:.15s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:19px;height:19px;border-radius:50%;
+    background:#fff;transition:.15s}
+.sw[aria-pressed="true"]{background:var(--clear)}
+.sw[aria-pressed="true"]::after{left:22px}
+.toggle{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;
+        padding:14px 0;border-top:1px solid var(--hair)}
+.toggle:first-of-type{border-top:0}
+.toggle p{margin:3px 0 0;font-size:12.5px;color:var(--muted)}
+
+.tag{font-family:var(--cond);font-weight:700;font-size:10px;letter-spacing:.16em;
+     text-transform:uppercase;color:var(--muted)}
+.tag.red{color:var(--alert)} .tag.green{color:var(--clear)} .tag.amber{color:var(--amber)}
+.pill{font-family:var(--cond);font-weight:700;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+      padding:3px 7px;border:1px solid var(--hair);border-radius:4px;color:var(--muted);white-space:nowrap}
+.pill.green{color:var(--clear);border-color:var(--clear)}
+.pill.red{color:var(--alert);border-color:var(--alert)}
+.pill.amber{color:var(--amber);border-color:var(--amber);background:#FBF0E7}
+
+/* ------------------------------------------------- the receipt (signature) */
+.slip{--tooth:9px;background:var(--slip);color:var(--slipink);font-family:var(--mono);
+      font-size:11.5px;line-height:1.6;padding:20px 15px;margin-top:12px;
+      -webkit-mask:radial-gradient(var(--tooth) at 50% 0,#0000 98%,#000) 50% 0/18px 100% repeat-x,
+                   radial-gradient(var(--tooth) at 50% 100%,#0000 98%,#000) 50% 100%/18px 100% repeat-x,
+                   linear-gradient(#000,#000) 50% 50%/100% calc(100% - 18px) no-repeat;
+      mask:radial-gradient(var(--tooth) at 50% 0,#0000 98%,#000) 50% 0/18px 100% repeat-x,
+           radial-gradient(var(--tooth) at 50% 100%,#0000 98%,#000) 50% 100%/18px 100% repeat-x,
+           linear-gradient(#000,#000) 50% 50%/100% calc(100% - 18px) no-repeat}
+.slip-hd{font-weight:600;letter-spacing:.1em;border-bottom:1px dashed var(--slipline);
+         padding-bottom:6px;margin-bottom:8px}
+.slip dl{display:grid;grid-template-columns:auto 1fr;gap:2px 14px;margin:0}
+.slip dt{opacity:.72}
+.slip dd{margin:0;text-align:right}
+.slip-ft{border-top:1px dashed var(--slipline);margin-top:9px;padding-top:7px;font-size:10.5px;opacity:.82}
+.why{background:none;border:0;padding:0;margin-top:11px;font-family:var(--mono);font-size:11.5px;
+     color:var(--burnt);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+
+/* --------------------------------------------------------------- lists */
+.rowline{display:flex;justify-content:space-between;align-items:center;gap:12px;
+         padding:11px 0;border-top:1px solid var(--hair)}
+.rowline:first-of-type{border-top:0}
+.rowline .l{min-width:0}
+.rowline .l b{display:block;font-weight:500;font-size:13.5px;white-space:nowrap;
+              overflow:hidden;text-overflow:ellipsis}
+.rowline .l span{font-size:11.5px;color:var(--muted);font-family:var(--mono)}
+.rowline .r{font-family:var(--mono);font-size:13px;white-space:nowrap}
+.rowline .r.in{color:var(--clear)}
+.pick{width:100%;text-align:left;background:none;border:0;cursor:pointer;padding:11px 0;
+      border-top:1px solid var(--hair);display:flex;justify-content:space-between;gap:12px;align-items:center}
+.pick:hover{background:#F0F1F3}
+.pick:first-of-type{border-top:0}
+
+/* --------------------------------------------------------------- chat */
+.msg{max-width:84%;padding:10px 13px;border-radius:14px;margin-bottom:9px;font-size:13.5px;line-height:1.5}
+.msg.me{background:var(--ink);color:#fff;margin-left:auto;border-bottom-right-radius:4px}
+.msg.ai{background:#fff;border:1px solid var(--hair);border-bottom-left-radius:4px}
+.msg.sys{background:#FBF0E7;border:1px solid #EBD3BC;color:#7A4A20;font-size:12.5px;max-width:100%}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 12px}
+.chips button{font-size:12px;padding:6px 11px;border-radius:20px;border:1px solid var(--hair);
+              background:#fff;cursor:pointer}
+.chips button:hover{border-color:var(--ink)}
+.chips button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.composer{display:flex;gap:8px}
+.composer input{flex:1;padding:11px 13px;border:1px solid var(--hair);border-radius:10px}
+
+/* -------------------------------------------------------------- charts */
+.cols{width:100%;height:auto;display:block}
+.colslab{font-family:var(--mono);font-size:9.5px;fill:var(--muted)}
+
+/* -------------------------------------------------------------- misc */
+.hr{height:1px;background:var(--hair);margin:18px 0;border:0}
+.amt{font-family:var(--mono);font-size:30px;font-weight:500;letter-spacing:-.02em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<style>
+body{background:#EDEEF0}
+.top{background:var(--ink);color:#fff;position:sticky;top:0;z-index:30}
+.top .in{max-width:1500px;margin:0 auto;padding:11px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:11px}
+.brand .m{width:28px;height:28px;border-radius:50%;background:var(--orange);display:grid;place-items:center}
+.brand .m b{width:13px;height:2.4px;background:#fff;display:block;box-shadow:0 4.6px 0 #fff,0 9.2px 0 #fff;margin-top:-9px}
+.brand .t{font-family:var(--cond);font-weight:700;text-transform:uppercase;font-size:15px;letter-spacing:.02em}
+.brand .t i{font-style:normal;color:var(--orange)}
+.conn{font-family:var(--mono);font-size:11px;color:#8C9199;display:flex;align-items:center;gap:7px}
+.dot{width:7px;height:7px;border-radius:50%;background:#8C9199}
+.dot.live{background:#5DBE8E;box-shadow:0 0 0 3px rgba(93,190,142,.2)}
+.me{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:13px;color:#C6CAD0}
+.me b{color:#fff;font-weight:500}
+
+/* -------------------------------------------------- capacity strip (signature) */
+.cap{background:#fff;border-bottom:1px solid var(--hair)}
+.cap .in{max-width:1500px;margin:0 auto;padding:15px 24px 17px;display:grid;
+         grid-template-columns:1fr auto;gap:24px;align-items:center}
+.capbar{position:relative;height:34px;background:#F0F1F3;border:1px solid var(--hair);border-radius:6px;overflow:hidden}
+.capbar .done{position:absolute;inset:0 auto 0 0;background:var(--clear);opacity:.85}
+.capbar .queued{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(45deg,
+  #E0A98A,#E0A98A 5px,#D99B77 5px,#D99B77 10px)}
+.capbar .over{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(45deg,
+  #C0392B,#C0392B 5px,#93291E 5px,#93291E 10px)}
+.capbar .tick{position:absolute;top:0;bottom:0;width:2px;background:var(--ink)}
+.capbar .lab{position:absolute;top:8px;font-family:var(--cond);font-weight:700;font-size:10.5px;
+             letter-spacing:.12em;color:#fff;text-transform:uppercase;white-space:nowrap}
+.capnote{font-size:12px;color:var(--muted);margin-top:7px;line-height:1.45;max-width:88ch}
+.capnote b{color:var(--ink);font-weight:600}
+.capstats{display:flex;gap:22px}
+.capstat{text-align:right}
+.capstat .v{font-family:var(--mono);font-size:23px;font-weight:500;display:block;line-height:1.1}
+.capstat .l{font-size:10.5px;color:var(--muted);font-family:var(--cond);font-weight:700;
+            letter-spacing:.12em;text-transform:uppercase}
+
+/* ------------------------------------------------------------------- layout */
+.work{max-width:1500px;margin:0 auto;display:grid;grid-template-columns:400px minmax(0,1fr);
+      gap:0;align-items:start}
+.qcol{border-right:1px solid var(--hair);background:#fff;position:sticky;top:56px;
+      height:calc(100vh - 56px);display:flex;flex-direction:column}
+.qfilters{padding:13px 16px;border-bottom:1px solid var(--hair);display:flex;gap:5px;flex-wrap:wrap}
+.qfilters button{font-size:11.5px;padding:5px 10px;border-radius:20px;border:1px solid var(--hair);
+                 background:#fff;cursor:pointer}
+.qfilters button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.qlist{flex:1;overflow-y:auto}
+.qitem{width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--hair);
+       padding:13px 16px;cursor:pointer;display:block}
+.qitem:hover{background:#F6F7F8}
+.qitem[aria-current="true"]{background:#FBF0E7;box-shadow:inset 3px 0 0 var(--orange)}
+.qitem .r1{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.qitem .r1 b{font-size:13.5px;font-weight:600}
+.qitem .sla{font-family:var(--mono);font-size:11.5px;color:var(--clear);white-space:nowrap}
+.qitem .sla.warn{color:var(--amber)} .qitem .sla.late{color:var(--alert);font-weight:600}
+.qitem .r2{font-size:12px;color:var(--muted);margin-top:3px}
+.qitem .r3{font-family:var(--mono);font-size:11px;color:#5C6068;margin-top:6px;
+           display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.qempty{padding:36px 20px;text-align:center;color:var(--muted);font-size:13.5px;line-height:1.6}
+
+.case{padding:26px 30px 90px;min-width:0}
+.casehead{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:flex-start;
+          border-bottom:1px solid var(--hair);padding-bottom:18px;margin-bottom:20px}
+.casehead h2{font-family:var(--cond);font-weight:700;text-transform:uppercase;font-size:25px;line-height:1.05}
+.casehead .who{font-size:13.5px;color:var(--muted);margin-top:6px}
+.clock{text-align:right;font-family:var(--mono)}
+.clock .v{font-size:26px;font-weight:500;display:block;line-height:1.1}
+.clock .v.late{color:var(--alert)} .clock .v.warn{color:var(--amber)}
+.clock .l{font-size:10.5px;color:var(--muted);font-family:var(--cond);font-weight:700;
+          letter-spacing:.12em;text-transform:uppercase}
+.two{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:22px;align-items:start}
+.ev{display:grid;grid-template-columns:auto 1fr;gap:8px 18px;font-size:13.5px;margin-top:10px}
+.ev dt{color:var(--muted)} .ev dd{margin:0;font-family:var(--mono);text-align:right}
+.acts{position:sticky;bottom:0;background:linear-gradient(transparent,#EDEEF0 22%);padding:22px 0 0;margin-top:22px}
+.actbox{background:#fff;border:1px solid var(--hair);border-radius:var(--r);padding:18px}
+.actbox textarea{width:100%;min-height:66px;padding:10px 12px;border:1px solid var(--hair);
+                 border-radius:9px;font-family:inherit;font-size:13.5px;resize:vertical}
+.kbd{font-family:var(--mono);font-size:10.5px;border:1px solid var(--hair);border-bottom-width:2px;
+     border-radius:4px;padding:1px 5px;color:var(--muted);margin-left:6px}
+.done{max-width:520px;margin:60px auto;text-align:center}
+.done h3{font-family:var(--cond);text-transform:uppercase;font-size:22px;margin-bottom:8px}
+.done p{color:var(--muted);font-size:14px;line-height:1.6}
+
+@media (max-width:1080px){
+  .work{grid-template-columns:1fr}
+  .qcol{position:static;height:auto;max-height:400px;border-right:0;border-bottom:1px solid var(--hair)}
+  .two{grid-template-columns:1fr}
+  .cap .in{grid-template-columns:1fr}
+  .capstats{justify-content:space-between}
+}
+</style>
+</head>
+<body>
+
+<div class="top"><div class="in">
+  <div class="brand"><div class="m"><b></b></div><div class="t">Reviewer <i>Console</i></div></div>
+  <div class="conn"><span class="dot" id="dot"></span><span id="connlab">checking service…</span></div>
+  <div class="me"><span>Retail Credit · <b id="reviewer">kwame.a</b></span></div>
+</div></div>
+
+<div class="cap"><div class="in">
+  <div>
+    <div class="capbar" id="capbar"></div>
+    <p class="capnote" id="capnote"></p>
+  </div>
+  <div class="capstats" id="capstats"></div>
+</div></div>
+
+<div class="work">
+  <div class="qcol">
+    <div class="qfilters" id="filters"></div>
+    <div class="qlist" id="qlist"></div>
+  </div>
+  <div class="case" id="case"></div>
+</div>
+
+<script>/* =========================================================================
+   FIDELITY CUSTOMER CORE
+   Browser port of aibank_engine.py. Every agent keeps the engine contract:
+       infer(input) -> { action, confidence, explanation, adverse }
+   The wrapper FID.decide() applies the confidence floor, routes adverse
+   outcomes to human adjudication, and writes the customer-visible receipt
+   that mirrors the engine's audit record.
+   ========================================================================= */
+const FID = (() => {
+
+  const CCY = 'GHS';
+  const money  = n => CCY + ' ' + Number(n).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const money0 = n => CCY + ' ' + Math.round(n).toLocaleString('en-GB');
+  const pct    = n => (n*100).toFixed(0) + '%';
+
+  /* deterministic pseudo-random from a string, so demos repeat exactly */
+  const seed = s => { let h = 2166136261; for (const c of String(s)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return ((h >>> 0) % 100000) / 100000; };
+
+  /* ---------------------------------------------------------------- people */
+  const PERSONAL = {
+    id:'personal', label:'Personal', holder:'Ama Boateng', since:'2019',
+    accounts:[
+      {name:'Everyday account', num:'•••• 3391', balance:4182.60, type:'current'},
+      {name:'Target savings',   num:'•••• 7742', balance:11500.00, type:'savings'},
+    ],
+    card:{num:'•••• •••• •••• 3391', exp:'09/29', frozen:false},
+    credit:{bureau:648, dti:0.31, income:6400, thinFile:false},
+    beneficiaries:[
+      {name:'Kojo Mensah', bank:'Fidelity', acct:'•••• 2210', last:'GHS 200'},
+      {name:'MTN MoMo 024 447 8812', bank:'MoMo', acct:'024 447 8812', last:'GHS 50'},
+      {name:'Electro World Accra', bank:'GCB', acct:'•••• 9931', last:'GHS 1,240'},
+      {name:'Global Marine Ltd', bank:'Correspondent · Dubai', acct:'AE07 •••• 3311', last:'first payment'},
+    ],
+    transactions:[
+      {d:'Today 07:42', m:'Bolt Ghana', a:-38.00},
+      {d:'Yesterday',   m:'Melcom Osu', a:-214.50},
+      {d:'Yesterday',   m:'Salary — Ashesi University', a:6400.00},
+      {d:'24 Aug',      m:'ECG prepaid', a:-150.00},
+      {d:'23 Aug',      m:'Bolt Ghana', a:-42.00},
+      {d:'22 Aug',      m:'Shoprite Accra Mall', a:-388.20},
+      {d:'21 Aug',      m:'Bolt Ghana', a:-51.00},
+    ],
+  };
+
+  const BUSINESS = {
+    id:'business', label:"Ama's Kitchen Ltd", holder:"Ama's Kitchen Ltd", since:'2022',
+    accounts:[
+      {name:'Business current', num:'•••• 5108', balance:38470.15, type:'current'},
+      {name:'Tax reserve',      num:'•••• 5109', balance:9200.00,  type:'savings'},
+    ],
+    card:{num:'•••• •••• •••• 5108', exp:'02/28', frozen:false},
+    credit:{bureau:702, dti:0.24, income:41000, thinFile:true},
+    beneficiaries:[
+      {name:'Adom Poultry Farms', bank:'CalBank', acct:'•••• 8820', last:'GHS 12,400'},
+      {name:'Payroll — 14 staff', bank:'Fidelity', acct:'batch', last:'GHS 18,900'},
+      {name:'Global Marine Ltd', bank:'Correspondent · Dubai', acct:'AE07 •••• 3311', last:'first payment'},
+    ],
+    transactions:[
+      {d:'Today 06:10', m:'Card settlement — 214 covers', a:12840.00},
+      {d:'Yesterday',   m:'Adom Poultry Farms', a:-12400.00},
+      {d:'25 Aug',      m:'Payroll — 14 staff', a:-18900.00},
+      {d:'24 Aug',      m:'Card settlement — 188 covers', a:10120.00},
+      {d:'23 Aug',      m:'Ghana Water', a:-640.00},
+    ],
+    /* 8-week net cash position, engine forecast from week 4 */
+    cashflow:[42100, 38400, 44900, 38470, 31200, 22600, -4800, 9100],
+  };
+
+  const ENTITIES = { personal: PERSONAL, business: BUSINESS };
+
+  /* -------------------------------------------------------------- language */
+  const LANG = {
+    English:{base:.93, writes:true}, Twi:{base:.80, writes:true},
+    Ga:{base:.74, writes:false}, Ewe:{base:.72, writes:false}, Hausa:{base:.71, writes:false},
+  };
+
+  /* ----------------------------------------------------------------- floors */
+  const FLOOR = { chat:0.70, fraud:0.80, loan:0.78, sanctions:0.90, doc:0.85 };
+
+  /* ================================================================= agents */
+
+  /* retail.fraud_detection — azureml://fidelity/retail-fraud-lgbm/v3 */
+  function assessPayment(tx){
+    const s = seed(tx.to + tx.amount);
+    const foreign = /Dubai|Correspondent|AE07/.test(tx.bankLine || '');
+    const night = tx.hour < 5;
+    const unseen = tx.newBeneficiary === true;
+    let score = 0.05 + 0.35*foreign + 0.20*night + 0.18*unseen + Math.min(0.35, tx.amount/60000) + (s-0.5)*0.08;
+    score = Math.max(0, Math.min(0.98, score));
+    const reasons = [];
+    if (foreign) reasons.push('first payment to a correspondent bank outside Ghana');
+    if (night) reasons.push('sent outside your usual hours');
+    if (unseen) reasons.push('beneficiary added today');
+    if (tx.amount > 5000) reasons.push(`amount ${money0(tx.amount)} above your 90-day average`);
+    if (!reasons.length) reasons.push('matches your usual pattern for this beneficiary');
+    return score > 0.42
+      ? {action:'STEP_UP', confidence:0.62 + score/3, explanation:reasons.join('; '), adverse:false, reasons}
+      : {action:'APPROVE', confidence:0.96 - score/2, explanation:reasons.join('; '), adverse:false, reasons};
+  }
+
+  /* fcc.sanctions — lexisnexis://bridger/screen/v1 */
+  const WATCH = ['global marine', 'oceanic freight', 'transcontinental holdings'];
+  function screenBeneficiary(name){
+    const hit = WATCH.find(w => name.toLowerCase().includes(w));
+    if (hit){
+      const sim = 0.62 + seed(name)*0.2;
+      return {action:'HOLD_FOR_L2_REVIEW', confidence:0.55 + sim,
+        explanation:`name similarity ${sim.toFixed(2)} against a sanctions and PEP watchlist entry`,
+        adverse:false, similarity:sim};
+    }
+    const sim = seed(name) * 0.24;
+    return {action:'CLEAR', confidence:0.96,
+      explanation:`no match above 0.30 (closest ${sim.toFixed(2)})`, adverse:false, similarity:sim};
+  }
+
+  /* retail.loan_preapproval / credit.scoring — datarobot://fidelity/thin-file-scorecard/v5 */
+  function preapprove(amount, profile){
+    const pd = Math.max(0.01, Math.min(0.9, (750 - profile.bureau)/900 + profile.dti/3));
+    const cap = profile.income * 4;
+    const limit = Math.round((1 - pd) * cap / 100) * 100;
+    const conf = (profile.thinFile ? 0.82 : 0.94) - pd/2;
+    if (pd > 0.28)
+      return {action:'DECLINE', confidence:0.70, adverse:true, pd, cap, limit:0,
+        explanation:`modelled default probability ${(pd*100).toFixed(1)}% is above appetite`};
+    if (amount > limit)
+      return {action:'ABOVE_LIMIT', confidence:conf, adverse:true, pd, cap, limit,
+        explanation:`requested ${money0(amount)} exceeds the affordability cap of ${money0(limit)}`};
+    return {action:'PRE_APPROVE', confidence:conf, adverse:false, pd, cap, limit,
+      explanation:`default probability ${(pd*100).toFixed(1)}%, capped at 4× monthly income`};
+  }
+
+  /* retail.chatbot — rasa://fidelity/multilingual-nlu/v4 */
+  const INTENTS = [
+    [/balance|how much|sika|akonta|ahe/i, 'balance_enquiry'],
+    [/card|block|freeze|lost|stolen/i, 'card_block'],
+    [/branch|atm|where|near|baabi/i, 'branch_locator'],
+    [/loan|borrow|credit|bosea/i, 'loan_enquiry'],
+    [/complain|wrong|twice|charge|refund|angry/i, 'complaint'],
+    [/airtime|top ?up|data|bundle/i, 'airtime_topup'],
+    [/statement|transactions|history/i, 'statement'],
+    [/cash ?flow|forecast|working capital|invoice/i, 'cashflow'],
+  ];
+  function parse(text, lang){
+    const hit = INTENTS.find(([re]) => re.test(text));
+    const intent = hit ? hit[1] : 'unknown';
+    let conf = LANG[lang].base - 0.15 + seed(text)*0.24;
+    if (intent === 'unknown') conf -= 0.19;
+    conf = Math.max(0.18, Math.min(0.99, conf));
+    return {action: intent === 'unknown' ? 'CLARIFY' : 'SERVE_' + intent.toUpperCase(),
+      confidence:conf, intent, adverse:false,
+      explanation:`intent=${intent}, language=${lang}`};
+  }
+
+  /* sme.cashflow — prophet://fidelity/sme-cashflow/v1 */
+  function forecastCashflow(entity){
+    const s = entity.cashflow || [];
+    if (!s.length) return {action:'NO_DATA', confidence:0, adverse:false, trough:0, week:0,
+      explanation:'no settlement history on this account yet'};
+    const trough = Math.min(...s.slice(4));
+    const week = s.indexOf(trough) - 3;
+    return {action: trough < 0 ? 'OFFER_WORKING_CAPITAL' : 'NO_ACTION',
+      confidence:0.78, adverse:false, trough, week,
+      explanation: trough < 0
+        ? `projected shortfall of ${money0(Math.abs(trough))} in week ${week}, driven by payroll landing before card settlement`
+        : 'no financing gap projected over eight weeks'};
+  }
+
+  /* sme.doc_verification — tesseract+layoutlm://fidelity/lpo-verify/v2 */
+  function verifyDocument(filename){
+    const legible = /\.pdf$/i.test(filename) && !/blur|scan0|photo/i.test(filename);
+    const q = legible ? 0.55 + seed(filename)*0.40 : seed(filename)*0.29;
+    if (q < 0.30)
+      return {action:'REJECT_RESUBMIT', confidence:0.55 + q, adverse:false, quality:q,
+        explanation:`scan quality ${q.toFixed(2)} below the OCR threshold — buyer name and amount could not be read`};
+    return {action:'VERIFIED', confidence:0.80 + q*0.18, adverse:false, quality:q,
+      explanation:'buyer, amount and delivery date matched against the purchase order registry'};
+  }
+
+  /* ops.categorisation — supporting the spending insight */
+  const CATS = [[/bolt|uber|yango|trotro/i,'Transport'],[/melcom|shoprite|market|palace/i,'Groceries'],
+                [/ecg|water|dstv|surfline/i,'Utilities'],[/salary|settlement/i,'Income'],
+                [/poultry|payroll|supplier/i,'Cost of sales']];
+  const categorise = m => (CATS.find(([re]) => re.test(m)) || [null,'Other'])[1];
+
+  /* ================================================== decision + receipts */
+  const ledger = [];
+  const subs = [];
+  const onDecision = fn => subs.push(fn);
+
+  function decide(useCase, result, opts = {}){
+    const floor = opts.floor ?? 0.75;
+    const review = result.confidence < floor || result.adverse === true;
+    const rec = {
+      ts: new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),
+      useCase, action: review && result.adverse ? 'HUMAN_ADJUDICATION' : result.action,
+      confidence: result.confidence, explanation: result.explanation,
+      review, ref: opts.ref || ('DEC-' + (4400 + ledger.length)),
+      hash: '0x' + Math.floor(seed(useCase + result.explanation + ledger.length) * 0xfffffff)
+              .toString(16).padStart(7,'0'),
+      title: opts.title || useCase,
+    };
+    ledger.unshift(rec);
+    sync(rec, {customer: opts.customer, channel: opts.channel, amount: opts.amount,
+               evidence: opts.evidence});
+    subs.forEach(f => f(rec));
+    return {...result, review, record: rec};
+  }
+
+  /* When served by decision_api.py, every decision goes to the shared spine: the audit log
+     the control tower reads, and — if a person is needed — the reviewer's queue. Opened as a
+     bare file the products still work; they just decide alone. */
+  const API = (typeof location !== 'undefined' && location.protocol.startsWith('http')) ? '' : null;
+  let apiUp = API !== null;
+  function sync(rec, extra){
+    if (!apiUp) return;
+    fetch(API + '/api/decisions', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({...rec, ...extra})}).catch(() => { apiUp = false; });
+  }
+
+  /* receipt markup, shared by both products */
+  function slip(title, pairs, footer){
+    return `<div class="slip"><div class="slip-hd">${title}</div><dl>` +
+      pairs.map(([k,v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('') +
+      `</dl><div class="slip-ft">${footer}</div></div>`;
+  }
+
+  /* tiny SVG column chart for cash-flow */
+  function columns(values, opts = {}){
+    if (!values || !values.length) return '';
+    const w = opts.w || 460, h = opts.h || 130, n = values.length, bw = w/n;
+    const max = Math.max(...values.map(Math.abs)) * 1.15;
+    const zero = h/2 + 10;
+    const scale = v => (v/max) * (h/2);
+    let s = `<svg viewBox="0 0 ${w} ${h+28}" class="cols" role="img" aria-label="Cash position by week">`;
+    s += `<line x1="0" y1="${zero}" x2="${w}" y2="${zero}" stroke="var(--hair)"/>`;
+    values.forEach((v,i) => {
+      const x = i*bw + bw*0.2, bwid = bw*0.6, hgt = Math.abs(scale(v));
+      const y = v >= 0 ? zero - hgt : zero;
+      const fill = v < 0 ? 'var(--alert)' : (i >= (opts.forecastFrom ?? n) ? 'var(--orange)' : 'var(--ink)');
+      const op = i >= (opts.forecastFrom ?? n) ? '1' : '.82';
+      s += `<rect x="${x}" y="${y}" width="${bwid}" height="${Math.max(hgt,2)}" fill="${fill}" opacity="${op}"/>`;
+      s += `<text x="${x+bwid/2}" y="${h+20}" text-anchor="middle" class="colslab">${opts.labels?.[i] ?? ('w'+(i+1))}</text>`;
+    });
+    return s + '</svg>';
+  }
+
+  return { CCY, money, money0, pct, seed, ENTITIES, LANG, FLOOR, get live(){ return apiUp; },
+           assessPayment, screenBeneficiary, preapprove, parse,
+           forecastCashflow, verifyDocument, categorise,
+           ledger, onDecision, decide, slip, columns };
+})();
+
+/* =========================================================================
+   DIGITAL BANK EXTENSION
+   Everything a branch used to do, expressed as data and agents the products
+   can call. Same contract as before: infer(input) -> {action, confidence,
+   explanation, adverse}.
+   ========================================================================= */
+Object.assign(FID, (() => {
+
+  const BILLERS = [
+    {id:'ecg',    name:'ECG Prepaid',        cat:'Utilities',  hint:'Meter number',   icon:'power'},
+    {id:'gwcl',   name:'Ghana Water',        cat:'Utilities',  hint:'Account number', icon:'water'},
+    {id:'dstv',   name:'DStv / GOtv',        cat:'TV',         hint:'Smartcard',      icon:'tv'},
+    {id:'surf',   name:'Surfline / Busy',    cat:'Internet',   hint:'Account number', icon:'wifi'},
+    {id:'school', name:'School fees',        cat:'Education',  hint:'Student ID',     icon:'school'},
+    {id:'ssnit',  name:'SSNIT contributions',cat:'Statutory',  hint:'Employer number',icon:'gov'},
+    {id:'gra',    name:'GRA tax payment',    cat:'Statutory',  hint:'TIN',            icon:'invoice'},
+    {id:'insure', name:'Insurance premium',  cat:'Insurance',  hint:'Policy number',  icon:'shield'},
+  ];
+
+  const NETWORKS = [
+    {id:'mtn',  name:'MTN',        colour:'#FFCC00'},
+    {id:'telec',name:'Telecel',    colour:'#E4002B'},
+    {id:'at',   name:'AT',         colour:'#0057B8'},
+  ];
+
+  /* indicative, refreshed hourly in production from treasury */
+  const FX = {
+    USD:{buy:11.82, sell:12.14, name:'US Dollar'},
+    GBP:{buy:14.90, sell:15.35, name:'Pound Sterling'},
+    EUR:{buy:12.71, sell:13.08, name:'Euro'},
+    NGN:{buy:0.0072, sell:0.0079, name:'Naira'},
+  };
+
+  const TBILLS = [
+    {tenor:91,  rate:0.2685, label:'91-day'},
+    {tenor:182, rate:0.2810, label:'182-day'},
+    {tenor:364, rate:0.2925, label:'364-day'},
+  ];
+
+  const DEPOSITS = [
+    {months:3,  rate:0.185}, {months:6, rate:0.205}, {months:12, rate:0.235},
+  ];
+
+  const GOALS = [
+    {id:'g1', name:'Rent — Dansoman',  target:14400, saved:9600,  monthly:1200, due:'Mar 2027', icon:'home'},
+    {id:'g2', name:'Emergency fund',   target:20000, saved:4350,  monthly:500,  due:'open',     icon:'shield'},
+    {id:'g3', name:'Kofi — school fees',target:6000, saved:5400,  monthly:600,  due:'Jan 2027', icon:'school'},
+  ];
+
+  const STANDING = [
+    {name:'Rent — Mensah Properties', amount:1200, when:'1st of each month', next:'1 Sep'},
+    {name:'Emergency fund transfer',  amount:500,  when:'28th of each month',next:'28 Aug'},
+    {name:'DStv Compact',             amount:390,  when:'5th of each month', next:'5 Sep'},
+  ];
+
+  const KYC = {tier:2, label:'Tier 2', dailyLimit:20000, singleLimit:10000,
+               toTier3:['Ghana Card verified','Proof of address','Income declaration']};
+
+  /* ---- agents ---------------------------------------------------------- */
+
+  /* treasury.fx — quote with the spread made explicit */
+  function fxQuote(amount, ccy, side){
+    const r = FX[ccy], rate = side === 'buy' ? r.sell : r.buy;   // bank sells to you at 'sell'
+    const cedis = side === 'buy' ? amount * rate : amount * rate;
+    const midRate = (r.buy + r.sell) / 2;
+    const spread = Math.abs(rate - midRate) * amount;
+    return {action:'QUOTE', confidence:0.99, adverse:false, rate, cedis, spread,
+      explanation:`${side === 'buy' ? 'You buy' : 'You sell'} ${ccy} at ${rate.toFixed(4)}; ` +
+                  `mid-market is ${midRate.toFixed(4)}, so our margin on this trade is ${money0(spread)}`};
+  }
+
+  /* investments.tbill — Bank of Ghana auction, net of the 8% withholding tax */
+  function tbillQuote(amount, tenor){
+    const t = TBILLS.find(x => x.tenor === tenor);
+    const gross = amount * t.rate * (tenor / 364);
+    const tax = gross * 0.08;
+    return {action:'QUOTE', confidence:0.98, adverse:false,
+      gross, tax, net:gross - tax, maturity:amount + gross - tax, rate:t.rate,
+      explanation:`${(t.rate*100).toFixed(2)}% for ${tenor} days on ${money0(amount)}; ` +
+                  `${money0(gross)} interest less ${money0(tax)} withholding tax`};
+  }
+
+  /* savings.goal — will this goal land on time at the current rate? */
+  function goalProject(g){
+    const left = g.target - g.saved;
+    const months = Math.ceil(left / g.monthly);
+    const onTrack = g.due === 'open' || months <= 6;
+    return {action: onTrack ? 'ON_TRACK' : 'BEHIND', confidence:0.84, adverse:false, months, left,
+      explanation: left <= 0 ? 'goal reached'
+        : `${money0(left)} to go; ${months} more month${months>1?'s':''} at ${money0(g.monthly)}`};
+  }
+
+  /* ops.payroll — maker-checker with a screen on every payee */
+  function payrollCheck(batch){
+    const flagged = batch.filter(p => FID.screenBeneficiary(p.name).action !== 'CLEAR');
+    const total = batch.reduce((s,p) => s + p.amount, 0);
+    return {action: flagged.length ? 'HOLD_BATCH' : 'READY_FOR_APPROVAL',
+      confidence: flagged.length ? 0.64 : 0.93, adverse:false, flagged, total,
+      explanation: flagged.length
+        ? `${flagged.length} of ${batch.length} payees matched a watchlist entry; batch cannot be released`
+        : `${batch.length} payees, ${money0(total)}, all screened clear — needs a second approver`};
+  }
+
+  /* limits.check — Bank of Ghana KYC tiering, before anything else runs */
+  function limitCheck(amount){
+    if (amount > KYC.singleLimit)
+      return {action:'BLOCKED_BY_TIER', confidence:1, adverse:true,
+        explanation:`${money0(amount)} is over your ${KYC.label} single-transaction limit of ${money0(KYC.singleLimit)}`};
+    return {action:'WITHIN_LIMIT', confidence:1, adverse:false,
+      explanation:`within your ${KYC.label} limits`};
+  }
+
+  const money0 = n => 'GHS ' + Math.round(n).toLocaleString('en-GB');
+
+  const PAYROLL = [
+    {name:'Kojo Mensah', role:'Head chef', amount:3200},
+    {name:'Adjoa Nyarko', role:'Sous chef', amount:2400},
+    {name:'Yaw Darko', role:'Server', amount:1400},
+    {name:'Efua Sarpong', role:'Server', amount:1400},
+    {name:'Global Marine Ltd', role:'Contract cleaning', amount:2100},
+    {name:'Akosua Frimpong', role:'Kitchen porter', amount:1200},
+  ];
+
+  return {BILLERS, NETWORKS, FX, TBILLS, DEPOSITS, GOALS, STANDING, KYC, PAYROLL,
+          fxQuote, tbillQuote, goalProject, payrollCheck, limitCheck};
+})());
+
+/* =========================================================================
+   MERCHANTS, LEDGER AND FUNDING
+   A statement is only readable if you can recognise a row at a glance, which
+   is what a logo does. Real brand assets are licensed, so each merchant here
+   carries a `logo` field that is null by default and a generated brand tile
+   as the fallback. Drop a URL or an inline SVG into `logo` and the tile is
+   replaced with it — nothing else has to change.
+   ========================================================================= */
+Object.assign(FID, (() => {
+
+  const slugify = n => n.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+  const M = (match, label, colour, mark, cat, slug = null) =>
+    ({match, label, colour, mark, cat, slug: slug || slugify(label)});
+
+  const MERCHANTS = [
+    M(/bolt/i,            'Bolt',                '#34D186', 'BO', 'Transport'),
+    M(/uber/i,            'Uber',                '#4A5058', 'UB', 'Transport'),
+    M(/yango/i,           'Yango',               '#FF3D00', 'YA', 'Transport'),
+    M(/trotro|stc/i,      'STC',                 '#0B6E4F', 'ST', 'Transport'),
+    M(/melcom/i,          'Melcom',              '#E4002B', 'ME', 'Shopping'),
+    M(/shoprite/i,        'Shoprite',            '#E31E24', 'SH', 'Groceries'),
+    M(/palace|maxmart/i,  'Palace Mall',         '#7A3E9D', 'PA', 'Groceries'),
+    M(/jumia/i,           'Jumia',               '#F68B1E', 'JU', 'Shopping'),
+    M(/kfc/i,             'KFC',                 '#A3080C', 'KF', 'Eating out'),
+    M(/papaye/i,          'Papaye',              '#D42027', 'PP', 'Eating out'),
+    M(/ecg|electricity/i, 'ECG',                 '#F5A623', 'EC', 'Utilities'),
+    M(/ghana water|gwcl/i,'Ghana Water',         '#0A7CC1', 'GW', 'Utilities'),
+    M(/dstv|gotv/i,       'DStv',                '#0D5AA7', 'DS', 'TV'),
+    M(/surfline|busy/i,   'Surfline',            '#00A9E0', 'SU', 'Internet'),
+    M(/mtn|momo/i,        'MTN',                 '#FFCB05', 'MT', 'Airtime', null),
+    M(/telecel|vodafone/i,'Telecel',             '#E4002B', 'TC', 'Airtime'),
+    M(/airteltigo|\bat\b/i,'AT',                 '#0057B8', 'AT', 'Airtime'),
+    M(/ashesi|university/i,'Ashesi University',  '#8C1D40', 'AU', 'Income'),
+    M(/adom poultry/i,    'Adom Poultry Farms',  '#5E8C31', 'AP', 'Cost of sales'),
+    M(/coastal foods/i,   'Coastal Foods Ltd',   '#0E6BA8', 'CF', 'Income'),
+    M(/ridge hotel/i,     'Ridge Hotel',         '#8A6D3B', 'RH', 'Income'),
+    M(/global marine/i,   'Global Marine Ltd',   '#455A64', 'GM', 'Transfer'),
+    M(/payroll/i,         'Payroll',             '#37474F', 'PR', 'Salaries'),
+    M(/gra|tax/i,         'GRA',                 '#006B3F', 'GR', 'Statutory'),
+    M(/ssnit/i,           'SSNIT',               '#1A5632', 'SS', 'Statutory'),
+    M(/netflix/i,         'Netflix',             '#E50914', 'NF', 'Subscriptions'),
+    M(/spotify/i,         'Spotify',             '#1DB954', 'SP', 'Subscriptions'),
+    M(/mensah properties|rent/i,'Mensah Properties','#6D4C41','MP','Housing'),
+    M(/fidelity|settlement|card settlement/i,'Fidelity','#F26F1D','FD','Income'),
+  ];
+
+  /** Resolve a raw transaction description to a known merchant, or synthesise one. */
+  function merchant(name){
+    const hit = MERCHANTS.find(m => m.match.test(name));
+    if (hit) return hit;
+    const slug = slugify(String(name));
+    const words = String(name).replace(/[^A-Za-z ]/g,'').trim().split(/\s+/);
+    const mark = (words[0]?.[0] || '?') + (words[1]?.[0] || words[0]?.[1] || '');
+    /* deterministic grey-blue so unknown merchants never look broken */
+    const hue = Math.floor(FID.seed(name) * 360);
+    return {label:name, colour:`hsl(${hue} 34% 42%)`, mark:mark.toUpperCase(), cat:'Other', slug};
+  }
+
+  /* Where partner logo files live. Drop `bolt.svg`, `mtn.svg`, `ecg.svg` … into this
+     folder and every statement row picks them up with no other change. The filename is
+     the merchant slug, which `merchant()` returns. */
+  let LOGO_DIR = 'logos/';
+  const setLogoDir = dir => { LOGO_DIR = dir.endsWith('/') ? dir : dir + '/'; };
+
+  /** Swap a missing logo for the generated mark. Called by the <img> onerror. */
+  function logoFail(img){
+    const span = document.createElement('span');
+    span.className = 'brandtile fallback';
+    span.setAttribute('style', img.dataset.fallback);
+    span.textContent = img.dataset.mark;
+    img.replaceWith(span);
+  }
+
+  /** The statement row mark: the partner's own logo when the file is there, a
+      generated mark in their brand colour when it is not. */
+  function brandTile(name, size = 44, radius = 14){
+    const m = merchant(name);
+    const fb = `width:${size}px;height:${size}px;border-radius:${radius}px;flex:none;` +
+      `background:${m.colour};color:#fff;display:grid;place-items:center;font-weight:800;` +
+      `font-size:${Math.round(size * 0.34)}px;letter-spacing:-.04em`;
+    return `<img class="brandtile" src="${LOGO_DIR}${m.slug}.svg" alt="${m.label}" loading="lazy"
+      data-mark="${m.mark}" data-fallback="${fb}" onerror="FID.logoFail(this)"
+      style="width:${size}px;height:${size}px;border-radius:${radius}px;flex:none;object-fit:contain;
+             background:#fff;padding:${Math.round(size*0.13)}px;border:1px solid var(--line)">`;
+  }
+
+  /* ------------------------------------------------------------- wallets */
+  const MOMO = [
+    {id:'mtn',    network:'MTN MoMo',    msisdn:'024 447 8812', balance:1240.50},
+    {id:'telecel',network:'Telecel Cash',msisdn:'050 118 2204', balance:310.00},
+  ];
+
+  /* --------------------------------------------------------- the ledger */
+  let txSeq = 9000;
+
+  const dayLabel = ts => {
+    const d = new Date(ts), now = new Date();
+    const days = Math.floor((new Date(now.getFullYear(),now.getMonth(),now.getDate()) -
+                             new Date(d.getFullYear(),d.getMonth(),d.getDate())) / 86400000);
+    if (days === 0) return 'Today';
+    if (days === 1) return 'Yesterday';
+    return d.toLocaleDateString('en-GB',{day:'numeric', month:'short'});
+  };
+  const timeLabel = ts => new Date(ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+
+  /** Post a real movement. Balances change, the statement grows, and the row
+      carries the record the decision layer already wrote. */
+  function post(entity, {merchant:name, amount, account = 0, method = 'Fidelity account',
+                         category, status = 'Completed', note = '', hash}){
+    const acct = entity.accounts[account];
+    const m = merchant_(name);
+    const tx = {
+      id: 'TX' + (++txSeq), ts: Date.now(), m: name, a: amount,
+      cat: category || m.cat, method, status, note,
+      ref: 'FID' + (txSeq * 7 % 999999).toString().padStart(6,'0'),
+      hash: hash || ('0x' + Math.floor(FID.seed(name + amount + txSeq) * 0xfffffff).toString(16).padStart(7,'0')),
+      balanceAfter: 0,
+    };
+    if (status === 'Completed'){
+      acct.balance += amount;
+      tx.balanceAfter = acct.balance;
+    } else {
+      tx.balanceAfter = acct.balance;
+    }
+    tx.d = dayLabel(tx.ts) + ' ' + timeLabel(tx.ts);
+    entity.transactions.unshift(tx);
+    return tx;
+  }
+  const merchant_ = merchant;
+
+  /** Move money into a goal from an account or a mobile money wallet. */
+  function fundGoal(entity, goal, amount, source){
+    if (source.kind === 'account'){
+      const acct = entity.accounts[source.index];
+      if (acct.balance < amount)
+        return {action:'INSUFFICIENT', confidence:1, adverse:true,
+          explanation:`${acct.name} holds ${money0(acct.balance)}, which is less than ${money0(amount)}`};
+      /* the debit itself is posted by the caller through post(), so the movement
+         appears on the statement exactly once */
+      goal.saved = Math.min(goal.target, goal.saved + amount);
+      return {action:'FUNDED', confidence:1, adverse:false, from:acct.name,
+        explanation:`moved from ${acct.name} instantly, no charge`};
+    }
+    const w = MOMO.find(x => x.id === source.id);
+    if (w.balance < amount)
+      return {action:'INSUFFICIENT', confidence:1, adverse:true,
+        explanation:`${w.network} holds ${money0(w.balance)}, which is less than ${money0(amount)}`};
+    w.balance -= amount;
+    goal.saved = Math.min(goal.target, goal.saved + amount);
+    return {action:'FUNDED', confidence:0.97, adverse:false, from:w.network,
+      explanation:`collected from ${w.network} ${w.msisdn}; the network confirms within a minute`};
+  }
+
+  const money0 = n => 'GHS ' + Math.round(n).toLocaleString('en-GB');
+
+  /* ------------------------------------ richer seeded statement history */
+  const H = (days, hours, name, amount, method = 'Card', status = 'Completed') => {
+    const ts = Date.now() - days*86400000 - hours*3600000;
+    return {id:'TX'+(++txSeq), ts, m:name, a:amount, cat:merchant(name).cat, method, status,
+            d: dayLabel(ts) + ' ' + timeLabel(ts),
+            ref:'FID'+(txSeq*7%999999).toString().padStart(6,'0'),
+            hash:'0x'+Math.floor(FID.seed(name+amount+ts)*0xfffffff).toString(16).padStart(7,'0'),
+            balanceAfter:0};
+  };
+
+  FID.ENTITIES.personal.transactions = [
+    H(0,2,'Bolt Ghana',-38.00), H(0,4,'Papaye Osu',-72.00,'Card'),
+    H(1,3,'Melcom Osu',-214.50), H(1,9,'Salary — Ashesi University',6400.00,'Transfer in'),
+    H(1,11,'MTN airtime',-20.00,'Mobile money'), H(2,5,'ECG prepaid',-150.00,'Bill payment'),
+    H(2,8,'Bolt Ghana',-42.00), H(3,4,'Shoprite Accra Mall',-388.20),
+    H(3,10,'Netflix',-71.00,'Card'), H(4,6,'Bolt Ghana',-51.00),
+    H(5,2,'DStv Compact',-390.00,'Bill payment'), H(5,7,'Jumia order',-249.00,'Card'),
+    H(6,3,'Rent — Mensah Properties',-1200.00,'Standing order'),
+    H(7,5,'Ghana Water',-96.40,'Bill payment'), H(8,4,'KFC Airport City',-118.00),
+    H(9,6,'Bolt Ghana',-44.00), H(10,3,'Palace Mall',-176.30),
+    H(11,8,'Spotify',-29.00,'Card'), H(12,5,'Surfline data',-150.00,'Bill payment'),
+  ];
+
+  FID.ENTITIES.business.transactions = [
+    H(0,3,'Card settlement — 214 covers',12840.00,'Settlement'),
+    H(1,4,'Adom Poultry Farms',-12400.00,'Transfer'),
+    H(2,2,'Payroll — 14 staff',-18900.00,'Bulk payment'),
+    H(3,3,'Card settlement — 188 covers',10120.00,'Settlement'),
+    H(4,5,'Ghana Water',-640.00,'Bill payment'),
+    H(5,6,'Coastal Foods Ltd',8600.00,'Transfer in'),
+    H(6,4,'GRA VAT return',-4180.00,'Bill payment'),
+    H(7,2,'Ridge Hotel',6200.00,'Transfer in'),
+    H(8,7,'SSNIT contributions',-2340.00,'Bill payment'),
+  ];
+
+  /* running balance backwards from today's position, so the statement adds up */
+  for (const e of Object.values(FID.ENTITIES)){
+    let bal = e.accounts[0].balance;
+    for (const t of e.transactions){ t.balanceAfter = bal; bal -= t.a; }
+  }
+
+  return {MERCHANTS, merchant, brandTile, logoFail, setLogoDir, slugify,
+          MOMO, post, fundGoal, dayLabel, timeLabel};
+})());
+</script>
+<script>
+/* =========================================================================
+   Reviewer console. Talks to decision_api.py when it is running; falls back
+   to a local queue seeded from the same shared agents when it is not, so the
+   file still works opened straight off disk.
+   ========================================================================= */
+const API = location.protocol.startsWith('http') ? '' : null;
+const S = { live:false, cases:[], cleared:[], filter:'all', sel:null, capacity:120, reviewer:'kwame.a' };
+
+const $ = id => document.getElementById(id);
+const KINDS = {
+  chat_handover:      {label:'Assistant handover', team:'Contact centre',  sla:2},
+  fraud_confirm:      {label:'Fraud confirmation', team:'Fraud operations',sla:15},
+  sanctions_l2:       {label:'Sanctions review',   team:'Financial crime', sla:60},
+  credit_adjudication:{label:'Credit adjudication',team:'Retail credit',   sla:240},
+  aml_triage:         {label:'AML triage',         team:'Financial crime', sla:1440},
+  doc_review:         {label:'Document review',    team:'Trade operations',sla:480},
+};
+const mins = m => m < 0 ? `${Math.abs(Math.round(m))}m over`
+  : m < 90 ? `${Math.round(m)}m left` : `${(m/60).toFixed(1)}h left`;
+const slaClass = m => m < 0 ? 'late' : m < 15 ? 'warn' : '';
+
+/* ------------------------------------------------------- offline fallback */
+function seedLocal(){
+  const people = ['Ama Boateng','Kofi Asare','Adjoa Nyarko','Yaw Darko','Efua Sarpong',
+    'Ibrahim Salifu','Akosua Frimpong','Kwesi Owusu',"Ama's Kitchen Ltd",'Coastal Foods Ltd',
+    'Nana Addo Boakye','Zainab Mohammed'];
+  const tpl = [
+    ['retail.loan_preapproval','credit_adjudication','Loan pre-approval','web'],
+    ['credit.scoring','credit_adjudication','Thin-file credit grade','app'],
+    ['fcc.sanctions','sanctions_l2','Beneficiary screened','web'],
+    ['retail.fraud_detection','fraud_confirm','Payment screened','app'],
+    ['retail.chatbot','chat_handover','Assistant handover','whatsapp'],
+    ['fcc.aml','aml_triage','Transaction monitoring alert','batch'],
+    ['sme.doc_verification','doc_review','Purchase order unreadable','app'],
+  ];
+  const out = [];
+  for (let i = 0; i < 12; i++){
+    const [uc, kind, title, channel] = tpl[i % tpl.length];
+    const who = people[i % people.length];
+    const s = FID.seed(uc + who + i);
+    const amount = [2450,8900,12400,24800,41000,3200][i % 6];
+    const conf = +(0.58 + s * 0.20).toFixed(2);
+    const sla = KINDS[kind].sla;
+    const age = 1 + Math.round(s * sla * 1.35);
+    let explanation, evidence;
+    if (kind === 'credit_adjudication'){
+      const r = FID.preapprove(amount, {bureau: 430 + Math.round(s*330), dti: 0.18 + s*0.4,
+                                        income: 2400 + s*9000, thinFile: i % 3 === 0});
+      explanation = r.explanation;
+      evidence = {'Credit bureau': 430 + Math.round(s*330), 'Debt to income': ((0.18+s*0.4)*100).toFixed(0)+'%',
+                  'Default probability': (r.pd*100).toFixed(1)+'%', 'Affordability cap': FID.money0(r.cap),
+                  'Relationship': (1 + Math.round(s*10)) + ' years', 'Prior overrides': s > 0.7 ? '1 in 12 months' : 'none'};
+    } else if (kind === 'sanctions_l2'){
+      const r = FID.screenBeneficiary('Global Marine Ltd');
+      explanation = r.explanation;
+      evidence = {'Beneficiary':'Global Marine Ltd','Match score': r.similarity.toFixed(2),
+                  'Threshold':'0.30','List':'UN consolidated + local PEP','Money moved':'none'};
+    } else if (kind === 'fraud_confirm'){
+      const r = FID.assessPayment({to:'Electro World', amount, bankLine:'Correspondent · Dubai',
+                                   hour:2, newBeneficiary:true});
+      explanation = r.explanation;
+      evidence = {'Amount': FID.money0(amount),'Time':'02:14 local','Beneficiary age':'added today',
+                  'Prior foreign spend':'none in 18 months','Model confidence': r.confidence.toFixed(2)};
+    } else if (kind === 'chat_handover'){
+      explanation = `Hausa model ${(conf*100).toFixed(0)}% sure it understood the customer, below the 70% floor`;
+      evidence = {'Channel':'WhatsApp','Language':'Hausa','Understanding': conf.toFixed(2),
+                  'Required':'0.70','Turns before handover':'2'};
+    } else if (kind === 'aml_triage'){
+      explanation = `six deposits of ${FID.money0(amount)} in four days from unrelated payers`;
+      evidence = {'Typology':'structuring','Alerts this year': Math.round(s*4),
+                  'Account age': (2 + Math.round(s*7)) + ' years','Model confidence': conf.toFixed(2)};
+    } else {
+      explanation = 'scan quality below the OCR threshold; the amount line could not be read';
+      evidence = {'File':'photo_2026-08-27.jpg','Scan quality': (s*0.29).toFixed(2),'Needed':'0.30',
+                  'Fields read':'buyer only','Action taken':'none'};
+    }
+    out.push({ref:'DEC-'+(4401+i), useCase:uc, kind, title, channel, customer:who, amount,
+              confidence:conf, explanation, evidence, slaMinutes:sla,
+              minutesLeft: sla - age, ageMinutes: age});
+  }
+  return out.sort((a,b) => a.minutesLeft - b.minutesLeft);
+}
+
+/* ---------------------------------------------------------------- service */
+async function pull(){
+  if (API === null) return false;
+  try{
+    const r = await fetch('/api/state', {cache:'no-store'});
+    if (!r.ok) throw 0;
+    const d = await r.json();
+    S.live = true; S.capacity = d.capacityPerDay;
+    S.cases = d.queue.map(c => ({...c, kind: c.kind || 'credit_adjudication'}));
+    S.cleared = d.resolved || [];
+    S.quality = d.modelQuality || {};
+    return true;
+  } catch { S.live = false; return false; }
+}
+
+async function resolve(ref, outcome, note){
+  const c = S.cases.find(x => x.ref === ref);
+  if (S.live){
+    try{
+      await fetch(`/api/cases/${ref}/resolve`, {method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({outcome, note, reviewer:S.reviewer})});
+      await pull();
+    } catch { S.live = false; }
+  }
+  if (!S.live){
+    S.cases = S.cases.filter(x => x.ref !== ref);
+    S.cleared.push({...c, status:outcome, note, reviewer:S.reviewer,
+                    minutesToClose:c.ageMinutes, breachedSla:c.minutesLeft < 0});
+  }
+  S.sel = S.cases.length ? S.cases[0].ref : null;
+  render();
+}
+
+/* ------------------------------------------------------------------ views */
+function capacity(){
+  const open = S.cases.length, cleared = S.cleared.length, cap = S.capacity;
+  const total = Math.max(cap, cleared + open);
+  const pc = n => (n / total * 100).toFixed(1) + '%';
+  const overflow = Math.max(0, cleared + open - cap);
+  const queued = open - overflow;
+
+  $('capbar').innerHTML =
+    `<div class="done" style="width:${pc(cleared)}"></div>
+     <div class="queued" style="left:${pc(cleared)};width:${pc(Math.max(queued,0))}"></div>
+     ${overflow > 0 ? `<div class="over" style="left:${pc(cleared + Math.max(queued,0))};width:${pc(overflow)}"></div>` : ''}
+     <div class="tick" style="left:${pc(cap)}"></div>
+     <span class="lab" style="left:10px">${cleared} cleared</span>
+     ${overflow > 0 ? `<span class="lab" style="right:10px">${overflow} beyond today</span>` : ''}`;
+
+  $('capnote').innerHTML = overflow > 0
+    ? `Today's capacity is <b>${cap} cases</b>. With ${cleared} cleared and ${open} open,
+       <b>${overflow} will not be reached today</b> and roll into tomorrow's queue.
+       The control tower counts that roll-over as the cost of the current confidence floors.`
+    : `Today's capacity is <b>${cap} cases</b>. ${cleared} cleared, ${open} open — inside capacity.
+       Every case can be reached before its SLA.`;
+
+  const breach = S.cases.filter(c => c.minutesLeft < 0).length;
+  const overrides = S.cleared.filter(c => c.status === 'override').length;
+  const decided = S.cleared.filter(c => c.status !== 'return').length;
+  $('capstats').innerHTML = [
+    ['Open', open, breach ? 'var(--ink)' : 'var(--ink)'],
+    ['Past SLA', breach, breach ? 'var(--alert)' : 'var(--muted)'],
+    ['Cleared', cleared, 'var(--clear)'],
+    ['Override rate', decided ? Math.round(overrides/decided*100) + '%' : '—', 'var(--amber)'],
+  ].map(([l,v,c]) => `<div class="capstat"><span class="v" style="color:${c}">${v}</span>
+     <span class="l">${l}</span></div>`).join('');
+}
+
+function queue(){
+  const counts = {};
+  S.cases.forEach(c => counts[c.kind] = (counts[c.kind]||0)+1);
+  const kinds = Object.keys(KINDS).filter(k => counts[k]);
+  $('filters').innerHTML =
+    `<button data-filter="all" aria-pressed="${S.filter==='all'}">All ${S.cases.length}</button>` +
+    kinds.map(k => `<button data-filter="${k}" aria-pressed="${S.filter===k}">${KINDS[k].label} ${counts[k]}</button>`).join('');
+
+  const list = S.cases.filter(c => S.filter === 'all' || c.kind === S.filter);
+  $('qlist').innerHTML = list.length ? list.map(c => `
+    <button class="qitem" data-ref="${c.ref}" aria-current="${S.sel===c.ref}">
+      <div class="r1"><b>${c.customer}</b>
+        <span class="sla ${slaClass(c.minutesLeft)}">${mins(c.minutesLeft)}</span></div>
+      <div class="r2">${KINDS[c.kind]?.label || c.kind}${c.amount ? ' · ' + FID.money0(c.amount) : ''} · ${c.channel}</div>
+      <div class="r3">${c.explanation}</div>
+    </button>`).join('')
+    : `<div class="qempty">Nothing in this queue.</div>`;
+}
+
+function caseView(){
+  if (!S.cases.length) return $('case').innerHTML = `<div class="done">
+      <h3>Queue clear</h3>
+      <p>Every escalation has been through a person. New ones arrive here the moment a model
+         declines to decide on its own — trigger one by pushing a loan past its limit in the
+         customer app, or paying Global Marine Ltd.</p>
+      ${S.cleared.length ? `<div class="card" style="margin-top:24px;text-align:left">
+        <span class="tag">Cleared this session</span><div style="margin-top:8px">` +
+        S.cleared.slice(-8).reverse().map(c => `<div class="rowline">
+          <div class="l"><b>${c.customer}</b><span>${c.ref} · ${KINDS[c.kind]?.label||c.kind}</span></div>
+          <span class="pill ${c.status==='override'?'amber':c.status==='agree'?'green':''}">${c.status}</span>
+        </div>`).join('') + `</div></div>` : ''}</div>`;
+
+  const c = S.cases.find(x => x.ref === S.sel) || S.cases[0];
+  S.sel = c.ref;
+  const k = KINDS[c.kind] || {label:c.kind, team:'—'};
+  const ev = Object.entries(c.evidence || {});
+  const late = c.minutesLeft < 0;
+
+  $('case').innerHTML = `
+    <div class="casehead">
+      <div><span class="eyebrow">${k.team} · ${c.ref}</span>
+        <h2>${k.label}</h2>
+        <div class="who">${c.customer}${c.amount ? ' · ' + FID.money0(c.amount) : ''} · via ${c.channel}</div></div>
+      <div class="clock"><span class="v ${slaClass(c.minutesLeft)}">${mins(c.minutesLeft)}</span>
+        <span class="l">${late ? 'SLA breached' : 'to decide'}</span></div>
+    </div>
+
+    <div class="two">
+      <div>
+        <div class="card">
+          <span class="tag">What the model did</span>
+          <h4>It declined to decide this on its own</h4>
+          <p>${c.explanation.charAt(0).toUpperCase() + c.explanation.slice(1)}.</p>
+          ${ev.length ? `<hr class="hr"><span class="tag">Evidence it used</span>
+            <dl class="ev">${ev.map(([a,b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl>` : ''}
+          <button class="why" data-slip="c">The record the customer sees</button>
+          <div id="slip-c" hidden>${FID.slip('DECISION RECORD', [
+            ['Reference', c.ref], ['Model', c.useCase], ['Confidence', (+c.confidence).toFixed(2)],
+            ['Outcome', 'sent to a person'], ['Told the customer', 'yes, at the time']],
+            'The customer already has this slip. Whatever you decide is appended to it, with your name.')}</div>
+        </div>
+
+        <div class="card">
+          <span class="tag">What the customer was told</span>
+          <p style="margin-top:8px">“${c.kind === 'credit_adjudication'
+              ? 'A credit officer is deciding this, not a model. You will hear back by 16:00 today.'
+              : c.kind === 'sanctions_l2'
+              ? 'A compliance officer is checking this beneficiary. Your money has not moved.'
+              : c.kind === 'fraud_confirm'
+              ? 'We paused this payment. Nothing has left your account.'
+              : c.kind === 'chat_handover'
+              ? 'Passing you to a person — the model was not sure it understood you.'
+              : 'We are looking at this and will come back to you.'}”</p>
+          <p style="margin-top:10px;color:var(--muted);font-size:12.5px">
+            They were told at the moment it happened, not afterwards. Anything you decide has to be
+            consistent with that wording.</p>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <span class="tag">This model, this week</span>
+          <h4 style="margin-bottom:10px">${overrideLine(c.useCase)}</h4>
+          <p style="font-size:12.5px">Your override is the only ground truth this model gets. Agreeing
+             when you are not sure is worse than overriding — it teaches the model it was right.</p>
+        </div>
+        <div class="card">
+          <span class="tag">Queue position</span>
+          <div class="rowline" style="margin-top:6px"><div class="l"><b>Ahead of this one</b></div>
+            <div class="r">${S.cases.findIndex(x => x.ref === c.ref)}</div></div>
+          <div class="rowline"><div class="l"><b>Past SLA right now</b></div>
+            <div class="r" style="color:${S.cases.filter(x=>x.minutesLeft<0).length?'var(--alert)':'inherit'}">
+              ${S.cases.filter(x => x.minutesLeft < 0).length}</div></div>
+          <div class="rowline"><div class="l"><b>Capacity left today</b></div>
+            <div class="r">${Math.max(0, S.capacity - S.cleared.length)}</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="acts"><div class="actbox">
+      <span class="tag">Your decision</span>
+      <textarea id="note" placeholder="Why? One line is enough. This is what an auditor reads in six months, and what the model gets retrained against."></textarea>
+      <div class="btnrow">
+        <button class="btn" data-outcome="agree">Agree with the model<span class="kbd">A</span></button>
+        <button class="btn orange" data-outcome="override">Override it<span class="kbd">O</span></button>
+        <button class="btn ghost" data-outcome="return">Need more from the customer<span class="kbd">R</span></button>
+      </div>
+    </div></div>`;
+}
+
+function overrideLine(useCase){
+  const q = (S.quality || {})[useCase];
+  const local = S.cleared.filter(c => c.useCase === useCase);
+  const o = (q ? q.overridden : local.filter(c => c.status === 'override').length);
+  const a = (q ? q.agreed : local.filter(c => c.status === 'agree').length);
+  if (!o && !a) return 'No decisions on this model yet today';
+  return `${o} overridden, ${a} upheld — ${Math.round(o/(o+a)*100)}% override rate`;
+}
+
+function render(){ capacity(); queue(); caseView(); connection(); }
+
+function connection(){
+  $('dot').className = 'dot' + (S.live ? ' live' : '');
+  $('connlab').textContent = S.live
+    ? 'live · decision service connected'
+    : (API === null ? 'offline file · local queue' : 'service not reachable · local queue');
+}
+
+/* -------------------------------------------------------------- behaviour */
+document.addEventListener('click', ev => {
+  const el = ev.target.closest('[data-ref],[data-filter],[data-outcome],[data-slip]');
+  if (!el) return;
+  if (el.dataset.slip){ const b = $('slip-'+el.dataset.slip);
+    if (!el.dataset.label) el.dataset.label = el.textContent;
+    b.hidden = !b.hidden; el.textContent = b.hidden ? el.dataset.label : 'Hide the record'; return; }
+  if (el.dataset.filter){ S.filter = el.dataset.filter; render(); return; }
+  if (el.dataset.ref){ S.sel = el.dataset.ref; render(); return; }
+  if (el.dataset.outcome){
+    const note = ($('note') && $('note').value || '').trim();
+    if (el.dataset.outcome !== 'agree' && !note){
+      $('note').focus();
+      $('note').setAttribute('placeholder','Say why before you override or return it. One line.');
+      return;
+    }
+    resolve(S.sel, el.dataset.outcome, note);
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+  const map = {a:'agree', o:'override', r:'return'};
+  if (map[e.key.toLowerCase()] && S.sel){
+    const note = ($('note') && $('note').value || '').trim();
+    if (map[e.key.toLowerCase()] !== 'agree' && !note){ $('note').focus(); return; }
+    resolve(S.sel, map[e.key.toLowerCase()], note);
+  }
+  if (e.key === 'j' || e.key === 'k'){
+    const i = S.cases.findIndex(c => c.ref === S.sel);
+    const n = e.key === 'j' ? Math.min(i+1, S.cases.length-1) : Math.max(i-1, 0);
+    if (S.cases[n]){ S.sel = S.cases[n].ref; render(); }
+  }
+});
+
+/* ------------------------------------------------------------------- boot */
+(async () => {
+  const ok = await pull();
+  if (!ok || !S.cases.length){ S.cases = seedLocal(); S.quality = {}; }
+  S.sel = S.cases.length ? S.cases[0].ref : null;
+  render();
+  if (API !== null) setInterval(async () => { if (await pull()) render(); }, 4000);
+  else setInterval(() => {          // keep SLA clocks honest in offline mode
+    S.cases.forEach(c => { c.minutesLeft -= 0.25; c.ageMinutes += 0.25; });
+    capacity(); queue();
+  }, 15000);
+})();
+</script>
+</body>
+</html>

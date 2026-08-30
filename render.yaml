@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: fidelity-ai-bank
+    runtime: python
+    plan: free
+    buildCommand: "true"
+    startCommand: "python3 decision_api.py --seed-queue 12"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10
+    healthCheckPath: /api/health

@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reviewer console — Fidelity Bank Ghana</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;450;500;600;700&display=swap" rel="stylesheet">
+<style>__DS__</style>
+<style>
+body{background:#EDEEF0}
+.top{background:var(--ink);color:#fff;position:sticky;top:0;z-index:30}
+.top .in{max-width:1500px;margin:0 auto;padding:11px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:11px}
+.brand .m{width:28px;height:28px;border-radius:50%;background:var(--orange);display:grid;place-items:center}
+.brand .m b{width:13px;height:2.4px;background:#fff;display:block;box-shadow:0 4.6px 0 #fff,0 9.2px 0 #fff;margin-top:-9px}
+.brand .t{font-family:var(--cond);font-weight:700;text-transform:uppercase;font-size:15px;letter-spacing:.02em}
+.brand .t i{font-style:normal;color:var(--orange)}
+.conn{font-family:var(--mono);font-size:11px;color:#8C9199;display:flex;align-items:center;gap:7px}
+.dot{width:7px;height:7px;border-radius:50%;background:#8C9199}
+.dot.live{background:#5DBE8E;box-shadow:0 0 0 3px rgba(93,190,142,.2)}
+.me{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:13px;color:#C6CAD0}
+.me b{color:#fff;font-weight:500}
+
+/* -------------------------------------------------- capacity strip (signature) */
+.cap{background:#fff;border-bottom:1px solid var(--hair)}
+.cap .in{max-width:1500px;margin:0 auto;padding:15px 24px 17px;display:grid;
+         grid-template-columns:1fr auto;gap:24px;align-items:center}
+.capbar{position:relative;height:34px;background:#F0F1F3;border:1px solid var(--hair);border-radius:6px;overflow:hidden}
+.capbar .done{position:absolute;inset:0 auto 0 0;background:var(--clear);opacity:.85}
+.capbar .queued{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(45deg,
+  #E0A98A,#E0A98A 5px,#D99B77 5px,#D99B77 10px)}
+.capbar .over{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(45deg,
+  #C0392B,#C0392B 5px,#93291E 5px,#93291E 10px)}
+.capbar .tick{position:absolute;top:0;bottom:0;width:2px;background:var(--ink)}
+.capbar .lab{position:absolute;top:8px;font-family:var(--cond);font-weight:700;font-size:10.5px;
+             letter-spacing:.12em;color:#fff;text-transform:uppercase;white-space:nowrap}
+.capnote{font-size:12px;color:var(--muted);margin-top:7px;line-height:1.45;max-width:88ch}
+.capnote b{color:var(--ink);font-weight:600}
+.capstats{display:flex;gap:22px}
+.capstat{text-align:right}
+.capstat .v{font-family:var(--mono);font-size:23px;font-weight:500;display:block;line-height:1.1}
+.capstat .l{font-size:10.5px;color:var(--muted);font-family:var(--cond);font-weight:700;
+            letter-spacing:.12em;text-transform:uppercase}
+
+/* ------------------------------------------------------------------- layout */
+.work{max-width:1500px;margin:0 auto;display:grid;grid-template-columns:400px minmax(0,1fr);
+      gap:0;align-items:start}
+.qcol{border-right:1px solid var(--hair);background:#fff;position:sticky;top:56px;
+      height:calc(100vh - 56px);display:flex;flex-direction:column}
+.qfilters{padding:13px 16px;border-bottom:1px solid var(--hair);display:flex;gap:5px;flex-wrap:wrap}
+.qfilters button{font-size:11.5px;padding:5px 10px;border-radius:20px;border:1px solid var(--hair);
+                 background:#fff;cursor:pointer}
+.qfilters button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.qlist{flex:1;overflow-y:auto}
+.qitem{width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--hair);
+       padding:13px 16px;cursor:pointer;display:block}
+.qitem:hover{background:#F6F7F8}
+.qitem[aria-current="true"]{background:#FBF0E7;box-shadow:inset 3px 0 0 var(--orange)}
+.qitem .r1{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.qitem .r1 b{font-size:13.5px;font-weight:600}
+.qitem .sla{font-family:var(--mono);font-size:11.5px;color:var(--clear);white-space:nowrap}
+.qitem .sla.warn{color:var(--amber)} .qitem .sla.late{color:var(--alert);font-weight:600}
+.qitem .r2{font-size:12px;color:var(--muted);margin-top:3px}
+.qitem .r3{font-family:var(--mono);font-size:11px;color:#5C6068;margin-top:6px;
+           display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.qempty{padding:36px 20px;text-align:center;color:var(--muted);font-size:13.5px;line-height:1.6}
+
+.case{padding:26px 30px 90px;min-width:0}
+.casehead{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:flex-start;
+          border-bottom:1px solid var(--hair);padding-bottom:18px;margin-bottom:20px}
+.casehead h2{font-family:var(--cond);font-weight:700;text-transform:uppercase;font-size:25px;line-height:1.05}
+.casehead .who{font-size:13.5px;color:var(--muted);margin-top:6px}
+.clock{text-align:right;font-family:var(--mono)}
+.clock .v{font-size:26px;font-weight:500;display:block;line-height:1.1}
+.clock .v.late{color:var(--alert)} .clock .v.warn{color:var(--amber)}
+.clock .l{font-size:10.5px;color:var(--muted);font-family:var(--cond);font-weight:700;
+          letter-spacing:.12em;text-transform:uppercase}
+.two{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:22px;align-items:start}
+.ev{display:grid;grid-template-columns:auto 1fr;gap:8px 18px;font-size:13.5px;margin-top:10px}
+.ev dt{color:var(--muted)} .ev dd{margin:0;font-family:var(--mono);text-align:right}
+.acts{position:sticky;bottom:0;background:linear-gradient(transparent,#EDEEF0 22%);padding:22px 0 0;margin-top:22px}
+.actbox{background:#fff;border:1px solid var(--hair);border-radius:var(--r);padding:18px}
+.actbox textarea{width:100%;min-height:66px;padding:10px 12px;border:1px solid var(--hair);
+                 border-radius:9px;font-family:inherit;font-size:13.5px;resize:vertical}
+.kbd{font-family:var(--mono);font-size:10.5px;border:1px solid var(--hair);border-bottom-width:2px;
+     border-radius:4px;padding:1px 5px;color:var(--muted);margin-left:6px}
+.done{max-width:520px;margin:60px auto;text-align:center}
+.done h3{font-family:var(--cond);text-transform:uppercase;font-size:22px;margin-bottom:8px}
+.done p{color:var(--muted);font-size:14px;line-height:1.6}
+
+@media (max-width:1080px){
+  .work{grid-template-columns:1fr}
+  .qcol{position:static;height:auto;max-height:400px;border-right:0;border-bottom:1px solid var(--hair)}
+  .two{grid-template-columns:1fr}
+  .cap .in{grid-template-columns:1fr}
+  .capstats{justify-content:space-between}
+}
+</style>
+</head>
+<body>
+
+<div class="top"><div class="in">
+  <div class="brand"><div class="m"><b></b></div><div class="t">Reviewer <i>Console</i></div></div>
+  <div class="conn"><span class="dot" id="dot"></span><span id="connlab">checking service…</span></div>
+  <div class="me"><span>Retail Credit · <b id="reviewer">kwame.a</b></span></div>
+</div></div>
+
+<div class="cap"><div class="in">
+  <div>
+    <div class="capbar" id="capbar"></div>
+    <p class="capnote" id="capnote"></p>
+  </div>
+  <div class="capstats" id="capstats"></div>
+</div></div>
+
+<div class="work">
+  <div class="qcol">
+    <div class="qfilters" id="filters"></div>
+    <div class="qlist" id="qlist"></div>
+  </div>
+  <div class="case" id="case"></div>
+</div>
+
+<script>__CORE__</script>
+<script>
+/* =========================================================================
+   Reviewer console. Talks to decision_api.py when it is running; falls back
+   to a local queue seeded from the same shared agents when it is not, so the
+   file still works opened straight off disk.
+   ========================================================================= */
+const API = location.protocol.startsWith('http') ? '' : null;
+const S = { live:false, cases:[], cleared:[], filter:'all', sel:null, capacity:120, reviewer:'kwame.a' };
+
+const $ = id => document.getElementById(id);
+const KINDS = {
+  chat_handover:      {label:'Assistant handover', team:'Contact centre',  sla:2},
+  fraud_confirm:      {label:'Fraud confirmation', team:'Fraud operations',sla:15},
+  sanctions_l2:       {label:'Sanctions review',   team:'Financial crime', sla:60},
+  credit_adjudication:{label:'Credit adjudication',team:'Retail credit',   sla:240},
+  aml_triage:         {label:'AML triage',         team:'Financial crime', sla:1440},
+  doc_review:         {label:'Document review',    team:'Trade operations',sla:480},
+};
+const mins = m => m < 0 ? `${Math.abs(Math.round(m))}m over`
+  : m < 90 ? `${Math.round(m)}m left` : `${(m/60).toFixed(1)}h left`;
+const slaClass = m => m < 0 ? 'late' : m < 15 ? 'warn' : '';
+
+/* ------------------------------------------------------- offline fallback */
+function seedLocal(){
+  const people = ['Ama Boateng','Kofi Asare','Adjoa Nyarko','Yaw Darko','Efua Sarpong',
+    'Ibrahim Salifu','Akosua Frimpong','Kwesi Owusu',"Ama's Kitchen Ltd",'Coastal Foods Ltd',
+    'Nana Addo Boakye','Zainab Mohammed'];
+  const tpl = [
+    ['retail.loan_preapproval','credit_adjudication','Loan pre-approval','web'],
+    ['credit.scoring','credit_adjudication','Thin-file credit grade','app'],
+    ['fcc.sanctions','sanctions_l2','Beneficiary screened','web'],
+    ['retail.fraud_detection','fraud_confirm','Payment screened','app'],
+    ['retail.chatbot','chat_handover','Assistant handover','whatsapp'],
+    ['fcc.aml','aml_triage','Transaction monitoring alert','batch'],
+    ['sme.doc_verification','doc_review','Purchase order unreadable','app'],
+  ];
+  const out = [];
+  for (let i = 0; i < 12; i++){
+    const [uc, kind, title, channel] = tpl[i % tpl.length];
+    const who = people[i % people.length];
+    const s = FID.seed(uc + who + i);
+    const amount = [2450,8900,12400,24800,41000,3200][i % 6];
+    const conf = +(0.58 + s * 0.20).toFixed(2);
+    const sla = KINDS[kind].sla;
+    const age = 1 + Math.round(s * sla * 1.35);
+    let explanation, evidence;
+    if (kind === 'credit_adjudication'){
+      const r = FID.preapprove(amount, {bureau: 430 + Math.round(s*330), dti: 0.18 + s*0.4,
+                                        income: 2400 + s*9000, thinFile: i % 3 === 0});
+      explanation = r.explanation;
+      evidence = {'Credit bureau': 430 + Math.round(s*330), 'Debt to income': ((0.18+s*0.4)*100).toFixed(0)+'%',
+                  'Default probability': (r.pd*100).toFixed(1)+'%', 'Affordability cap': FID.money0(r.cap),
+                  'Relationship': (1 + Math.round(s*10)) + ' years', 'Prior overrides': s > 0.7 ? '1 in 12 months' : 'none'};
+    } else if (kind === 'sanctions_l2'){
+      const r = FID.screenBeneficiary('Global Marine Ltd');
+      explanation = r.explanation;
+      evidence = {'Beneficiary':'Global Marine Ltd','Match score': r.similarity.toFixed(2),
+                  'Threshold':'0.30','List':'UN consolidated + local PEP','Money moved':'none'};
+    } else if (kind === 'fraud_confirm'){
+      const r = FID.assessPayment({to:'Electro World', amount, bankLine:'Correspondent · Dubai',
+                                   hour:2, newBeneficiary:true});
+      explanation = r.explanation;
+      evidence = {'Amount': FID.money0(amount),'Time':'02:14 local','Beneficiary age':'added today',
+                  'Prior foreign spend':'none in 18 months','Model confidence': r.confidence.toFixed(2)};
+    } else if (kind === 'chat_handover'){
+      explanation = `Hausa model ${(conf*100).toFixed(0)}% sure it understood the customer, below the 70% floor`;
+      evidence = {'Channel':'WhatsApp','Language':'Hausa','Understanding': conf.toFixed(2),
+                  'Required':'0.70','Turns before handover':'2'};
+    } else if (kind === 'aml_triage'){
+      explanation = `six deposits of ${FID.money0(amount)} in four days from unrelated payers`;
+      evidence = {'Typology':'structuring','Alerts this year': Math.round(s*4),
+                  'Account age': (2 + Math.round(s*7)) + ' years','Model confidence': conf.toFixed(2)};
+    } else {
+      explanation = 'scan quality below the OCR threshold; the amount line could not be read';
+      evidence = {'File':'photo_2026-08-27.jpg','Scan quality': (s*0.29).toFixed(2),'Needed':'0.30',
+                  'Fields read':'buyer only','Action taken':'none'};
+    }
+    out.push({ref:'DEC-'+(4401+i), useCase:uc, kind, title, channel, customer:who, amount,
+              confidence:conf, explanation, evidence, slaMinutes:sla,
+              minutesLeft: sla - age, ageMinutes: age});
+  }
+  return out.sort((a,b) => a.minutesLeft - b.minutesLeft);
+}
+
+/* ---------------------------------------------------------------- service */
+async function pull(){
+  if (API === null) return false;
+  try{
+    const r = await fetch('/api/state', {cache:'no-store'});
+    if (!r.ok) throw 0;
+    const d = await r.json();
+    S.live = true; S.capacity = d.capacityPerDay;
+    S.cases = d.queue.map(c => ({...c, kind: c.kind || 'credit_adjudication'}));
+    S.cleared = d.resolved || [];
+    S.quality = d.modelQuality || {};
+    return true;
+  } catch { S.live = false; return false; }
+}
+
+async function resolve(ref, outcome, note){
+  const c = S.cases.find(x => x.ref === ref);
+  if (S.live){
+    try{
+      await fetch(`/api/cases/${ref}/resolve`, {method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({outcome, note, reviewer:S.reviewer})});
+      await pull();
+    } catch { S.live = false; }
+  }
+  if (!S.live){
+    S.cases = S.cases.filter(x => x.ref !== ref);
+    S.cleared.push({...c, status:outcome, note, reviewer:S.reviewer,
+                    minutesToClose:c.ageMinutes, breachedSla:c.minutesLeft < 0});
+  }
+  S.sel = S.cases.length ? S.cases[0].ref : null;
+  render();
+}
+
+/* ------------------------------------------------------------------ views */
+function capacity(){
+  const open = S.cases.length, cleared = S.cleared.length, cap = S.capacity;
+  const total = Math.max(cap, cleared + open);
+  const pc = n => (n / total * 100).toFixed(1) + '%';
+  const overflow = Math.max(0, cleared + open - cap);
+  const queued = open - overflow;
+
+  $('capbar').innerHTML =
+    `<div class="done" style="width:${pc(cleared)}"></div>
+     <div class="queued" style="left:${pc(cleared)};width:${pc(Math.max(queued,0))}"></div>
+     ${overflow > 0 ? `<div class="over" style="left:${pc(cleared + Math.max(queued,0))};width:${pc(overflow)}"></div>` : ''}
+     <div class="tick" style="left:${pc(cap)}"></div>
+     <span class="lab" style="left:10px">${cleared} cleared</span>
+     ${overflow > 0 ? `<span class="lab" style="right:10px">${overflow} beyond today</span>` : ''}`;
+
+  $('capnote').innerHTML = overflow > 0
+    ? `Today's capacity is <b>${cap} cases</b>. With ${cleared} cleared and ${open} open,
+       <b>${overflow} will not be reached today</b> and roll into tomorrow's queue.
+       The control tower counts that roll-over as the cost of the current confidence floors.`
+    : `Today's capacity is <b>${cap} cases</b>. ${cleared} cleared, ${open} open — inside capacity.
+       Every case can be reached before its SLA.`;
+
+  const breach = S.cases.filter(c => c.minutesLeft < 0).length;
+  const overrides = S.cleared.filter(c => c.status === 'override').length;
+  const decided = S.cleared.filter(c => c.status !== 'return').length;
+  $('capstats').innerHTML = [
+    ['Open', open, breach ? 'var(--ink)' : 'var(--ink)'],
+    ['Past SLA', breach, breach ? 'var(--alert)' : 'var(--muted)'],
+    ['Cleared', cleared, 'var(--clear)'],
+    ['Override rate', decided ? Math.round(overrides/decided*100) + '%' : '—', 'var(--amber)'],
+  ].map(([l,v,c]) => `<div class="capstat"><span class="v" style="color:${c}">${v}</span>
+     <span class="l">${l}</span></div>`).join('');
+}
+
+function queue(){
+  const counts = {};
+  S.cases.forEach(c => counts[c.kind] = (counts[c.kind]||0)+1);
+  const kinds = Object.keys(KINDS).filter(k => counts[k]);
+  $('filters').innerHTML =
+    `<button data-filter="all" aria-pressed="${S.filter==='all'}">All ${S.cases.length}</button>` +
+    kinds.map(k => `<button data-filter="${k}" aria-pressed="${S.filter===k}">${KINDS[k].label} ${counts[k]}</button>`).join('');
+
+  const list = S.cases.filter(c => S.filter === 'all' || c.kind === S.filter);
+  $('qlist').innerHTML = list.length ? list.map(c => `
+    <button class="qitem" data-ref="${c.ref}" aria-current="${S.sel===c.ref}">
+      <div class="r1"><b>${c.customer}</b>
+        <span class="sla ${slaClass(c.minutesLeft)}">${mins(c.minutesLeft)}</span></div>
+      <div class="r2">${KINDS[c.kind]?.label || c.kind}${c.amount ? ' · ' + FID.money0(c.amount) : ''} · ${c.channel}</div>
+      <div class="r3">${c.explanation}</div>
+    </button>`).join('')
+    : `<div class="qempty">Nothing in this queue.</div>`;
+}
+
+function caseView(){
+  if (!S.cases.length) return $('case').innerHTML = `<div class="done">
+      <h3>Queue clear</h3>
+      <p>Every escalation has been through a person. New ones arrive here the moment a model
+         declines to decide on its own — trigger one by pushing a loan past its limit in the
+         customer app, or paying Global Marine Ltd.</p>
+      ${S.cleared.length ? `<div class="card" style="margin-top:24px;text-align:left">
+        <span class="tag">Cleared this session</span><div style="margin-top:8px">` +
+        S.cleared.slice(-8).reverse().map(c => `<div class="rowline">
+          <div class="l"><b>${c.customer}</b><span>${c.ref} · ${KINDS[c.kind]?.label||c.kind}</span></div>
+          <span class="pill ${c.status==='override'?'amber':c.status==='agree'?'green':''}">${c.status}</span>
+        </div>`).join('') + `</div></div>` : ''}</div>`;
+
+  const c = S.cases.find(x => x.ref === S.sel) || S.cases[0];
+  S.sel = c.ref;
+  const k = KINDS[c.kind] || {label:c.kind, team:'—'};
+  const ev = Object.entries(c.evidence || {});
+  const late = c.minutesLeft < 0;
+
+  $('case').innerHTML = `
+    <div class="casehead">
+      <div><span class="eyebrow">${k.team} · ${c.ref}</span>
+        <h2>${k.label}</h2>
+        <div class="who">${c.customer}${c.amount ? ' · ' + FID.money0(c.amount) : ''} · via ${c.channel}</div></div>
+      <div class="clock"><span class="v ${slaClass(c.minutesLeft)}">${mins(c.minutesLeft)}</span>
+        <span class="l">${late ? 'SLA breached' : 'to decide'}</span></div>
+    </div>
+
+    <div class="two">
+      <div>
+        <div class="card">
+          <span class="tag">What the model did</span>
+          <h4>It declined to decide this on its own</h4>
+          <p>${c.explanation.charAt(0).toUpperCase() + c.explanation.slice(1)}.</p>
+          ${ev.length ? `<hr class="hr"><span class="tag">Evidence it used</span>
+            <dl class="ev">${ev.map(([a,b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl>` : ''}
+          <button class="why" data-slip="c">The record the customer sees</button>
+          <div id="slip-c" hidden>${FID.slip('DECISION RECORD', [
+            ['Reference', c.ref], ['Model', c.useCase], ['Confidence', (+c.confidence).toFixed(2)],
+            ['Outcome', 'sent to a person'], ['Told the customer', 'yes, at the time']],
+            'The customer already has this slip. Whatever you decide is appended to it, with your name.')}</div>
+        </div>
+
+        <div class="card">
+          <span class="tag">What the customer was told</span>
+          <p style="margin-top:8px">“${c.kind === 'credit_adjudication'
+              ? 'A credit officer is deciding this, not a model. You will hear back by 16:00 today.'
+              : c.kind === 'sanctions_l2'
+              ? 'A compliance officer is checking this beneficiary. Your money has not moved.'
+              : c.kind === 'fraud_confirm'
+              ? 'We paused this payment. Nothing has left your account.'
+              : c.kind === 'chat_handover'
+              ? 'Passing you to a person — the model was not sure it understood you.'
+              : 'We are looking at this and will come back to you.'}”</p>
+          <p style="margin-top:10px;color:var(--muted);font-size:12.5px">
+            They were told at the moment it happened, not afterwards. Anything you decide has to be
+            consistent with that wording.</p>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <span class="tag">This model, this week</span>
+          <h4 style="margin-bottom:10px">${overrideLine(c.useCase)}</h4>
+          <p style="font-size:12.5px">Your override is the only ground truth this model gets. Agreeing
+             when you are not sure is worse than overriding — it teaches the model it was right.</p>
+        </div>
+        <div class="card">
+          <span class="tag">Queue position</span>
+          <div class="rowline" style="margin-top:6px"><div class="l"><b>Ahead of this one</b></div>
+            <div class="r">${S.cases.findIndex(x => x.ref === c.ref)}</div></div>
+          <div class="rowline"><div class="l"><b>Past SLA right now</b></div>
+            <div class="r" style="color:${S.cases.filter(x=>x.minutesLeft<0).length?'var(--alert)':'inherit'}">
+              ${S.cases.filter(x => x.minutesLeft < 0).length}</div></div>
+          <div class="rowline"><div class="l"><b>Capacity left today</b></div>
+            <div class="r">${Math.max(0, S.capacity - S.cleared.length)}</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="acts"><div class="actbox">
+      <span class="tag">Your decision</span>
+      <textarea id="note" placeholder="Why? One line is enough. This is what an auditor reads in six months, and what the model gets retrained against."></textarea>
+      <div class="btnrow">
+        <button class="btn" data-outcome="agree">Agree with the model<span class="kbd">A</span></button>
+        <button class="btn orange" data-outcome="override">Override it<span class="kbd">O</span></button>
+        <button class="btn ghost" data-outcome="return">Need more from the customer<span class="kbd">R</span></button>
+      </div>
+    </div></div>`;
+}
+
+function overrideLine(useCase){
+  const q = (S.quality || {})[useCase];
+  const local = S.cleared.filter(c => c.useCase === useCase);
+  const o = (q ? q.overridden : local.filter(c => c.status === 'override').length);
+  const a = (q ? q.agreed : local.filter(c => c.status === 'agree').length);
+  if (!o && !a) return 'No decisions on this model yet today';
+  return `${o} overridden, ${a} upheld — ${Math.round(o/(o+a)*100)}% override rate`;
+}
+
+function render(){ capacity(); queue(); caseView(); connection(); }
+
+function connection(){
+  $('dot').className = 'dot' + (S.live ? ' live' : '');
+  $('connlab').textContent = S.live
+    ? 'live · decision service connected'
+    : (API === null ? 'offline file · local queue' : 'service not reachable · local queue');
+}
+
+/* -------------------------------------------------------------- behaviour */
+document.addEventListener('click', ev => {
+  const el = ev.target.closest('[data-ref],[data-filter],[data-outcome],[data-slip]');
+  if (!el) return;
+  if (el.dataset.slip){ const b = $('slip-'+el.dataset.slip);
+    if (!el.dataset.label) el.dataset.label = el.textContent;
+    b.hidden = !b.hidden; el.textContent = b.hidden ? el.dataset.label : 'Hide the record'; return; }
+  if (el.dataset.filter){ S.filter = el.dataset.filter; render(); return; }
+  if (el.dataset.ref){ S.sel = el.dataset.ref; render(); return; }
+  if (el.dataset.outcome){
+    const note = ($('note') && $('note').value || '').trim();
+    if (el.dataset.outcome !== 'agree' && !note){
+      $('note').focus();
+      $('note').setAttribute('placeholder','Say why before you override or return it. One line.');
+      return;
+    }
+    resolve(S.sel, el.dataset.outcome, note);
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+  const map = {a:'agree', o:'override', r:'return'};
+  if (map[e.key.toLowerCase()] && S.sel){
+    const note = ($('note') && $('note').value || '').trim();
+    if (map[e.key.toLowerCase()] !== 'agree' && !note){ $('note').focus(); return; }
+    resolve(S.sel, map[e.key.toLowerCase()], note);
+  }
+  if (e.key === 'j' || e.key === 'k'){
+    const i = S.cases.findIndex(c => c.ref === S.sel);
+    const n = e.key === 'j' ? Math.min(i+1, S.cases.length-1) : Math.max(i-1, 0);
+    if (S.cases[n]){ S.sel = S.cases[n].ref; render(); }
+  }
+});
+
+/* ------------------------------------------------------------------- boot */
+(async () => {
+  const ok = await pull();
+  if (!ok || !S.cases.length){ S.cases = seedLocal(); S.quality = {}; }
+  S.sel = S.cases.length ? S.cases[0].ref : null;
+  render();
+  if (API !== null) setInterval(async () => { if (await pull()) render(); }, 4000);
+  else setInterval(() => {          // keep SLA clocks honest in offline mode
+    S.cases.forEach(c => { c.minutesLeft -= 0.25; c.ageMinutes += 0.25; });
+    capacity(); queue();
+  }, 15000);
+})();
+</script>
+</body>
+</html>

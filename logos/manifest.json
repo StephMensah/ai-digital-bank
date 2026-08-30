@@ -1,0 +1,234 @@
+[
+  {
+    "slug": "bolt",
+    "name": "Bolt",
+    "file": "bolt.svg",
+    "brandColour": "#34D186",
+    "category": "Transport",
+    "supplied": false
+  },
+  {
+    "slug": "uber",
+    "name": "Uber",
+    "file": "uber.svg",
+    "brandColour": "#111111",
+    "category": "Transport",
+    "supplied": false
+  },
+  {
+    "slug": "yango",
+    "name": "Yango",
+    "file": "yango.svg",
+    "brandColour": "#FF3D00",
+    "category": "Transport",
+    "supplied": false
+  },
+  {
+    "slug": "stc",
+    "name": "STC",
+    "file": "stc.svg",
+    "brandColour": "#0B6E4F",
+    "category": "Transport",
+    "supplied": false
+  },
+  {
+    "slug": "melcom",
+    "name": "Melcom",
+    "file": "melcom.svg",
+    "brandColour": "#E4002B",
+    "category": "Shopping",
+    "supplied": false
+  },
+  {
+    "slug": "shoprite",
+    "name": "Shoprite",
+    "file": "shoprite.svg",
+    "brandColour": "#E31E24",
+    "category": "Groceries",
+    "supplied": false
+  },
+  {
+    "slug": "palace-mall",
+    "name": "Palace Mall",
+    "file": "palace-mall.svg",
+    "brandColour": "#7A3E9D",
+    "category": "Groceries",
+    "supplied": false
+  },
+  {
+    "slug": "jumia",
+    "name": "Jumia",
+    "file": "jumia.svg",
+    "brandColour": "#F68B1E",
+    "category": "Shopping",
+    "supplied": false
+  },
+  {
+    "slug": "kfc",
+    "name": "KFC",
+    "file": "kfc.svg",
+    "brandColour": "#A3080C",
+    "category": "Eating out",
+    "supplied": false
+  },
+  {
+    "slug": "papaye",
+    "name": "Papaye",
+    "file": "papaye.svg",
+    "brandColour": "#D42027",
+    "category": "Eating out",
+    "supplied": false
+  },
+  {
+    "slug": "ecg",
+    "name": "ECG",
+    "file": "ecg.svg",
+    "brandColour": "#F5A623",
+    "category": "Utilities",
+    "supplied": false
+  },
+  {
+    "slug": "ghana-water",
+    "name": "Ghana Water",
+    "file": "ghana-water.svg",
+    "brandColour": "#0A7CC1",
+    "category": "Utilities",
+    "supplied": false
+  },
+  {
+    "slug": "dstv",
+    "name": "DStv",
+    "file": "dstv.svg",
+    "brandColour": "#0D5AA7",
+    "category": "TV",
+    "supplied": false
+  },
+  {
+    "slug": "surfline",
+    "name": "Surfline",
+    "file": "surfline.svg",
+    "brandColour": "#00A9E0",
+    "category": "Internet",
+    "supplied": false
+  },
+  {
+    "slug": "mtn",
+    "name": "MTN",
+    "file": "mtn.svg",
+    "brandColour": "#FFCB05",
+    "category": "Airtime",
+    "supplied": false
+  },
+  {
+    "slug": "telecel",
+    "name": "Telecel",
+    "file": "telecel.svg",
+    "brandColour": "#E4002B",
+    "category": "Airtime",
+    "supplied": false
+  },
+  {
+    "slug": "at",
+    "name": "AT",
+    "file": "at.svg",
+    "brandColour": "#0057B8",
+    "category": "Airtime",
+    "supplied": false
+  },
+  {
+    "slug": "ashesi-university",
+    "name": "Ashesi University",
+    "file": "ashesi-university.svg",
+    "brandColour": "#8C1D40",
+    "category": "Income",
+    "supplied": false
+  },
+  {
+    "slug": "adom-poultry-farms",
+    "name": "Adom Poultry Farms",
+    "file": "adom-poultry-farms.svg",
+    "brandColour": "#5E8C31",
+    "category": "Cost of sales",
+    "supplied": false
+  },
+  {
+    "slug": "coastal-foods-ltd",
+    "name": "Coastal Foods Ltd",
+    "file": "coastal-foods-ltd.svg",
+    "brandColour": "#0E6BA8",
+    "category": "Income",
+    "supplied": false
+  },
+  {
+    "slug": "ridge-hotel",
+    "name": "Ridge Hotel",
+    "file": "ridge-hotel.svg",
+    "brandColour": "#8A6D3B",
+    "category": "Income",
+    "supplied": false
+  },
+  {
+    "slug": "global-marine-ltd",
+    "name": "Global Marine Ltd",
+    "file": "global-marine-ltd.svg",
+    "brandColour": "#455A64",
+    "category": "Transfer",
+    "supplied": false
+  },
+  {
+    "slug": "payroll",
+    "name": "Payroll",
+    "file": "payroll.svg",
+    "brandColour": "#37474F",
+    "category": "Salaries",
+    "supplied": false
+  },
+  {
+    "slug": "gra",
+    "name": "GRA",
+    "file": "gra.svg",
+    "brandColour": "#006B3F",
+    "category": "Statutory",
+    "supplied": false
+  },
+  {
+    "slug": "ssnit",
+    "name": "SSNIT",
+    "file": "ssnit.svg",
+    "brandColour": "#1A5632",
+    "category": "Statutory",
+    "supplied": false
+  },
+  {
+    "slug": "netflix",
+    "name": "Netflix",
+    "file": "netflix.svg",
+    "brandColour": "#E50914",
+    "category": "Subscriptions",
+    "supplied": false
+  },
+  {
+    "slug": "spotify",
+    "name": "Spotify",
+    "file": "spotify.svg",
+    "brandColour": "#1DB954",
+    "category": "Subscriptions",
+    "supplied": false
+  },
+  {
+    "slug": "mensah-properties",
+    "name": "Mensah Properties",
+    "file": "mensah-properties.svg",
+    "brandColour": "#6D4C41",
+    "category": "Housing",
+    "supplied": false
+  },
+  {
+    "slug": "fidelity",
+    "name": "Fidelity",
+    "file": "fidelity.svg",
+    "brandColour": "#F26F1D",
+    "category": "Income",
+    "supplied": false
+  }
+]

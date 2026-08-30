@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fidelity Online — digital bank</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Geist+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>__UI__</style>
+<style>
+/* ------------------------------------------------------------- web shell */
+.app{display:grid;grid-template-columns:250px minmax(0,1fr);min-height:100vh}
+.side{background:var(--white);color:var(--slate);border-right:1px solid var(--line);padding:22px 16px 30px;position:sticky;top:0;height:100vh;
+      display:flex;flex-direction:column;gap:4px;overflow-y:auto}
+.brand{display:flex;align-items:center;gap:11px;padding:0 8px 20px}
+.brand .m{width:34px;height:34px;border-radius:12px;display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--orange-l),var(--orange))}
+.brand .m svg{display:block}
+.brand .t{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:-.01em;color:var(--ink)}
+.brand .t i{font-style:normal;color:var(--orange)}
+.ent{background:var(--haze);border-radius:14px;padding:5px;display:flex;gap:4px;margin:0 0 16px}
+.ent button{flex:1;background:none;border:0;color:var(--grey);padding:8px 6px;border-radius:10px;font-size:12.5px;
+            font-weight:600;cursor:pointer}
+.ent button[aria-pressed="true"]{background:var(--orange);color:#fff}
+.navgrp{font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--mist);
+        padding:16px 10px 6px}
+.side nav button{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;color:#C4C8CE;
+  padding:11px 12px;border-radius:12px;font-size:14.5px;font-weight:600;cursor:pointer;text-align:left;
+  transition:.13s var(--ease)}
+.side nav button:hover{background:var(--haze);color:var(--ink)}
+.side nav button[aria-current="page"]{background:var(--orange-t);color:var(--orange-d);font-weight:700;
+  box-shadow:inset 3px 0 0 var(--orange)}
+.side nav button svg{width:21px;height:21px;opacity:.9;flex:none}
+.side nav button[aria-current="page"] svg{opacity:1;color:var(--orange-d)}
+.sidefoot{margin-top:auto;padding:16px 10px 0;border-top:1px solid var(--line);font-size:11.5px;color:var(--mist);
+          font-family:var(--mono);line-height:1.7}
+
+.main{min-width:0;display:grid;grid-template-columns:minmax(0,1fr) 330px}
+.content{padding:clamp(18px,2.4vw,26px) clamp(16px,3vw,32px) 90px;min-width:0}
+.topbar{display:flex;align-items:center;gap:16px;margin-bottom:26px;flex-wrap:wrap}
+.topbar .search{flex:1;min-width:180px;max-width:420px;height:46px;border-radius:100px;border:1.5px solid var(--line);
+  background:var(--white);padding:0 18px;font-size:14.5px}
+.topbar .icon{width:46px;height:46px;border-radius:100px;border:0;background:var(--white);box-shadow:var(--sh-sm);
+  cursor:pointer;font-size:16px;position:relative}
+.topbar .icon i{position:absolute;top:11px;right:11px;width:8px;height:8px;border-radius:50%;
+  background:var(--orange);border:2px solid #fff}
+.topbar .who{display:flex;align-items:center;gap:10px;background:var(--white);border-radius:100px;
+  padding:6px 16px 6px 6px;box-shadow:var(--sh-sm)}
+.topbar .who .av{width:34px;height:34px;border-radius:100px}
+.topbar .who b{font-size:13.5px}
+
+.phead{margin-bottom:22px}
+.phead h2{font-family:var(--display);font-weight:700;font-size:30px;letter-spacing:-.03em}
+.phead p{color:var(--sub);font-size:14px;margin-top:5px;max-width:62ch}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(min(210px,100%),1fr))}
+.sectitle{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:-.015em;
+          margin:26px 0 12px;display:flex;justify-content:space-between;align-items:baseline}
+.sectitle button{background:none;border:0;font-size:13px;font-weight:600;color:var(--orange-d);cursor:pointer}
+
+/* right rail */
+.rail{border-left:1px solid var(--line);padding:26px 22px 60px;position:sticky;top:0;height:100vh;
+      overflow-y:auto;background:var(--sand)}
+.rail h3{font-family:var(--display);font-weight:700;font-size:15px;margin-bottom:4px}
+.rail .railsub{font-size:12.5px;color:var(--mute);line-height:1.5;margin-bottom:16px}
+.rec{border-top:1px solid var(--line);padding:13px 0}
+.rec:first-of-type{border-top:0}
+.rec .rh{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.rec .rh b{font-size:13.5px;font-weight:600}
+.rec .re{font-family:var(--mono);font-size:11px;color:var(--sub);margin-top:5px;line-height:1.55}
+
+table.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
+table.tbl th{text-align:left;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--mute);padding:0 0 10px;border-bottom:1px solid var(--line)}
+table.tbl td{padding:12px 0;border-bottom:1px solid var(--line-2)}
+table.tbl td:last-child,table.tbl th:last-child{text-align:right}
+
+/* the decision rail is context, not content — it goes first */
+@media (max-width:1340px){
+  .main{grid-template-columns:minmax(0,1fr)}
+  aside.dec{display:none}
+}
+@media (max-width:1120px){
+  .app{grid-template-columns:78px minmax(0,1fr)}
+  .side{padding:18px 12px 24px;align-items:center}
+  .side .brand .t,.side .navgrp,.side .sidefoot{display:none}
+  .side .brand{padding:0 0 18px;justify-content:center}
+  .ent{flex-direction:column;width:54px;padding:4px}
+  .ent button{font-size:10px;padding:9px 0;letter-spacing:.02em}
+  .side nav{width:100%}
+  .side nav button{justify-content:center;padding:12px 0;gap:0;font-size:0}
+  .side nav button svg{width:21px;height:21px}
+  .content{padding:22px 22px 70px}
+  .grid.g3{grid-template-columns:1fr 1fr}
+}
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  .side{position:sticky;top:0;z-index:40;height:auto;flex-direction:row;overflow-x:auto;
+        gap:6px;align-items:center;padding:10px 12px}
+  .side .brand{display:none}
+  .ent{flex-direction:row;width:auto;margin:0 8px 0 0;flex:none}
+  .ent button{font-size:12.5px;padding:8px 12px}
+  .side nav{display:flex;gap:4px;width:auto}
+  .side nav button{white-space:nowrap;width:auto;font-size:13px;padding:9px 13px;gap:8px}
+  .side nav button svg{width:17px;height:17px}
+  .content{padding:18px 16px 60px}
+  .topbar{gap:10px}
+  .topbar .search{order:3;flex-basis:100%;max-width:none;height:44px}
+  .topbar .who b{display:none}
+  .topbar .who{padding:5px}
+  .phead h2{font-size:25px}
+  .grid.g2,.grid.g3{grid-template-columns:1fr}
+  .sheet{width:100%;border-radius:22px 22px 0 0;left:0;right:0;top:auto;bottom:0;height:auto;
+         max-height:92%;transform:translateY(101%);padding:20px 16px 40px}
+}
+@media (max-width:480px){
+  .content{padding:14px 12px 56px}
+  .phead h2{font-size:22px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><div class="m"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"><path d="M12 3.2 19.4 7.6v8.8L12 20.8 4.6 16.4V7.6L12 3.2Z"/><circle cx="12" cy="12" r="2" fill="#fff" stroke="none"/></svg></div><div class="t">Fidelity <i>Online</i></div></div>
+    <div class="ent" id="ent"></div>
+    <nav id="nav"></nav>
+    <div class="sidefoot">Decision service<br><span id="svc">checking…</span></div>
+  </aside>
+
+  <div class="main">
+    <div class="content">
+      <div class="topbar">
+        <input class="search" placeholder="Search payments, beneficiaries, statements…" aria-label="Search">
+        <button class="icon" data-sheet="alerts" aria-label="Notifications">${I('bell',19)}<i></i></button>
+        <div class="who"><div class="av o" id="topav">AB</div><b id="topname">Ama Boateng</b></div>
+      </div>
+      <div id="view"></div>
+    </div>
+    <aside class="rail">
+      <h3>Decisions about you</h3>
+      <p class="railsub">Every automated decision prints here as it is made, with what it used and how sure
+        it was. The bank keeps the same record.</p>
+      <div id="feed"></div>
+    </aside>
+  </div>
+</div>
+
+<div class="scrim" id="scrim" style="position:fixed"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true"
+     style="position:fixed;left:auto;right:0;top:0;bottom:0;width:min(470px,100%);border-radius:26px 0 0 26px;
+            transform:translateX(101%);max-height:none;padding:26px 26px 60px"></div>
+
+<script>__CORE__</script>
+<script>
+const S = { entity:'personal', view:'overview', lang:'English', consent:{offers:true, insights:true},
+            frozen:{physical:false, virtual:false}, pay:{i:null, amount:''}, loan:{amount:12000, term:24},
+            chat:[], goals:JSON.parse(JSON.stringify(FID.GOALS)), invoice:null,
+            stmtQuery:'', stmtFilter:'all', src:null, goalId:null };
+const E = () => FID.ENTITIES[S.entity];
+const $ = id => document.getElementById(id);
+const m0 = FID.money0, m2 = FID.money;
+const initials = n => n.split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+
+function openSheet(html){ $('sheet').innerHTML = html;
+  $('sheet').style.transform = 'none'; $('scrim').classList.add('on'); }
+function closeSheet(){ $('sheet').style.transform = 'translateX(101%)'; $('scrim').classList.remove('on'); }
+$('scrim').onclick = closeSheet;
+
+function note(title, pairs, footer){
+  return `<div class="note"><div class="nh">${I('block',13)}${title}</div><dl>` +
+    pairs.map(([k,v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('') +
+    `</dl><div class="nf">${footer}</div></div>`;
+}
+function ring(pct, size = 62){
+  const r = size/2 - 5, c = 2*Math.PI*r;
+  return `<svg class="ring" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle class="bg" cx="${size/2}" cy="${size/2}" r="${r}" stroke-width="6"/>
+    <circle class="fg" cx="${size/2}" cy="${size/2}" r="${r}" stroke-width="6"
+      stroke-dasharray="${c}" stroke-dashoffset="${c*(1-Math.min(pct,1))}"/></svg>`;
+}
+
+/* ---------------------------------------------------------------- chrome */
+const NAV = {
+  personal:[['Everyday',[['overview','dashboard','Overview'],['transfers','transfer','Transfers'],
+             ['bills','receipt','Bills & airtime'],['cards','card','Cards']]],
+            ['Money',[['save','piggy','Save & invest'],['borrow','loan','Borrow'],
+             ['fx','exchange','Foreign exchange']]],
+            ['Account',[['statements','statement','Statements'],['support','headset','Support'],
+             ['privacy','scales','Privacy & decisions']]]],
+  business:[['Everyday',[['overview','dashboard','Overview'],['transfers','transfer','Transfers'],
+             ['bills','receipt','Bills & tax'],['cards','card','Cards']]],
+            ['Business',[['payroll','payroll','Payroll'],['invoices','invoice','Invoices & POs'],
+             ['cashflow','growth','Cash flow'],['approvals','stamp','Approvals']]],
+            ['Money',[['save','piggy','Save & invest'],['borrow','loan','Borrow'],
+             ['fx','exchange','Foreign exchange']]],
+            ['Account',[['statements','statement','Statements'],['support','headset','Support'],
+             ['privacy','scales','Privacy & decisions']]]],
+};
+
+function chrome(){
+  $('ent').innerHTML = Object.values(FID.ENTITIES).map(e =>
+    `<button data-entity="${e.id}" aria-pressed="${S.entity===e.id}">${e.id==='personal'?'Personal':'Business'}</button>`).join('');
+  $('nav').innerHTML = NAV[S.entity].map(([grp, items]) =>
+    `<div class="navgrp">${grp}</div>` + items.map(([id,i,l]) =>
+      `<button data-view="${id}" aria-current="${S.view===id?'page':'false'}">${IS(i,21)}${l}</button>`).join('')).join('');
+  $('topav').textContent = initials(E().holder);
+  $('topname').textContent = E().holder;
+  $('svc').textContent = FID.live ? '● connected' : '○ local only';
+}
+
+/* -------------------------------------------------------------- overview */
+function vOverview(){
+  const e = E();
+  const total = e.accounts.reduce((s,a)=>s+a.balance,0);
+  const saved = S.goals.reduce((s,g)=>s+g.saved,0);
+  return `<div class="phead"><h2>Overview</h2>
+      <p>${e.holder} · customer since ${e.since} · ${FID.KYC.label}, single-transaction limit ${m0(FID.KYC.singleLimit)}</p></div>
+
+    <div class="grid g2">
+      <div class="hero">${lattice('h1')}
+        <div class="label">${I('node',15)} ${S.entity==='personal'?'Total with Fidelity':'Business position'}</div>
+        <div class="bal"><small>GHS</small>${total.toLocaleString('en-GB',{minimumFractionDigits:2})}</div>
+        <div class="delta">${I('growth',14)} ${m0(6400)} in this month</div>
+        <div style="display:flex;gap:8px;margin-top:20px">
+          <button class="btn primary sm" data-view="transfers">Send money</button>
+          <button class="btn sm" style="background:rgba(255,255,255,.14)" data-view="bills">Pay a bill</button>
+        </div>
+      </div>
+      <div class="surface" style="display:flex;flex-direction:column;justify-content:space-between">
+        <div><span class="eyebrow">Accounts</span>
+          ${e.accounts.map(a=>`<div class="item static"><div class="av">${I(a.type==='savings'?'piggy':'bank',19)}</div>
+            <div class="txt"><b>${a.name}</b><span>${a.num}</span></div>
+            <div class="amt">${m0(a.balance)}</div></div>`).join('')}</div>
+        <button class="btn quiet sm" style="margin-top:12px" data-sheet="newaccount">Open another account</button>
+      </div>
+    </div>
+
+    ${S.entity === 'business' ? bizOverview(e) : `
+    <div class="sectitle">Money set aside <button data-view="save">Manage goals</button></div>
+    <div class="grid g3">${S.goals.map(g=>{const p=FID.goalProject(g);return `
+      <div class="surface" style="display:flex;gap:14px;align-items:center">${ring(g.saved/g.target,54)}
+        <div style="min-width:0"><b style="font-size:14px">${g.name}</b>
+          <div class="money" style="font-size:18px;margin:2px 0">${m0(g.saved)}</div>
+          <div class="tiny">${p.explanation}</div></div></div>`;}).join('')}</div>`}
+
+    ${S.consent.insights && S.entity==='personal' ? `
+    <div class="sectitle">Worth knowing</div>
+    <div class="surface" style="border-left:3px solid var(--orange)">
+      <span class="badge o">Insight</span>
+      <h4 class="d3" style="margin:10px 0 6px">${m0(340)} a month on ride-hailing</h4>
+      <p class="sub">More than 8 in 10 customers on your account type. A monthly transport pass for the Tuesday
+        commute would save about ${m0(95)}.</p>
+      <button class="why" data-note="ins">${I('info',15)} Where this came from</button><div id="note-ins" hidden></div></div>` : ''}
+
+    <div class="grid g2" style="margin-top:26px">
+      <div class="surface"><span class="eyebrow">Coming up</span>
+        ${FID.STANDING.map(o=>`<div class="item static"><div class="av">${I('repeat',21,2.2)}</div>
+          <div class="txt"><b>${o.name}</b><span>${o.next} · ${o.when}</span></div>
+          <div class="amt">${m0(o.amount)}</div></div>`).join('')}</div>
+      <div class="surface"><span class="eyebrow">Recent activity</span>
+        ${e.transactions.slice(0,6).map(txRow).join('')}
+        <button class="btn quiet sm wide" style="margin-top:12px" data-view="statements">See full statement</button></div>
+    </div>`;
+}
+
+function bizOverview(e){
+  const f = FID.forecastCashflow(e);
+  return `<div class="sectitle">Cash flow <button data-view="cashflow">Eight-week view</button></div>
+    <div class="surface">
+      <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap">
+        <div style="flex:1;min-width:240px">
+          <span class="badge ${f.trough<0?'r':'j'}">${f.trough<0?'Gap ahead':'Healthy'}</span>
+          <h4 class="d2" style="margin:10px 0 6px">${f.trough<0
+            ? `${m0(Math.abs(f.trough))} short in week ${f.week}` : 'No financing gap in eight weeks'}</h4>
+          <p class="sub">${f.explanation}.</p>
+          ${f.trough<0?`<button class="btn primary sm" style="margin-top:14px" data-view="borrow">Cover it with working capital</button>`:''}
+        </div>
+        <div style="flex:1;min-width:280px">${FID.columns(e.cashflow,{forecastFrom:4,h:120,
+          labels:['w-4','w-3','w-2','now','+1','+2','+3','+4']})}</div>
+      </div></div>`;
+}
+
+/* -------------------------------------------------------------- transfers */
+function vTransfers(){
+  const e = E();
+  return `<div class="phead"><h2>Transfers</h2>
+      <p>Fidelity accounts, any Ghanaian bank by GhIPSS instant, mobile money, or international by SWIFT.
+         Every beneficiary is screened and every payment is checked before it leaves.</p></div>
+    <div class="grid g2">
+      <div class="surface"><span class="eyebrow">Send to</span>
+        ${e.beneficiaries.map((b,i)=>`<button class="item" data-ben="${i}">
+          <div class="av o">${initials(b.name)}</div><div class="txt"><b>${b.name}</b>
+          <span>${b.bank} · ${b.acct}</span></div><span class="tiny">last ${b.last}</span><span class="go">${I('chevron',17)}</span></button>`).join('')}
+        <div style="display:flex;gap:8px;margin-top:14px">
+          <button class="btn quiet sm" data-sheet="newben">+ New beneficiary</button>
+          <button class="btn quiet sm" data-sheet="swift">International (SWIFT)</button></div></div>
+      <div>
+        <div class="surface"><span class="eyebrow">Standing orders</span>
+          ${FID.STANDING.map(o=>`<div class="item static"><div class="av">${I('repeat',21,2.2)}</div>
+            <div class="txt"><b>${o.name}</b><span>${o.when}</span></div>
+            <div class="amt">${m0(o.amount)}</div></div>`).join('')}
+          <button class="btn quiet sm wide" style="margin-top:12px" data-sheet="standing">New standing order</button></div>
+        <div class="surface"><span class="eyebrow">Your limits</span>
+          <div class="item static"><div class="txt"><b>Single transaction</b><span>${FID.KYC.label}</span></div>
+            <div class="amt">${m0(FID.KYC.singleLimit)}</div></div>
+          <div class="item static"><div class="txt"><b>Daily total</b><span>resets midnight</span></div>
+            <div class="amt">${m0(FID.KYC.dailyLimit)}</div></div>
+          <button class="btn quiet sm wide" style="margin-top:12px" data-sheet="upgrade">Raise my limits</button></div>
+      </div></div>`;
+}
+
+/* ------------------------------------------------------------------ bills */
+function vBills(){
+  return `<div class="phead"><h2>Bills & ${S.entity==='business'?'tax':'airtime'}</h2>
+      <p>Posted to the biller within a minute, with a reference you can quote.</p></div>
+    <div class="sectitle">Billers</div>
+    <div class="grid g3">${FID.BILLERS.map(b=>`
+      <button class="surface" style="text-align:left;border:0;cursor:pointer" data-bill="${b.id}">
+        <div class="av o hex" style="width:46px;height:46px">${IS(b.icon,23)}</div>
+        <b style="display:block;margin-top:10px;font-size:14.5px">${b.name}</b>
+        <span class="tiny">${b.cat} · ${b.hint}</span></button>`).join('')}</div>
+    <div class="sectitle">Airtime & data</div>
+    <div class="surface"><div class="chiprow" style="margin-bottom:14px">
+      ${FID.NETWORKS.map((n,i)=>`<button class="chip" aria-pressed="${i===0}" data-pick="net">${n.name}</button>`).join('')}</div>
+      <div class="grid g2"><label class="field" style="margin:0"><span>Phone number</span>
+        <input value="024 447 8812"></label>
+        <label class="field" style="margin:0"><span>Amount</span><input type="number" value="20"></label></div>
+      <button class="btn primary" style="margin-top:16px" data-act="close">Buy airtime</button></div>`;
+}
+
+/* ------------------------------------------------------------------ cards */
+function vCards(){
+  const e = E();
+  return `<div class="phead"><h2>Cards</h2><p>Freeze, set limits, or spin up a virtual card for one merchant.</p></div>
+    <div class="grid g2">
+      <div>
+        <div class="plastic ${S.frozen.physical?'frozen':''}" style="max-width:380px">${lattice('c1')}
+          <div class="brand"><span>FIDELITY</span>${I('node',18)}</div><div class="chipimg"></div>
+          <div class="pan">${e.card.num}</div>
+          <div class="foot"><span>${e.holder.toUpperCase()}</span><span>${e.card.exp} · VISA</span></div></div>
+        <div class="chiprow" style="margin-top:14px">
+          <button class="chip" data-which="physical">${I('freeze',16)} ${S.frozen.physical?'Unfreeze':'Freeze'}</button>
+          <button class="chip" data-sheet="limits">Limits</button>
+          <button class="chip" data-sheet="pin">Change PIN</button>
+          <button class="chip" data-sheet="replace">Replace</button></div>
+      </div>
+      <div>
+        <div class="plastic virtual ${S.frozen.virtual?'frozen':''}" style="max-width:380px">${lattice('c2')}
+          <div class="brand"><span>FIDELITY</span>${I('node',18)}</div><div class="chipimg"></div>
+          <div class="pan">4821 •••• •••• 7719</div>
+          <div class="foot"><span>MERCHANT LOCK ON</span><span>11/28</span></div></div>
+        <div class="chiprow" style="margin-top:14px">
+          <button class="chip" data-which="virtual">${I('freeze',16)} ${S.frozen.virtual?'Unfreeze':'Freeze'}</button>
+          <button class="chip" data-sheet="reveal">Show details</button>
+          <button class="chip" data-sheet="newvirtual">+ New virtual card</button></div>
+      </div></div>
+    <div class="sectitle">On these cards</div>
+    <div class="surface"><div class="tblwrap"><table class="tbl"><thead><tr><th>Merchant</th><th>Date</th><th>Category</th><th>Amount</th></tr></thead>
+      <tbody>${e.transactions.filter(t=>t.a<0).slice(0,10).map(t=>`<tr data-tx="${t.id}" style="cursor:pointer">
+        <td><div style="display:flex;align-items:center;gap:11px">${FID.brandTile(t.m,32,10)}
+          <b>${FID.merchant(t.m).label}</b></div></td><td>${t.d}</td>
+        <td>${t.cat}</td><td>−${m0(Math.abs(t.a))}</td></tr>`).join('')}</tbody></table></div></div>`;
+}
+
+/* ------------------------------------------------------------------- save */
+function vSave(){
+  return `<div class="surface" style="background:var(--sand);border-color:var(--orange-t2);margin-bottom:20px">
+      <div class="arthead"><div>
+        <h2 class="d2" style="font-size:27px;margin-bottom:8px">Save & invest</h2>
+        <p class="sub">Goals, fixed deposits and Government of Ghana treasury bills. Every quote shows the
+          withholding tax and our margin before you commit.</p></div>
+        <div style="width:210px">${ART.goal()}</div></div></div>
+    <div class="sectitle">Your goals <button data-sheet="newgoal">New goal</button></div>
+    <div class="grid g3">${S.goals.map(g=>{const p=FID.goalProject(g);return `
+      <div class="surface"><div style="display:flex;gap:14px;align-items:center">${ring(g.saved/g.target,54)}
+        <div style="min-width:0"><b style="font-size:14px;display:flex;align-items:center;gap:7px">${I(g.icon,16)} ${g.name}</b>
+          <div class="money" style="font-size:19px;margin:2px 0">${m0(g.saved)}</div>
+          <div class="tiny">of ${m0(g.target)} · due ${g.due}</div></div></div>
+        <div class="bar" style="margin:14px 0 10px"><i style="width:${(g.saved/g.target*100).toFixed(0)}%"></i></div>
+        <div class="tiny">${p.explanation}</div>
+        <button class="btn quiet sm wide" style="margin-top:12px" data-goal="${g.id}">Add money</button></div>`;}).join('')}</div>
+
+    <div class="sectitle">Treasury bills <span class="badge p">Government of Ghana</span></div>
+    <div class="grid g3">${FID.TBILLS.map(t=>`
+      <button class="surface" style="text-align:left;border:0;cursor:pointer" data-tenor="${t.tenor}">
+        <span class="eyebrow">${t.label}</span>
+        <div class="money" style="font-size:28px;color:var(--jade);margin:6px 0 2px">${(t.rate*100).toFixed(2)}%</div>
+        <div class="tiny">per year · minimum ${m0(1000)} · settles Friday</div></button>`).join('')}</div>
+
+    <div class="sectitle">Fixed deposits</div>
+    <div class="grid g3">${FID.DEPOSITS.map(d=>`
+      <button class="surface" style="text-align:left;border:0;cursor:pointer" data-months="${d.months}">
+        <span class="eyebrow">${d.months} months</span>
+        <div class="money" style="font-size:28px;margin:6px 0 2px">${(d.rate*100).toFixed(1)}%</div>
+        <div class="tiny">interest paid at maturity</div></button>`).join('')}</div>`;
+}
+
+/* ----------------------------------------------------------------- borrow */
+function vBorrow(){
+  const e = E(), L = S.loan;
+  const monthly = L.amount * (0.265/12) / (1 - Math.pow(1+0.265/12, -L.term));
+  const rows = [1,2,3].map(i=>`<tr><td>Month ${i}</td><td>${m0(monthly)}</td>
+    <td>${m0(L.amount*0.265/12)}</td><td>${m0(Math.max(0, L.amount - monthly*i))}</td></tr>`).join('');
+  return `<div class="surface" style="background:var(--sand);border-color:var(--orange-t2);margin-bottom:20px">
+      <div class="arthead"><div>
+        <h2 class="d2" style="font-size:27px;margin-bottom:8px">Borrow</h2>
+        <p class="sub">Checking does not affect your credit score. A model can price a loan, but it can never
+          decline you on its own — that always goes to a credit officer.</p></div>
+        <div style="width:210px">${ART.growth()}</div></div></div>
+    <div class="grid g2">
+      <div class="surface">
+        <div class="chiprow" style="margin-bottom:18px">
+          <button class="chip" aria-pressed="true" data-pick="kind">Personal loan</button>
+          <button class="chip" data-pick="kind">Salary advance</button>
+          <button class="chip" data-pick="kind">Overdraft</button></div>
+        <span class="eyebrow">How much do you need?</span>
+        <div class="money" id="loanAmt" style="font-size:38px;margin:8px 0 12px">${m0(L.amount)}</div>
+        <input type="range" id="loanRange" min="1000" max="60000" step="500" value="${L.amount}"
+          style="width:100%;accent-color:var(--orange)">
+        <div class="tiny" style="display:flex;justify-content:space-between;margin-bottom:18px">
+          <span>${m0(1000)}</span><span>${m0(60000)}</span></div>
+        <label class="field"><span>Over</span><select id="term">${[12,24,36,48].map(t=>
+          `<option value="${t}" ${t===L.term?'selected':''}>${t} months</option>`).join('')}</select></label>
+        <button class="btn primary wide" data-act="loancheck">Check what I qualify for</button>
+      </div>
+      <div class="surface">
+        <span class="eyebrow">Indicative repayment</span>
+        <div class="money" style="font-size:30px;margin:8px 0 4px">${m0(monthly)}<span
+          style="font-size:.42em;color:var(--mute);font-weight:600"> / month</span></div>
+        <div class="tiny" style="margin-bottom:14px">at 26.5% a year over ${L.term} months</div>
+        <div class="tblwrap"><table class="tbl"><thead><tr><th>Period</th><th>Payment</th><th>Interest</th><th>Balance</th></tr></thead>
+          <tbody>${rows}</tbody></table></div></div>
+        <div class="tiny" style="margin-top:12px">Indicative only. Your rate is set by the model once you check,
+          and shown with the reasons behind it.</div>
+      </div></div>`;
+}
+
+/* --------------------------------------------------------------------- fx */
+function vFx(){
+  return `<div class="phead"><h2>Foreign exchange</h2>
+      <p>Indicative rates, refreshed hourly from treasury. Every quote shows our margin against mid-market
+         before you confirm — no separate transfer fee on top.</p></div>
+    <div class="grid g2">${Object.entries(FID.FX).map(([c,r])=>`
+      <button class="surface" style="text-align:left;border:0;cursor:pointer;display:flex;gap:16px;align-items:center"
+        data-fx="${c}"><div class="av o hex" style="width:48px;height:48px;font-size:13px">${c}</div>
+        <div style="flex:1"><b style="font-size:15px">${c} · ${r.name}</b>
+          <div class="tiny">mid-market ${((r.buy+r.sell)/2).toFixed(4)}</div></div>
+        <div style="text-align:right"><div class="money" style="font-size:19px">${r.sell.toFixed(4)}</div>
+          <div class="tiny">you buy at</div></div></button>`).join('')}</div>`;
+}
+
+/* --------------------------------------------------------------- business */
+function vPayroll(){
+  const r = FID.payrollCheck(FID.PAYROLL);
+  return `<div class="phead"><h2>Payroll</h2>
+      <p>Every payee screened before release, and no single person can release a batch.</p></div>
+    <div class="surface">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px">
+        <div><span class="eyebrow">August 2026</span>
+          <div class="money" style="font-size:30px;margin-top:6px">${m0(r.total)}</div>
+          <div class="tiny">${FID.PAYROLL.length} staff · pay date 28 August</div></div>
+        <span class="badge ${r.flagged.length?'r':'j'}">${r.flagged.length?'Batch held':'Ready for approval'}</span>
+      </div>
+      <hr class="hairline">
+      <div class="tblwrap"><table class="tbl"><thead><tr><th>Name</th><th>Role</th><th>Screening</th><th>Amount</th></tr></thead>
+        <tbody>${FID.PAYROLL.map(p=>{const f = r.flagged.includes(p); return `<tr>
+          <td><b>${p.name}</b></td><td>${p.role}</td>
+          <td><span class="badge ${f?'r':'j'}">${f?'held':'clear'}</span></td>
+          <td>${m0(p.amount)}</td></tr>`;}).join('')}</tbody></table></div></div>
+      ${r.flagged.length ? `<div class="surface" style="margin-top:16px;background:var(--rose-t);box-shadow:none">
+        <b style="font-size:14px">Batch cannot be released</b>
+        <p class="sub" style="margin-top:5px">${r.explanation}. The rest of the batch is ready — remove the
+          flagged payee to release the others, or wait for compliance to clear it.</p></div>` : ''}
+      ${note('MAKER-CHECKER',[['Prepared by','you'],['Screened payees',FID.PAYROLL.length],
+        ['Flagged',r.flagged.length],['Needs','a second approver'],
+        ['Status',r.action.replace(/_/g,' ').toLowerCase()]],
+        'Your second approver sees this same screen, including the flag and the reason for it.')}
+      <button class="btn primary" style="margin-top:16px" data-act="payrollsend">Send for approval</button>
+    </div>`;
+}
+
+function vInvoices(){
+  const inv = S.invoice;
+  return `<div class="phead"><h2>Invoices & purchase orders</h2>
+      <p>Upload a purchase order and we read it against the buyer registry before it counts toward financing.</p></div>
+    <div class="grid g2">
+      <div class="surface"><span class="eyebrow">Upload</span>
+        <h4 class="d3" style="margin:8px 0 6px">Add a purchase order</h4>
+        <p class="sub">PDF or photo. We extract the buyer, amount and delivery date.</p>
+        <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+          <button class="btn sm" data-upload="LPO-Adom-4471.pdf">Upload LPO-Adom-4471.pdf</button>
+          <button class="btn quiet sm" data-upload="photo_2026-08-27_blurred.jpg">Upload a photo</button></div>
+        ${!inv ? '' : inv.ok
+          ? `<div class="surface" style="margin-top:16px;background:var(--jade-t);box-shadow:none">
+              <span class="badge j">Verified</span>
+              <h4 class="d3" style="margin:8px 0 6px">${m0(24800)} from Adom Poultry Farms, due 12 October</h4>
+              <p class="sub">${inv.explanation}. This now counts toward your invoice financing limit.</p>
+              ${note('WHAT WE READ',[['File',inv.file],['Buyer','Adom Poultry Farms'],['Amount',m0(24800)],
+                ['Due','12 Oct 2026'],['Confidence',inv.conf.toFixed(2)]],
+                'Document images are deleted 90 days after the facility closes.')}</div>`
+          : `<div class="surface" style="margin-top:16px;background:var(--rose-t);box-shadow:none">
+              <span class="badge r">Could not read it</span>
+              <h4 class="d3" style="margin:8px 0 6px">Send this one again</h4>
+              <p class="sub">${inv.explanation}. Lay it flat, fill the frame, avoid shadows on the amount line.</p>
+              ${note('WHAT WENT WRONG',[['File',inv.file],['Scan quality',inv.q.toFixed(2)],['Needed','0.30'],
+                ['Fields read','buyer only'],['Action','no decision made']],
+                'Nothing was recorded against your account. A failed read is not a rejection.')}</div>`}
+      </div>
+      <div class="surface"><span class="eyebrow">Outstanding invoices</span>
+        ${[['Adom Poultry Farms',24800,'due 12 Oct'],['Coastal Foods Ltd',9400,'due 30 Sep'],
+           ['Ridge Hotel',6200,'overdue 14 days']].map(([n,a,d])=>`
+          <div class="item static"><div class="av ${d.includes('overdue')?'n':''}">${initials(n)}</div>
+            <div class="txt"><b>${n}</b><span>${d}</span></div><div class="amt">${m0(a)}</div></div>`).join('')}
+        <button class="btn quiet sm wide" style="margin-top:14px" data-view="borrow">Finance these invoices</button></div>
+    </div>`;
+}
+
+function vApprovals(){
+  return `<div class="phead"><h2>Approvals</h2>
+      <p>Anything above ${m0(5000)} needs a second person. You see what the first approver saw.</p></div>
+    <div class="surface">${[
+      ['August payroll','6 payees · 1 held by screening',18100,'Prepared by you, 08:12'],
+      ['Adom Poultry Farms','Supplier settlement',12400,'Prepared by Kwesi, 07:40'],
+      ['Ghana Water','Utility',640,'Auto-prepared, standing order'],
+    ].map(([t,s,a,w])=>`<div class="item static"><div class="av o">${I('stamp',19)}</div>
+      <div class="txt"><b>${t}</b><span>${s} · ${w}</span></div>
+      <div style="display:flex;gap:8px;align-items:center"><div class="amt">${m0(a)}</div>
+      <button class="btn sm" data-act="close">Approve</button></div></div>`).join('')}</div>`;
+}
+
+function vCashflow(){
+  const e = E(), f = FID.forecastCashflow(e);
+  if (!e.cashflow) return `<div class="phead"><h2>Cash flow</h2></div>
+    <div class="surface"><h4 class="d3">Forecasting is for business accounts</h4>
+    <p class="sub" style="margin-top:6px">Switch to ${FID.ENTITIES.business.label} in the sidebar to see the
+      eight-week view. Personal accounts get spending insights instead.</p></div>`;
+  return `<div class="phead"><h2>Cash flow</h2>
+      <p>Four weeks behind you, four weeks modelled ahead. Orange bars are forecast, not history.</p></div>
+    <div class="surface">
+      <div style="margin-top:6px">${FID.columns(e.cashflow,{forecastFrom:4,h:180,
+        labels:['w-4','w-3','w-2','now','w+1','w+2','w+3','w+4']})}</div>
+      <hr class="hairline">
+      <h4 class="d2">${f.trough<0 ? `Shortfall of ${m0(Math.abs(f.trough))} in week ${f.week}` : 'No gap projected'}</h4>
+      <p class="sub" style="margin-top:6px">${f.explanation}.</p>
+      ${f.trough<0?`<div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn primary" data-view="borrow">Cover it with working capital</button>
+        <button class="btn quiet" data-act="movepay">Move payroll to the 30th</button></div>`:''}
+      ${note('HOW THE FORECAST IS BUILT',[['Model','Prophet, weekly seasonality'],
+        ['Trained on','24 months of your settlements'],['Known dates','payroll, VAT, rent'],
+        ['Confidence','0.78'],['Typical error','±11% at 4 weeks']],
+        'A forecast is not a promise. Large one-off receipts are not predictable and are excluded.')}</div>`;
+}
+
+/* ------------------------------------------------------------- statements */
+function txRow(t){
+  return `<button class="item" data-tx="${t.id}">${FID.brandTile(t.m)}
+    <div class="txt"><b>${FID.merchant(t.m).label}</b>
+      <span>${t.d} · ${t.cat} · ${t.method}</span></div>
+    <div class="amt ${t.a>0?'in':''}">${t.a>0?'+':'−'}${m0(Math.abs(t.a))}
+      <small>bal ${m0(t.balanceAfter)}</small></div></button>`;
+}
+
+function vStatements(){
+  const e = E();
+  const q = (S.stmtQuery||'').toLowerCase(), f = S.stmtFilter || 'all';
+  const rows = e.transactions.filter(t => {
+    if (q && !FID.merchant(t.m).label.toLowerCase().includes(q) && !t.cat.toLowerCase().includes(q)) return false;
+    if (f === 'in') return t.a > 0;
+    if (f === 'out') return t.a < 0;
+    if (f !== 'all') return t.cat === f;
+    return true;
+  });
+  const cats = [...new Set(e.transactions.map(t=>t.cat))].slice(0,7);
+  const spent = rows.filter(t=>t.a<0).reduce((s,t)=>s-t.a,0);
+  const got = rows.filter(t=>t.a>0).reduce((s,t)=>s+t.a,0);
+  const byCat = {};
+  rows.filter(t=>t.a<0).forEach(t => byCat[t.cat] = (byCat[t.cat]||0) - t.a);
+  const top = Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const maxCat = top[0] ? top[0][1] : 1;
+
+  return `<div class="phead"><h2>Statement</h2>
+      <p>Every movement on ${e.accounts[0].name}, with the merchant it went to and the balance it left behind.</p></div>
+    <div class="grid g3" style="margin-bottom:18px">
+      <div class="surface"><span class="eyebrow">Money out</span>
+        <div class="money" style="font-size:26px;margin-top:6px">${m0(spent)}</div>
+        <div class="tiny">${rows.filter(t=>t.a<0).length} payments</div></div>
+      <div class="surface"><span class="eyebrow">Money in</span>
+        <div class="money" style="font-size:26px;margin-top:6px;color:var(--pos)">${m0(got)}</div>
+        <div class="tiny">${rows.filter(t=>t.a>0).length} receipts</div></div>
+      <div class="surface"><span class="eyebrow">Balance now</span>
+        <div class="money" style="font-size:26px;margin-top:6px">${m0(e.accounts[0].balance)}</div>
+        <div class="tiny">${e.accounts[0].num}</div></div>
+    </div>
+    <div class="grid g2" style="align-items:start">
+      <div>
+        <div class="surface" style="margin-bottom:14px">
+          <input id="stmtQ" placeholder="Search a merchant or category" value="${S.stmtQuery||''}"
+            style="width:100%;height:48px;padding:0 16px;border-radius:100px;border:1.5px solid var(--line);
+                   font-size:15px;font-weight:500;margin-bottom:12px">
+          <div class="chiprow">${[['all','All'],['out','Money out'],['in','Money in'],...cats.map(c=>[c,c])]
+            .map(([k,l])=>`<button class="chip" data-stmtf="${k}" aria-pressed="${f===k}">${l}</button>`).join('')}</div>
+        </div>
+        <div class="surface flush">${rows.map(txRow).join('')
+          || `<div class="emptystate">${ART.empty()}<b>Nothing matches that</b>
+            <p class="sub">Try a different merchant, or clear the filter.</p></div>`}</div>
+      </div>
+      <div>
+        <div class="surface"><span class="eyebrow">Where it went</span>
+          <div style="margin-top:12px">${top.map(([c,v])=>`
+            <div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;
+              font-size:13px;font-weight:600;margin-bottom:5px"><span>${c}</span><span>${m0(v)}</span></div>
+              <div class="bar"><i style="width:${(v/maxCat*100).toFixed(0)}%"></i></div></div>`).join('')
+            || '<p class="sub">Nothing to summarise.</p>'}</div></div>
+        <div class="surface"><span class="eyebrow">Documents</span>
+          ${['August 2026 statement','July 2026 statement','Q2 2026 summary','2025 tax certificate',
+             'Bank reference letter'].map(x=>`<button class="item"><div class="av">${I('statement',19)}</div>
+            <div class="txt"><b>${x}</b><span>PDF · stamped on request</span></div>
+            <span class="go">${I('download',18)}</span></button>`).join('')}</div>
+      </div></div>`;
+}
+
+/* ---------------------------------------------------------------- support */
+function vSupport(){
+  const thread = S.chat.map(m=>{
+    if (m.role==='me') return `<div style="text-align:right;margin-bottom:10px"><span style="display:inline-block;
+      background:linear-gradient(135deg,var(--orange-l),var(--orange));color:#fff;padding:11px 15px;border-radius:16px 16px 4px 16px;max-width:70%">${m.text}</span></div>`;
+    if (m.role==='sys') return `<div class="surface" style="box-shadow:none;background:var(--orange-t);
+      margin-bottom:10px;font-size:13.5px">${m.text}${m.note||''}</div>`;
+    return `<div style="margin-bottom:10px"><span style="display:inline-block;background:#fff;
+      box-shadow:var(--sh-sm);padding:11px 15px;border-radius:16px 16px 16px 4px;max-width:70%">${m.text}</span></div>`;
+  }).join('');
+  return `<div class="surface" style="background:var(--sand);border-color:var(--orange-t2);margin-bottom:20px">
+      <div class="arthead"><div>
+        <h2 class="d2" style="font-size:27px;margin-bottom:8px">Support</h2>
+        <p class="sub">The same assistant that answers on WhatsApp and USSD. Strongest in English, weakest in
+          Ga, Ewe and Hausa — below its accuracy floor it hands to a person rather than guessing.</p></div>
+        <div style="width:200px">${ART.support()}</div></div></div>
+    <div class="surface" style="max-width:760px">
+      <div class="chiprow" style="margin-bottom:16px">${Object.keys(FID.LANG).map(l=>
+        `<button class="chip" data-lang="${l}" aria-pressed="${S.lang===l}">${l}</button>`).join('')}</div>
+      <div id="thread" style="min-height:130px">${thread || `<p class="sub">Ask about your balance, a card,
+        a branch, a loan${S.entity==='business'?', or your cash flow':''}.</p>`}</div>
+      <div class="chiprow" style="margin:16px 0">${['What is my balance?','Block my card',
+        S.entity==='business'?'How is my cash flow?':'I want a loan','I was charged twice']
+        .map(q=>`<button class="chip" data-quick="${q}">${q}</button>`).join('')}</div>
+      <div style="display:flex;gap:8px"><input id="chatIn" placeholder="Type in ${S.lang}…"
+        style="flex:1;height:50px;padding:0 18px;border-radius:100px;border:1.5px solid var(--line)">
+        <button class="btn primary" data-act="send">Send</button></div></div>
+    <div class="grid g3" style="margin-top:20px">
+      ${[['atm','Branches & ATMs','48 branches, 210 ATMs'],['headset','Talk to a person','0302 214 490, 24 hours'],
+         ['shield','Report fraud','Freeze first, then call']].map(([i,t,s])=>`
+        <div class="surface"><div class="av o hex" style="width:44px;height:44px">${I(i,20)}</div>
+          <b style="display:block;margin-top:8px;font-size:14.5px">${t}</b>
+          <span class="tiny">${s}</span></div>`).join('')}</div>`;
+}
+
+/* ---------------------------------------------------------------- privacy */
+function vPrivacy(){
+  const rows = FID.ledger.length ? FID.ledger.map(r=>`<tr>
+      <td><b>${r.title}</b><div class="tiny">${r.useCase} · ${r.ref}</div></td>
+      <td>${r.ts}</td><td><span class="badge ${r.review?'o':'j'}">${r.review?'person involved':'automatic'}</span></td>
+      <td><button class="btn quiet sm" data-review="${r.ref}">Ask for a review</button></td></tr>`).join('')
+    : `<tr><td colspan="4"><div class="emptystate">${ART.empty()}<b>No decisions yet</b>
+        <p class="sub">Make a payment or check a loan and every decision appears here.</p></div></td></tr>`;
+  return `<div class="surface" style="background:var(--sand);border-color:var(--orange-t2);margin-bottom:20px">
+      <div class="arthead"><div>
+        <h2 class="d2" style="font-size:27px;margin-bottom:8px">Privacy & decisions</h2>
+        <p class="sub">What we decided about you, what we used to decide it, and what you can switch off.</p></div>
+        <div style="width:190px">${ART.secure()}</div></div></div>
+    <div class="surface"><span class="eyebrow">Your decisions</span>
+      <div class="tblwrap"><table class="tbl" style="margin-top:10px"><thead><tr><th>Decision</th><th>When</th><th>How</th><th></th></tr></thead>
+        <tbody>${rows}</tbody></table></div></div>
+    <div class="grid g2" style="margin-top:14px">
+      <div class="surface"><span class="eyebrow">What powers what</span>
+        <h4 class="d3" style="margin:8px 0 6px">Assessment DPIA-RETAIL-2026</h4>
+        <p class="sub">We process your name, contact details, transactions and product holdings on the basis of
+          your consent and our legitimate interest under the Data Protection Act, 2012 (Act 843).</p>
+        <div style="margin-top:12px">
+          <div class="togglerow"><div><b style="font-size:14px">Personalised offers</b>
+            <p class="tiny" style="margin-top:3px">Off means no offer cards anywhere.</p></div>
+            <button class="sw" data-consent="offers" aria-pressed="${S.consent.offers}" aria-label="Offers"></button></div>
+          <div class="togglerow"><div><b style="font-size:14px">Spending insights</b>
+            <p class="tiny" style="margin-top:3px">Off means we stop reading transaction categories.</p></div>
+            <button class="sw" data-consent="insights" aria-pressed="${S.consent.insights}" aria-label="Insights"></button></div>
+        </div></div>
+      <div class="surface"><span class="eyebrow">Always on</span>
+        <h4 class="d3" style="margin:8px 0 6px">Fraud, sanctions and transaction monitoring</h4>
+        <p class="sub">These cannot be switched off. They are how we keep your money and our licence, they are
+          covered by the same assessment, and they never feed marketing.</p>
+        ${note('WHAT THEY SEE',[['Fraud model','amount, time, beneficiary, device'],
+          ['Sanctions','beneficiary name only'],['Monitoring','transaction patterns'],
+          ['Retention','7 years, then deleted'],['Shared with','FIC where the law requires']],
+          'Nothing in this list is used to decide what to sell you.')}</div>
+    </div>`;
+}
+
+/* ------------------------------------------------------------ goal funding */
+function goalSheet(id){
+  const e = E(), g = S.goals.find(x => x.id === id);
+  S.goalId = id;
+  S.src = S.src || {kind:'account', index:0};
+  const sources = [
+    ...e.accounts.map((a,i)=>({kind:'account', index:i, label:a.name, sub:a.num, bal:a.balance, icon:'bank'})),
+    ...FID.MOMO.map(w=>({kind:'momo', id:w.id, label:w.network, sub:w.msisdn, bal:w.balance, icon:'airtime'})),
+  ];
+  const chosen = s => S.src.kind === s.kind &&
+    (s.kind === 'account' ? S.src.index === s.index : S.src.id === s.id);
+
+  openSheet(`<button class="btn quiet sm" style="margin-bottom:20px" data-act="close">${I('close',16)} Close</button>
+    <h3 class="d2">${g.name}</h3><p class="sub">${FID.goalProject(g).explanation}.</p>
+    <div style="display:flex;align-items:center;gap:18px;margin:20px 0 4px">
+      ${ring(g.saved/g.target, 70)}
+      <div style="flex:1"><div class="money" style="font-size:28px">${m0(g.saved)}</div>
+        <div class="tiny">of ${m0(g.target)} · due ${g.due}</div>
+        <div class="bar" style="margin-top:10px"><i style="width:${(g.saved/g.target*100).toFixed(0)}%"></i></div>
+      </div></div>
+    <div class="eyebrow" style="margin:24px 0 10px">Where should it come from?</div>
+    ${sources.map(s=>`<button class="item"
+        data-src='${JSON.stringify(s.kind==='account'?{kind:'account',index:s.index}:{kind:'momo',id:s.id})}'>
+      <div class="av ${chosen(s)?'o':''} hex">${IS(s.icon,22)}</div>
+      <div class="txt"><b>${s.label}</b><span>${s.sub} · ${m0(s.bal)} available</span></div>
+      ${chosen(s)?`<span style="color:var(--orange-d)">${I('check',20,2.2)}</span>`
+                 :`<span class="go">${I('chevron',17)}</span>`}</button>`).join('')}
+    <label class="field" style="margin-top:20px"><span>How much?</span>
+      <input type="number" value="500" id="goalAdd"></label>
+    <div class="chiprow" style="margin-bottom:20px">${[100,250,500,1000].map(v=>
+      `<button class="chip" data-goalamt="${v}">${m0(v)}</button>`).join('')}</div>
+    <button class="btn primary wide" data-act="fundgoal">
+      ${I(S.src.kind==='momo'?'airtime':'send',18)} Add to this goal</button>
+    <p class="tiny" style="margin-top:12px;text-align:center">${S.src.kind==='momo'
+      ? 'You will get a prompt on your phone to approve the collection.'
+      : 'Moved instantly between your own accounts, at no charge.'}</p>`);
+}
+
+function fundGoalNow(){
+  const e = E(), g = S.goals.find(x => x.id === S.goalId);
+  const amount = +($('goalAdd')?.value || 0);
+  if (!amount) return;
+  const r = FID.fundGoal(e, g, amount, S.src);
+  FID.decide('savings.goal_funding', r, {floor:0.9, title:'Goal funded', customer:e.holder,
+    channel:'web', amount, evidence:{'Goal':g.name,'Source':r.from||S.src.kind,'Amount':m0(amount)}});
+
+  if (r.adverse) return openSheet(`<span class="badge n">${I('alert',13)} Not enough there</span>
+    <h3 class="d2" style="margin-top:14px">That source is short</h3>
+    <p class="sub">${r.explanation.charAt(0).toUpperCase()+r.explanation.slice(1)}. Nothing has moved.</p>
+    <button class="btn primary wide" style="margin-top:18px" data-goal="${g.id}">Pick another source</button>`);
+
+  if (S.src.kind === 'account')
+    FID.post(e, {merchant:'Transfer to ' + g.name, amount:-amount, account:S.src.index,
+      method:'Goal transfer', category:'Savings'});
+
+  const done = g.saved >= g.target;
+  openSheet(`<div style="text-align:center;padding:10px 0 2px">
+      <div class="av ${done?'o':'p'} hex" style="width:74px;height:74px;margin:0 auto">
+        ${I(done?'goal':'check',32,2.2)}</div>
+      <h3 class="d2" style="margin-top:18px">${done ? g.name + ' is fully funded' : m0(amount) + ' added'}</h3>
+      <p class="sub">${done ? 'You got there. Withdraw it whenever you need it.'
+        : `${g.name} is now ${m0(g.saved)} of ${m0(g.target)}.`}</p>
+      <div class="bar" style="margin:20px 0"><i style="width:${(g.saved/g.target*100).toFixed(0)}%"></i></div></div>
+    ${note('HOW IT MOVED',[['Goal',g.name],['From',r.from],['Amount',m0(amount)],['Charge','none'],
+      ['Settles', S.src.kind==='momo' ? 'within a minute' : 'instantly']],
+      r.explanation.charAt(0).toUpperCase()+r.explanation.slice(1)+'.')}
+    <button class="btn primary wide" style="margin-top:18px" data-act="close">Done</button>`);
+  render();
+}
+
+/* ==================================================================== flows */
+function payFlow(i){
+  const e = E(), b = e.beneficiaries[i];
+  S.pay = {i, amount:''};
+  openSheet(`<button class="btn quiet sm" style="margin-bottom:18px" data-act="close">${I('back',16)} Back</button>
+    <h3 class="d2">${b.name}</h3><p class="sub">${b.bank} · ${b.acct}</p>
+    <label class="field" style="margin-top:20px"><span>Amount (GHS)</span>
+      <input id="payamt" type="number" placeholder="0.00" autofocus></label>
+    <div class="chiprow" style="margin-bottom:16px">${[50,200,1000,12400].map(v=>
+      `<button class="chip" data-payset="${v}">${m0(v)}</button>`).join('')}</div>
+    <label class="field"><span>Reference</span><input placeholder="What is this for?"></label>
+    <button class="btn primary wide" data-act="payreview">Review payment</button>`);
+}
+
+function payReview(){
+  const e = E(), b = e.beneficiaries[S.pay.i], amount = +($('payamt')?.value || 0);
+  if (!amount) return;
+  S.pay.amount = amount;
+
+  const lim = FID.limitCheck(amount);
+  if (lim.adverse){
+    FID.decide('limits.tier', lim, {floor:1, title:'Blocked by your tier', customer:e.holder,
+      channel:'web', amount});
+    return openSheet(`<span class="badge r">Not sent</span>
+      <h3 class="d2" style="margin-top:14px">That is over your limit</h3>
+      <p class="sub">${lim.explanation}. Nothing has left your account.</p>
+      ${note('WHY IT STOPPED',[['Requested',m0(amount)],['Your tier',FID.KYC.label],
+        ['Single limit',m0(FID.KYC.singleLimit)],['Set by','Bank of Ghana KYC rules']],
+        'Upgrading to Tier 3 raises this to GHS 100,000. It takes about two minutes with your Ghana Card.')}
+      <div style="display:flex;gap:8px;margin-top:18px"><button class="btn primary" data-sheet="upgrade">Upgrade tier</button>
+        <button class="btn quiet" data-act="close">Close</button></div>`);
+  }
+
+  const sanc = FID.screenBeneficiary(b.name);
+  FID.decide('fcc.sanctions', sanc, {floor:FID.FLOOR.sanctions, title:'Beneficiary screened', customer:e.holder,
+    channel:'web', amount, evidence:{'Beneficiary':b.name,'Match score':sanc.similarity.toFixed(2),
+    'Threshold':'0.30','Money moved':'none'}});
+  if (sanc.action === 'HOLD_FOR_L2_REVIEW'){
+    const ref = 'CMP-' + (7700 + FID.ledger.length);
+    return openSheet(`<span class="badge r">Held · not sent</span>
+      <h3 class="d2" style="margin-top:14px">A compliance officer is checking this</h3>
+      <p class="sub">${b.name} matched a sanctions and PEP watchlist entry closely enough that we cannot release
+        it automatically. <b>Your money has not moved.</b> We will call you by 16:00. Reference ${ref}.</p>
+      ${note('WHAT THE CHECK FOUND',[['Beneficiary',b.name],['Match score',sanc.similarity.toFixed(2)],
+        ['Threshold','0.30'],['List','UN consolidated + local PEP'],['Money moved','none']],
+        'Screening cannot be switched off. A person, not the model, decides what happens next.')}
+      <button class="btn quiet wide" style="margin-top:18px" data-act="close">Close</button>`);
+  }
+
+  const fr = FID.assessPayment({to:b.name, amount, bankLine:b.bank, hour:new Date().getHours(),
+    newBeneficiary: b.last === 'first payment'});
+  const dec = FID.decide('retail.fraud_detection', fr, {floor:FID.FLOOR.fraud, title:'Payment screened',
+    customer:e.holder, channel:'web', amount, evidence:{'Beneficiary':b.name,'Amount':m0(amount),
+    'Signals':fr.reasons.join('; '),'Model confidence':fr.confidence.toFixed(2)}});
+
+  if (fr.action === 'STEP_UP' || dec.review)
+    return openSheet(`<span class="badge o">Confirm it is you</span>
+      <h3 class="d2" style="margin-top:14px">This is not your usual payment</h3>
+      <p class="sub">${fr.reasons.map(r=>r[0].toUpperCase()+r.slice(1)).join('. ')}. Nothing has been sent yet.</p>
+      <label class="field" style="margin-top:18px"><span>Code sent to 024 ••• 8812</span>
+        <input inputmode="numeric" placeholder="• • • • • •" style="letter-spacing:.3em;text-align:center"></label>
+      <div style="display:flex;gap:8px"><button class="btn primary" style="flex:1" data-act="paysent">Confirm and send</button>
+        <button class="btn danger" data-act="paynotme">Not me</button></div>
+      ${note('WHY WE STOPPED IT',[['Beneficiary',b.name],['Amount',m0(amount)],
+        ...fr.reasons.map((r,i)=>['Signal '+(i+1), r]),['Confidence',fr.confidence.toFixed(2)]],
+        'Fraud model v3. This note is kept whether or not you complain — it is what an investigation reads.')}`);
+
+  paySent();
+}
+
+function paySent(){
+  const e = E(), b = e.beneficiaries[S.pay.i], amount = S.pay.amount;
+  b.last = m0(amount);
+  const tx = FID.post(e, {merchant:b.name, amount:-amount, method:'Transfer · '+b.bank, category:'Transfer'});
+  openSheet(`<div style="text-align:center;padding:16px 0 4px">
+      <div class="av p hex" style="width:72px;height:72px;margin:0 auto">${I('check',30,2.2)}</div>
+      <h3 class="d2" style="margin-top:18px">${m0(amount)} sent</h3>
+      <p class="sub">to ${b.name} · ${b.bank}</p></div>
+    ${note('WHAT WE CHECKED FIRST',[['Tier limit','within'],['Sanctions screen','clear'],
+      ['Fraud model','approve'],['Reference',tx.ref],['New balance',m0(tx.balanceAfter)]],
+      'Both checks ran before the money moved, not after.')}
+    <button class="btn primary wide" style="margin-top:18px" data-act="close">Done</button>`);
+  render();
+}
+
+function loanCheck(){
+  const e = E(), amount = S.loan.amount;
+  const r = FID.preapprove(amount, e.credit);
+  const dec = FID.decide('retail.loan_preapproval', r, {floor:FID.FLOOR.loan, title:'Loan pre-approval',
+    customer:e.holder, channel:'web', amount, evidence:{'Credit bureau':e.credit.bureau,
+    'Debt to income':FID.pct(e.credit.dti),'Default probability':(r.pd*100).toFixed(1)+'%',
+    'Affordability cap':m0(r.cap),'Requested':m0(amount)}});
+
+  if (dec.review){
+    const ref = 'ADJ-' + (4470 + FID.ledger.length);
+    return openSheet(`<span class="badge o">With a person</span>
+      <h3 class="d2" style="margin-top:14px">A credit officer is deciding this, not a model</h3>
+      <p class="sub">${r.explanation.charAt(0).toUpperCase()+r.explanation.slice(1)}. Because the outcome would
+        go against you, it does not stay automated. You will hear back by 16:00 today. Reference ${ref}.</p>
+      ${note('WHAT THE MODEL SAW',[['Credit bureau',e.credit.bureau],['Debt to income',FID.pct(e.credit.dti)],
+        ['Default probability',(r.pd*100).toFixed(1)+'%'],['Affordability cap',m0(r.cap)],
+        ['Requested',m0(amount)],['Sent to','human adjudication']],
+        'The officer sees these same figures and can override every one of them.')}
+      <button class="btn quiet wide" style="margin-top:18px" data-act="close">Close</button>`);
+  }
+  const monthly = amount * (0.265/12) / (1 - Math.pow(1+0.265/12, -S.loan.term));
+  openSheet(`<span class="badge j">Pre-approved</span>
+    <h3 class="d2" style="margin-top:14px">${m0(amount)} over ${S.loan.term} months</h3>
+    <p class="sub">${m0(monthly)} a month at 26.5% a year. You qualify for up to ${m0(r.limit)}.
+      Nothing is drawn until you accept.</p>
+    ${note('HOW WE DECIDED',[['Credit bureau',e.credit.bureau],['Debt to income',FID.pct(e.credit.dti)],
+      ['Default probability',(r.pd*100).toFixed(1)+'%'],['Affordability cap',m0(r.cap)],
+      ['Limit',m0(r.limit)],['Confidence',r.confidence.toFixed(2)]],
+      'Automated pre-approval with a SHAP explainer. Ask for a person to check it under Privacy & decisions.')}
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <button class="btn primary" style="flex:1" data-act="close">Accept and draw down</button>
+      <button class="btn quiet" data-act="close">Later</button></div>`);
+}
+
+function txDetail(id){
+  const t = E().transactions.find(x => x.id === id);
+  if (!t) return;
+  openSheet(`<button class="btn quiet sm" style="margin-bottom:20px" data-act="close">${I('close',16)} Close</button>
+    <div style="text-align:center;padding:4px 0 2px">${FID.brandTile(t.m, 66, 21)}
+      <div class="money" style="font-size:38px;margin:16px 0 4px;color:${t.a>0?'var(--pos)':'var(--ink)'}">
+        ${t.a>0?'+':'−'}${m0(Math.abs(t.a))}</div>
+      <div class="sub">${FID.merchant(t.m).label}</div>
+      <div style="margin-top:12px"><span class="badge ${t.status==='Completed'?'p':'o'}">
+        ${I(t.status==='Completed'?'check':'clock',13)} ${t.status}</span></div></div>
+    ${note('TRANSACTION RECORD',[['When',t.d],['Category',t.cat],['Method',t.method],
+      ['Reference',t.ref],['Balance after',m0(t.balanceAfter)],['Record',t.hash]],
+      'Kept for seven years. Quote the reference if you query this with us or with the merchant.')}
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <button class="btn quiet" style="flex:1">${I('download',17)} Receipt</button>
+      <button class="btn quiet" style="flex:1" data-act="dispute">${I('alert',17)} Report a problem</button></div>`);
+}
+
+function sheets(k){
+  const e = E();
+  const map = {
+    alerts:`<button class="btn quiet sm" style="margin-bottom:18px" data-act="close">Close</button>
+      <h3 class="d2">Notifications</h3>
+      <div style="margin-top:14px">
+        <div class="item static"><div class="av n">${IS('alert',22)}</div><div class="txt"><b>We paused GHS 2,450 to Electro World</b>
+          <span>Foreign merchant, 02:14 · nothing left your account</span></div></div>
+        <div class="item static"><div class="av p">${IS('invest',22)}</div><div class="txt"><b>182-day bill matured</b>
+          <span>GHS 22,585 credited</span></div></div>
+        <div class="item static"><div class="av o">${IS('goal',22)}</div><div class="txt"><b>Rent goal is 67% funded</b>
+          <span>4 more months at GHS 1,200</span></div></div></div>`,
+    upgrade:`<h3 class="d2">Upgrade to Tier 3</h3><p class="sub">Raises your single-transaction limit to
+      GHS 100,000 and unlocks international transfers.</p>
+      <div style="margin-top:16px">${FID.KYC.toTier3.map((x,i)=>`<div class="item static">
+        <div class="av ${i===0?'p':''}">${i===0?I('check',18):i+1}</div><div class="txt"><b>${x}</b>
+        <span>${i===0?'Verified 12 Mar 2026':'Not yet provided'}</span></div></div>`).join('')}</div>
+      <button class="btn primary wide" style="margin-top:18px" data-act="close">Continue with Ghana Card</button>`,
+    limits:`<h3 class="d2">Spending limits</h3><p class="sub">Applies to this card only, effective immediately.</p>
+      ${[['Per transaction',5000],['Per day',10000],['Online',3000],['ATM withdrawal',2000]].map(([l,v])=>`
+        <div style="margin-top:20px"><div style="display:flex;justify-content:space-between">
+        <b style="font-size:14px">${l}</b><span class="money" style="font-size:15px">${m0(v)}</span></div>
+        <input type="range" min="500" max="20000" value="${v}" style="width:100%;accent-color:var(--orange);margin-top:6px"></div>`).join('')}
+      <button class="btn primary wide" style="margin-top:24px" data-act="close">Save limits</button>`,
+    newgoal:`<h3 class="d2">New savings goal</h3>
+      <label class="field" style="margin-top:16px"><span>What are you saving for?</span>
+        <input placeholder="Rent, school fees, a trip…"></label>
+      <label class="field"><span>Target</span><input type="number" placeholder="0.00"></label>
+      <label class="field"><span>Put aside each month</span><input type="number" placeholder="0.00"></label>
+      <button class="btn primary wide" data-act="close">Create goal</button>`,
+    swift:`<h3 class="d2">International transfer</h3>
+      <p class="sub">Tier 3 required. Settles in one to two business days by SWIFT.</p>
+      <div class="surface" style="margin-top:16px;background:var(--orange-t);box-shadow:none">
+        <b style="font-size:14px">Not available on ${FID.KYC.label}</b>
+        <p class="sub" style="margin-top:5px">Upgrade with your Ghana Card to send outside Ghana.</p></div>
+      <button class="btn primary wide" style="margin-top:18px" data-sheet="upgrade">Upgrade my tier</button>`,
+  };
+  openSheet(map[k] || `<h3 class="d2">Not built yet</h3>
+    <p class="sub">This service is mapped in the engine's portfolio, but the agent behind it has not been built.
+      The control tower counts every time you land here as roadmap demand.</p>
+    <button class="btn quiet wide" style="margin-top:18px" data-act="close">Close</button>`);
+}
+
+/* --------------------------------------------------------------- support */
+const REPLY = {
+  balance_enquiry: e => ({English:`Your available balance is ${m2(e.accounts[0].balance)}.`,
+                          Twi:`Wo sika a ɛwɔ hɔ yɛ ${m2(e.accounts[0].balance)}.`}),
+  card_block: () => ({English:'Card ending 3391 is frozen. Nothing new can be charged to it. Order a replacement?',
+                      Twi:'Wo card 3391 no, yɛasi ano. Yɛnyɛ foforɔ mma wo?'}),
+  branch_locator: () => ({English:'Nearest branch: Ridge, 1.2 km, opens 08:30. Nearest ATM: Farrar Avenue, 400 m.',
+                          Twi:'Baabi a ɛbɛn: Ridge, 1.2 km, ɛbue 08:30.'}),
+  loan_enquiry: () => ({English:'Open Borrow and check what you qualify for. It takes about 20 seconds.',
+                        Twi:'Kɔ Borrow hɔ na hwɛ deɛ wobɛtumi anya.'}),
+  airtime_topup: () => ({English:'How much airtime, and for which number?', Twi:'Airtime sɛn, na nɔma bɛn so?'}),
+  statement: () => ({English:'Which month? I can email a PDF or show it here.', Twi:'Bosome bɛn na wopɛ?'}),
+  cashflow: e => ({English:`You are projected ${m0(Math.abs(FID.forecastCashflow(e).trough))} short in week ${FID.forecastCashflow(e).week}. Open Cash flow to see it.`,
+                   Twi:'Kɔ Cash flow hɔ na hwɛ.'}),
+};
+
+function send(text){
+  text = (text||'').trim(); if (!text) return;
+  const e = E(), lang = S.lang;
+  S.chat.push({role:'me', text});
+  const p = FID.parse(text, lang);
+  const dec = FID.decide('retail.chatbot', p, {floor:FID.FLOOR.chat, title:'Assistant answered',
+    customer:e.holder, channel: lang==='English'?'web':'whatsapp',
+    evidence:{'Language':lang,'Understanding':p.confidence.toFixed(2),'Required':FID.FLOOR.chat.toFixed(2),'Message':text}});
+
+  if (dec.review){
+    S.chat.push({role:'sys', text:`<b>Passing you to a person.</b> The ${lang} model was ${FID.pct(p.confidence)}
+      sure it understood you, below the ${FID.pct(FID.FLOOR.chat)} we require before answering. Akosua joins in
+      about 40 seconds.`,
+      note: note('WHY A PERSON',[['Language',lang],['Understanding',p.confidence.toFixed(2)],
+        ['Required',FID.FLOOR.chat.toFixed(2)],['Action','handover, no guess']],
+        'We publish accuracy per language. Guessing in a language we serve less well is not something we do.')});
+  } else if (p.intent === 'complaint'){
+    S.chat.push({role:'ai', text:'That should not have happened. Case CX-2211 is open and a person will call you today. The duplicate charge is flagged for reversal.'});
+    FID.decide('cx.complaint_resolution', {action:'ESCALATE_TIER2', confidence:p.confidence, adverse:false,
+      explanation:'complaint intent detected, routed to tier 2'}, {title:'Complaint opened', customer:e.holder});
+  } else if (p.intent === 'unknown'){
+    S.chat.push({role:'ai', text:'I did not catch that. Try your balance, your card, branches or a loan — or type "person" and I hand over.'});
+  } else {
+    const bank = REPLY[p.intent](e), native = FID.LANG[lang].writes && bank[lang];
+    S.chat.push({role:'ai', text: native ? bank[lang] : bank.English});
+    if (!FID.LANG[lang].writes) S.chat.push({role:'sys',
+      text:`Answered in English. The ${lang} model is above the floor for understanding you but not for writing
+            back — we would rather be clear than sound local.`});
+  }
+  render();
+  const t = $('thread'); if (t) t.scrollTop = t.scrollHeight;
+}
+
+/* =================================================================== render */
+const V = {overview:vOverview, transfers:vTransfers, bills:vBills, cards:vCards, save:vSave,
+           borrow:vBorrow, fx:vFx, payroll:vPayroll, invoices:vInvoices, approvals:vApprovals,
+           cashflow:vCashflow, statements:vStatements, support:vSupport, privacy:vPrivacy};
+
+function feed(){
+  $('feed').innerHTML = FID.ledger.length ? FID.ledger.map(r=>`
+    <div class="rec"><div class="rh"><b>${r.title}</b><span class="ref">${r.ts}</span></div>
+      <div class="re">${r.explanation}</div>
+      <div style="display:flex;gap:7px;align-items:center;margin-top:8px">
+        <span class="badge ${r.review?'o':'j'}">${r.review?'person involved':'automatic'}</span>
+        <span class="ref">conf ${r.confidence.toFixed(2)}</span></div></div>`).join('')
+    : `<div class="artbox xs" style="margin-bottom:8px">${ART.network()}</div>
+       <p class="railsub">Nothing decided yet. As soon as a model does something that affects you — screens a
+        payment, prices a loan, answers a question — the record appears here, in the same words the bank's own
+        audit trail keeps.</p>`;
+}
+FID.onDecision(() => feed());
+
+function render(){ chrome(); $('view').innerHTML = (V[S.view] || vOverview)(); feed(); }
+
+/* =============================================================== behaviour */
+document.addEventListener('click', ev => {
+  const el = ev.target.closest('[data-view],[data-entity],[data-act],[data-ben],[data-sheet],[data-bill],'
+    + '[data-fx],[data-tenor],[data-months],[data-goal],[data-consent],[data-note],[data-lang],[data-quick],'
+    + '[data-which],[data-pick],[data-payset],[data-upload],[data-review],[data-tx],[data-stmtf],'
+    + '[data-goalamt],[data-src]');
+  if (!el) return;
+  const d = el.dataset;
+
+  if (d.pick){ el.parentElement.querySelectorAll('.chip')
+      .forEach(c => c.setAttribute('aria-pressed', c === el)); return; }
+  if (d.note){ const b = $('note-'+d.note);
+    if (!b.innerHTML) b.innerHTML = note('WHERE THIS CAME FROM',[['Read','your transactions, 90 days'],
+      ['Compared to','anonymised peer median'],['Not used','name, location, contacts'],['Confidence','0.86']],
+      'Turn off spending insights under Privacy & decisions and we stop reading transactions for tips.');
+    b.hidden = !b.hidden; el.innerHTML = b.hidden ? I('info',15) + ' Where this came from' : I('close',15) + ' Hide'; return; }
+  if (d.entity){ S.entity = d.entity; S.view = 'overview'; closeSheet(); render(); return; }
+  if (d.view){ S.view = d.view; closeSheet(); render(); window.scrollTo(0,0); return; }
+  if (d.consent){ S.consent[d.consent] = !S.consent[d.consent]; render(); return; }
+  if (d.which){ S.frozen[d.which] = !S.frozen[d.which];
+    FID.decide('retail.card_controls', {action:S.frozen[d.which]?'FREEZE_CARD':'UNFREEZE_CARD', confidence:1,
+      adverse:false, explanation:'you changed this yourself online'},
+      {title:S.frozen[d.which]?'Card frozen':'Card unfrozen', customer:E().holder, channel:'web'});
+    render(); return; }
+  if (d.lang){ S.lang = d.lang; render(); return; }
+  if (d.quick){ send(d.quick); return; }
+  if (d.ben !== undefined && d.ben !== ''){ payFlow(+d.ben); return; }
+  if (d.payset){ $('payamt').value = d.payset; return; }
+  if (d.review){ alert('A person will review ' + d.review + ' and call you on 024 ••• 8812 within one working day.'); return; }
+  if (d.bill){ const b = FID.BILLERS.find(x=>x.id===d.bill);
+    openSheet(`<h3 class="d2">${b.name}</h3>
+      <label class="field" style="margin-top:18px"><span>${b.hint}</span><input value="P0521 8834 210"></label>
+      <label class="field"><span>Amount</span><input id="billamt" type="number" value="150"></label>
+      <button class="btn primary wide" data-act="billpay" data-b="${b.id}">Pay ${b.name}</button>`); return; }
+  if (d.fx){ const q = FID.fxQuote(500, d.fx, 'buy');
+    openSheet(`<h3 class="d2">Buy ${d.fx}</h3>
+      <label class="field" style="margin-top:18px"><span>Amount in ${d.fx}</span>
+        <input type="number" value="500"></label>
+      <div class="surface" style="box-shadow:none;background:var(--line-2)">
+        <div class="item static" style="padding-top:0"><div class="txt"><b>You pay</b></div>
+          <div class="amt">${m0(q.cedis)}</div></div>
+        <div class="item static"><div class="txt"><b>Rate</b></div><div class="amt">${q.rate.toFixed(4)}</div></div></div>
+      ${note('OUR MARGIN ON THIS TRADE',[['You get', d.fx+' 500'],['At', q.rate.toFixed(4)],
+        ['Mid-market', ((FID.FX[d.fx].buy+FID.FX[d.fx].sell)/2).toFixed(4)],['Our margin', m0(q.spread)]],
+        'We show the margin because you would find it anyway. No separate transfer fee on top.')}
+      <button class="btn primary wide" style="margin-top:18px" data-act="close">Buy ${d.fx} 500</button>`); return; }
+  if (d.tenor){ const q = FID.tbillQuote(20000, +d.tenor);
+    openSheet(`<h3 class="d2">${d.tenor}-day treasury bill</h3>
+      <p class="sub">Government of Ghana. Locked until maturity; you can sell early at market price.</p>
+      <label class="field" style="margin-top:18px"><span>Amount to invest</span>
+        <input type="number" value="20000"></label>
+      <div class="surface" style="box-shadow:none;background:var(--jade-t)">
+        <div class="item static" style="padding-top:0"><div class="txt"><b>Rate</b></div>
+          <div class="amt in">${(q.rate*100).toFixed(2)}%</div></div>
+        <div class="item static"><div class="txt"><b>You receive at maturity</b></div>
+          <div class="amt in">${m0(q.maturity)}</div></div></div>
+      ${note('HOW THAT IS WORKED OUT',[['Invested',m0(20000)],['Gross interest',m0(q.gross)],
+        ['Withholding tax (8%)','−'+m0(q.tax)],['Net interest',m0(q.net)],['Maturity',d.tenor+' days']],
+        'The 8% withholding tax on treasury bill interest is deducted at source and remitted to GRA.')}
+      <button class="btn primary wide" style="margin-top:18px" data-act="close">Invest ${m0(20000)}</button>`); return; }
+  if (d.months){ const dep = FID.DEPOSITS.find(x=>x.months == d.months);
+    openSheet(`<h3 class="d2">${d.months}-month fixed deposit</h3>
+      <p class="sub">Locked for ${d.months} months at ${(dep.rate*100).toFixed(1)}% a year.
+        Breaking early forfeits accrued interest.</p>
+      <label class="field" style="margin-top:18px"><span>Amount</span><input type="number" value="10000"></label>
+      <button class="btn primary wide" data-act="close">Open deposit</button>`); return; }
+  if (d.goal){ goalSheet(d.goal); return; }
+  if (d.src){ S.src = JSON.parse(d.src); goalSheet(S.goalId); return; }
+  if (d.goalamt){ $('goalAdd').value = d.goalamt; return; }
+  if (d.tx){ txDetail(d.tx); return; }
+  if (d.stmtf){ S.stmtFilter = d.stmtf; render(); return; }
+  if (d.upload){ const v = FID.verifyDocument(d.upload);
+    FID.decide('sme.doc_verification', v, {floor:FID.FLOOR.doc, title:'Purchase order checked',
+      customer:E().holder, channel:'web'});
+    S.invoice = {ok: v.action === 'VERIFIED', file:d.upload, conf:v.confidence, q:v.quality,
+                 explanation:v.explanation}; render(); return; }
+  if (d.sheet) return sheets(d.sheet);
+
+  switch (d.act){
+    case 'close': closeSheet(); render(); break;
+    case 'fundgoal': fundGoalNow(); break;
+    case 'dispute': openSheet(`<h3 class="d2">What went wrong?</h3>
+      <p class="sub">Tell us in a line. A person reads every one of these — it does not go to a model.</p>
+      <label class="field" style="margin-top:18px"><span>What happened</span>
+        <textarea placeholder="I was charged twice, the amount is wrong, I do not recognise this…"></textarea></label>
+      <button class="btn primary wide" data-act="close">Send to a person</button>`); break;
+    case 'send': send($('chatIn').value); break;
+    case 'payreview': payReview(); break;
+    case 'paysent': paySent(); break;
+    case 'paynotme': S.frozen.physical = true;
+      FID.decide('retail.fraud_detection', {action:'FREEZE_CARD', confidence:.94, adverse:false,
+        explanation:'customer confirmed the payment was not theirs; card frozen'},
+        {title:'Card frozen at your request', customer:E().holder, channel:'web'});
+      openSheet(`<span class="badge r">Stopped</span>
+        <h3 class="d2" style="margin-top:14px">Card frozen, payment cancelled</h3>
+        <p class="sub">Nothing left your account. A replacement is on its way to Ridge branch and a fraud
+          officer will call you within the hour.</p>
+        <button class="btn primary wide" style="margin-top:18px" data-act="close">Done</button>`);
+      break;
+    case 'loancheck': loanCheck(); break;
+    case 'billpay': { const b = FID.BILLERS.find(x=>x.id===d.b), amount = +($('billamt')?.value||0);
+      if (!amount) break;
+      const fr = FID.assessPayment({to:b.name, amount, bankLine:'biller', hour:new Date().getHours()});
+      FID.decide('retail.bill_payment', fr, {floor:FID.FLOOR.fraud, title:'Bill payment screened',
+        customer:E().holder, channel:'web', amount, evidence:{'Biller':b.name,'Amount':m0(amount)}});
+      const btx = FID.post(E(), {merchant:b.name, amount:-amount, method:'Bill payment', category:b.cat});
+      openSheet(`<div style="text-align:center;padding:16px 0 4px">
+          <div class="av p hex" style="width:72px;height:72px;margin:0 auto">${I('check',30,2.2)}</div>
+          <h3 class="d2" style="margin-top:18px">${m0(amount)} paid</h3>
+          <p class="sub">${b.name} · token arrives by SMS</p></div>
+        ${note('RECEIPT',[['Biller',b.name],['Reference',btx.ref],['Amount',m0(amount)],
+          ['Screened','fraud, clear'],['New balance',m0(btx.balanceAfter)]],
+          'Keep this reference if the biller ever queries the payment.')}
+        <button class="btn primary wide" style="margin-top:18px" data-act="close">Done</button>`); break; }
+    case 'payrollsend': { const r = FID.payrollCheck(FID.PAYROLL);
+      FID.decide('ops.payroll', r, {floor:0.9, title:'Payroll batch screened', customer:E().holder,
+        channel:'web', amount:r.total});
+      alert(r.flagged.length
+        ? 'Batch held: ' + r.explanation
+        : 'Sent to your second approver. They see the same screen, including every screening result.');
+      render(); break; }
+    case 'addgoal': { const g = S.goals.find(x=>x.id===d.g), v = +$('goalAdd').value || 0;
+      g.saved = Math.min(g.target, g.saved + v); closeSheet(); render(); break; }
+    case 'movepay':
+      FID.decide('sme.cashflow', {action:'RESCHEDULE_PAYROLL', confidence:0.81, adverse:false,
+        explanation:'payroll moved to the 30th, after card settlement lands; projected gap closes'},
+        {title:'Payroll date moved', customer:E().holder, channel:'web'});
+      alert('Payroll is now scheduled for the 30th. The forecast gap closes.'); render(); break;
+  }
+});
+
+document.addEventListener('input', ev => {
+  if (ev.target.id === 'stmtQ'){ S.stmtQuery = ev.target.value; const pos = ev.target.selectionStart;
+    render(); const box = $('stmtQ'); if (box){ box.focus(); box.setSelectionRange(pos,pos); } }
+  if (ev.target.id === 'loanRange'){ S.loan.amount = +ev.target.value; render(); }
+  if (ev.target.id === 'term'){ S.loan.term = +ev.target.value; render(); }
+});
+document.addEventListener('keydown', ev => {
+  if (ev.key === 'Escape') closeSheet();
+  if (ev.target.id === 'chatIn' && ev.key === 'Enter') send(ev.target.value);
+  if (ev.target.id === 'payamt' && ev.key === 'Enter') payReview();
+});
+
+/* ---- product switcher: four connected products, reachable from any one ---- */
+(function(){
+  const HERE = (location.pathname || '').split('/').pop() || 'index.html';
+  const PRODUCTS = [
+    ['index.html','Prototype home','start here'],
+    ['fidelity-app.html','Fidelity app','customer · mobile'],
+    ['fidelity-web.html','Fidelity Online','customer · web'],
+    ['reviewer-console.html','Reviewer console','staff · the queue'],
+    ['control-tower.html','AI Control Tower','staff · governance'],
+  ];
+  const el = document.createElement('div');
+  el.className = 'switcher';
+  el.innerHTML = `<div class="panel"><div class="hd">Switch product</div>` +
+    PRODUCTS.map(([h,t,s]) => `<a href="${h}" class="${h===HERE?'here':''}">${I('node',18)}
+      <span style="font-size:13.5px;font-weight:600;opacity:1;margin:0">${t}<span>${s}</span></span></a>`).join('') +
+    `</div><button data-switch aria-label="Switch product" aria-expanded="false">${I('grid',22)}</button>`;
+  document.body.appendChild(el);
+  document.addEventListener('click', ev => {
+    const hit = ev.target.closest && ev.target.closest('[data-switch]');
+    if (!hit) { el.classList.remove('open'); return; }
+    const open = !el.classList.contains('open');
+    el.classList[open ? 'add' : 'remove']('open');
+    hit.setAttribute('aria-expanded', open);
+    hit.innerHTML = open ? I('close',22) : I('grid',22);
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') el.classList.remove('open'); });
+})();
+
+render();
+</script>
+</body>
+</html>

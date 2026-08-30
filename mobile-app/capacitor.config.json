@@ -1,0 +1,9 @@
+{
+  "appId": "com.fidelity.aibank",
+  "appName": "Fidelity Bank",
+  "webDir": "www",
+  "server": {
+    "cleartext": true,
+    "androidScheme": "https"
+  }
+}

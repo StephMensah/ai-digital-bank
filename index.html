@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#15161A">
+<title>Fidelity Digital — prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Geist+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>/* =========================================================================
+   FIDELITY DIGITAL — design system
+   Smart gold for action. White for surface. Grey for structure. Matte black
+   used deliberately, and only where the money is: the balance card, the
+   bank card, the confirm button. Nothing else earns it.
+   ========================================================================= */
+:root{
+  --ink:#333A42;         --slate:#5A626C;      --grey:#858D97;    --mist:#AAB2BC;
+  --line:#E7EBEF;        --line-2:#F1F4F6;     --haze:#F6F8F9;
+  --canvas:#FAFBFC;      --white:#FFFFFF;      --sand:#FFF9F4;
+  --jet:#15161A;         --jet-2:#232428;      /* the matte black surfaces */
+  --orange:#B8952E;      --orange-d:#8F7220;   --orange-l:#D9BE72;   /* smart gold */
+  --orange-t:#F8F1DC;    --orange-t2:#EFE3B8;
+  --pos:#2E9C78;        --pos-t:#E9F6F1;
+  --neg:#E0574A;        --neg-t:#FDEDEB;
+  --r-xl:26px; --r-lg:20px; --r:14px; --r-sm:10px;
+  --sh-xs:0 1px 2px rgba(93,74,54,.06);
+  --sh-sm:0 1px 2px rgba(93,74,54,.05), 0 8px 22px -14px rgba(93,74,54,.18);
+  --sh:0 2px 5px rgba(93,74,54,.05), 0 20px 42px -24px rgba(93,74,54,.24);
+  --sh-lg:0 34px 78px -32px rgba(93,74,54,.32);
+  --display:"Bricolage Grotesque","Manrope",system-ui,sans-serif;
+  --body:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Geist Mono","IBM Plex Mono",ui-monospace,monospace;
+  --ease:cubic-bezier(.22,.61,.36,1);
+  --hex:polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+html,body{margin:0;padding:0;overflow-x:hidden}
+body{font-family:var(--body);font-size:15px;line-height:1.5;color:var(--ink);background:var(--canvas);
+     -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;letter-spacing:-.005em}
+h1,h2,h3,h4,p{margin:0}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+:focus-visible{outline:2.5px solid var(--orange);outline-offset:2px;border-radius:8px}
+::-webkit-scrollbar{width:0;height:0}
+svg.ico{display:block;flex:none}
+
+/* ------------------------------------------------------------------ type */
+.d1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4vw,42px);line-height:1.02;letter-spacing:-.035em}
+.d2{font-family:var(--display);font-weight:700;font-size:23px;line-height:1.12;letter-spacing:-.025em}
+.d3{font-size:16px;font-weight:700;line-height:1.25;letter-spacing:-.015em}
+.money{font-family:var(--display);font-weight:700;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mist)}
+.sub{color:var(--slate);font-size:13.5px;line-height:1.6}
+.tiny{font-size:12px;color:var(--grey);line-height:1.5}
+.ref{font-family:var(--mono);font-size:11px;color:var(--mist);letter-spacing:-.02em}
+
+/* --------------------------------------------------------------- surfaces */
+.surface{background:var(--white);border-radius:var(--r-lg);padding:20px;box-shadow:var(--sh-sm);
+         border:1px solid var(--line-2)}
+.surface + .surface{margin-top:14px}
+.surface.flush{padding:6px 20px}
+.hairline{height:1px;background:var(--line-2);border:0;margin:16px -20px}
+
+/* the balance card — matte black, node lattice, one smart-gold light source */
+.hero{position:relative;color:#fff;border-radius:var(--r-xl);padding:24px;overflow:hidden;
+      background:linear-gradient(135deg,#2E2F33 0%,var(--jet-2) 48%,var(--jet) 100%);
+      box-shadow:0 22px 46px -22px rgba(0,0,0,.55)}
+.hero .lattice{color:var(--orange-l);opacity:.22;pointer-events:none;
+  -webkit-mask-image:radial-gradient(120% 100% at 88% 4%,#000 0%,transparent 66%);
+  mask-image:radial-gradient(120% 100% at 88% 4%,#000 0%,transparent 66%)}
+.hero::after{content:"";position:absolute;width:250px;height:250px;right:-96px;top:-120px;border-radius:50%;
+  background:radial-gradient(circle,rgba(184,149,46,.4),transparent 66%);pointer-events:none}
+.hero > *{position:relative;z-index:1}
+.hero .label{font-size:12.5px;color:var(--orange-l);display:flex;align-items:center;gap:8px}
+.hero .bal{font-family:var(--display);font-weight:700;font-size:clamp(32px,8.4vw,42px);
+           letter-spacing:-.045em;margin:10px 0 3px;font-variant-numeric:tabular-nums}
+.hero .bal small{font-size:.44em;font-weight:600;opacity:.55;letter-spacing:0;margin-right:7px}
+.hero .delta{font-size:12.5px;color:var(--orange-l);display:flex;align-items:center;gap:6px}
+
+.lattice{width:100%;height:100%;position:absolute;inset:0}
+
+/* ------------------------------------------------------------ app header */
+/* avatar, greeting and the notifications bell above the balance card. only
+   the small-screen padding tweaks for this lived in app.html — the base
+   layout was missing, so it fell back to unstyled buttons and a div. */
+.appbar{display:flex;align-items:center;gap:12px;padding:18px 20px 16px}
+.appbar .me{flex:none;width:42px;height:42px;border-radius:50%;border:0;cursor:pointer;
+  display:grid;place-items:center;color:#fff;font-weight:700;font-size:13.5px;letter-spacing:-.01em;
+  background:linear-gradient(135deg,var(--orange-l),var(--orange))}
+.appbar .hey{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.appbar .hey span{font-size:12.5px;color:var(--grey)}
+.appbar .hey b{font-size:16.5px;font-weight:700;color:var(--ink);letter-spacing:-.015em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.appbar .ib{flex:none;position:relative;width:42px;height:42px;border-radius:50%;border:0;
+  background:var(--white);box-shadow:var(--sh-sm);color:var(--ink);cursor:pointer;
+  display:grid;place-items:center}
+.appbar .ib i{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;
+  background:var(--orange);border:2px solid var(--white)}
+
+/* the scrolling content area between the app header and the tab bar. same gap as
+   .appbar/.hey/.me/.ib above: only the small-screen padding override lived in app.html. */
+.scroll{flex:1;min-height:0;overflow-y:auto;padding:0 20px 30px;-webkit-overflow-scrolling:touch}
+
+/* bottom tab bar — home, save, the raised pay button, cards, you. */
+.tabbar{flex:none;display:flex;align-items:flex-end;justify-content:space-around;
+  padding:8px 6px 6px;background:var(--white);border-top:1px solid var(--line-2)}
+.tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  background:none;border:0;padding:6px 2px 4px;color:var(--grey);font-size:10.5px;
+  font-weight:600;cursor:pointer;transition:color .15s}
+.tabbar button b{display:grid;place-items:center;width:24px;height:24px;font-style:normal}
+.tabbar button[aria-selected="true"]{color:var(--orange)}
+.tabbar .fab{position:relative;top:-18px}
+.tabbar .fab b{width:56px;height:56px;border-radius:20px;margin-bottom:2px;color:#fff;
+  background:linear-gradient(135deg,var(--orange-l),var(--orange));
+  box-shadow:0 14px 26px -12px rgba(143,114,32,.55)}
+
+/* --------------------------------------------------------------- controls */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;font-weight:700;font-size:15px;
+     padding:0 22px;height:50px;border-radius:100px;border:0;color:#fff;
+     background:linear-gradient(135deg,var(--orange-l),var(--orange) 60%);
+     cursor:pointer;letter-spacing:-.01em;
+     transition:transform .12s var(--ease),background .15s,box-shadow .18s}
+.btn:hover{background:linear-gradient(135deg,var(--orange),var(--orange-d));
+  box-shadow:0 12px 26px -12px rgba(143,114,32,.65)}
+.btn:active{transform:scale(.976)}
+/* the confirm button — the third place matte black earns its keep */
+.btn.primary{background:linear-gradient(135deg,var(--jet-2),var(--jet));
+  box-shadow:0 12px 26px -12px rgba(0,0,0,.6)}
+.btn.primary:hover{background:linear-gradient(135deg,#2c2d31,#000)}
+.btn.quiet{background:var(--white);color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line)}
+.btn.quiet:hover{background:var(--haze);box-shadow:inset 0 0 0 1.5px var(--mist)}
+.btn.danger{background:var(--neg);box-shadow:0 12px 26px -14px rgba(224,87,74,.7)}
+.btn.danger:hover{background:#C9463A}
+.btn.sm{height:42px;font-size:13.5px;padding:0 17px;gap:7px}
+.btn.wide{width:100%}
+.btn:disabled{opacity:.35;cursor:default;transform:none}
+.btn svg{width:18px;height:18px}
+
+.chip{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border-radius:100px;
+      background:var(--white);box-shadow:inset 0 0 0 1.5px var(--line);font-size:13.5px;font-weight:600;
+      cursor:pointer;transition:.14s var(--ease);border:0;color:var(--slate)}
+.chip:hover{box-shadow:inset 0 0 0 1.5px var(--ink);color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--orange);color:#fff;box-shadow:none}
+.chiprow{display:flex;gap:8px;flex-wrap:wrap}
+
+.field{display:block;margin-bottom:14px}
+.field > span{display:block;font-size:12.5px;font-weight:700;color:var(--slate);margin-bottom:7px}
+.field input,.field select,.field textarea{width:100%;height:54px;padding:0 16px;border-radius:var(--r);
+  border:1.5px solid var(--line);background:var(--white);font-size:16px;font-weight:600;transition:.14s}
+.field textarea{height:auto;padding:14px 16px;min-height:90px;resize:vertical;font-size:15px;font-weight:500}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--orange);outline:0;
+  box-shadow:0 0 0 4px var(--orange-t)}
+.field input::placeholder{color:#B4BAC2;font-weight:500}
+input[type=range]{width:100%;accent-color:var(--orange)}
+
+.sw{flex:none;width:50px;height:29px;border-radius:100px;background:var(--line);border:0;position:relative;
+    cursor:pointer;transition:.18s var(--ease)}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:23px;height:23px;border-radius:50%;
+  background:#fff;box-shadow:var(--sh-xs);transition:.18s var(--ease)}
+.sw[aria-pressed="true"]{background:var(--pos)}
+.sw[aria-pressed="true"]::after{left:24px}
+.togglerow{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;padding:15px 0;
+           border-top:1px solid var(--line-2)}
+.togglerow:first-of-type{border-top:0}
+
+/* ----------------------------------------- quick actions, hexagon tiles */
+.qa{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.qa button{background:none;border:0;cursor:pointer;padding:10px 2px;border-radius:var(--r);
+           display:flex;flex-direction:column;align-items:center;gap:9px;transition:.14s var(--ease)}
+.qa button:hover{background:var(--haze)}
+.qa button:active{transform:scale(.94)}
+.qa .ic{width:60px;height:60px;display:grid;place-items:center;clip-path:var(--hex);
+        background:var(--orange);color:#fff;transition:.16s var(--ease);
+        box-shadow:0 8px 18px -10px rgba(242,111,29,.9)}
+.qa button:hover .ic{background:var(--orange-d);transform:translateY(-2px)}
+.qa .ic.k{background:var(--haze);color:var(--slate)}
+.qa button:hover .ic.k{background:#000}
+.qa span{font-size:12px;font-weight:700;color:var(--ink);text-align:center;line-height:1.25;
+         letter-spacing:-.015em}
+
+/* --------------------------------------------------------------- lists */
+.item{display:flex;align-items:center;gap:13px;padding:13px 0;border-top:1px solid var(--line-2);
+      width:100%;text-align:left;background:none;border-left:0;border-right:0;border-bottom:0;cursor:pointer;
+      transition:.12s}
+.item:first-of-type{border-top:0}
+.item.static{cursor:default}
+.item:not(.static):hover{background:var(--haze);border-radius:var(--r);
+  box-shadow:-10px 0 0 var(--haze),10px 0 0 var(--haze)}
+.av{width:44px;height:44px;border-radius:14px;flex:none;display:grid;place-items:center;
+    font-weight:800;font-size:14px;background:var(--haze);color:var(--slate);letter-spacing:-.03em}
+.av.o{background:var(--orange-t);color:var(--orange-d)}
+.av.p{background:var(--pos-t);color:var(--pos)}
+.av.n{background:var(--neg-t);color:var(--neg)}
+.av.k{background:var(--orange);color:#fff}
+.av.hex{clip-path:var(--hex);border-radius:0}
+.item .txt{flex:1;min-width:0}
+.item .txt b{display:block;font-weight:700;font-size:15px;letter-spacing:-.015em;white-space:nowrap;
+             overflow:hidden;text-overflow:ellipsis}
+.item .txt span{font-size:12.5px;color:var(--grey);font-weight:500}
+.item .amt{font-weight:700;font-size:14.5px;font-variant-numeric:tabular-nums;white-space:nowrap;
+           text-align:right;letter-spacing:-.02em}
+.item .amt.in{color:var(--pos)}
+.item .amt small{display:block;font-weight:500;font-size:11.5px;color:var(--mist);letter-spacing:0}
+.item .go{color:var(--mist);flex:none}
+
+/* --------------------------------------------------------------- badges */
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;padding:5px 11px;
+       border-radius:100px;background:var(--haze);color:var(--slate);letter-spacing:-.01em}
+.badge.p{background:var(--pos-t);color:var(--pos)}
+.badge.o{background:var(--orange-t);color:var(--orange-d)}
+.badge.n{background:var(--neg-t);color:var(--neg)}
+.badge.k{background:var(--orange);color:#fff}
+.badge svg{width:14px;height:14px}
+.brandtile{box-shadow:0 1px 2px rgba(93,74,54,.18)}
+
+/* ------------------------------------------------------------- progress */
+.ring{transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-linecap:round}
+.ring .bg{stroke:var(--line)}
+.ring .fg{stroke:var(--orange);transition:stroke-dashoffset 1.1s var(--ease)}
+.bar{height:7px;border-radius:100px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:100px;background:var(--orange);transition:width .9s var(--ease)}
+.bar.p i{background:var(--pos)} .bar.k i{background:var(--orange-d)}
+
+/* ------------------------------------------------------ sheet + scrim */
+.scrim{position:absolute;inset:0;background:rgba(74,63,53,.42);backdrop-filter:blur(4px);opacity:0;
+       pointer-events:none;transition:opacity .22s var(--ease);z-index:60}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--white);border-radius:26px 26px 0 0;
+       transform:translateY(101%);transition:transform .32s var(--ease);z-index:70;max-height:92%;
+       overflow-y:auto;padding:10px 20px calc(26px + env(safe-area-inset-bottom));box-shadow:var(--sh-lg)}
+.sheet.on{transform:none}
+.grab{width:38px;height:4px;border-radius:100px;background:var(--line);margin:0 auto 18px}
+.sheet h3{font-family:var(--display);font-weight:700;font-size:22px;letter-spacing:-.03em;margin-bottom:5px}
+
+/* the decision note — the record, quietly available everywhere */
+.note{background:var(--haze);border:1px solid var(--line);border-radius:var(--r);padding:15px;margin-top:15px}
+.note .nh{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+          color:var(--grey);padding-bottom:9px;border-bottom:1px solid var(--line);margin-bottom:10px;
+          display:flex;align-items:center;gap:7px}
+.note .nh svg{width:13px;height:13px;color:var(--orange-d)}
+.note dl{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin:0;font-size:12.5px}
+.note dt{color:var(--grey);font-weight:500}
+.note dd{margin:0;text-align:right;font-family:var(--mono);font-size:12px;color:var(--ink)}
+.note .nf{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:11.5px;
+          color:var(--slate);line-height:1.55}
+.why{background:none;border:0;padding:10px 0 0;font-size:13px;font-weight:700;color:var(--orange-d);
+     cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.why:hover{text-decoration:underline;text-underline-offset:3px}
+.why svg{width:15px;height:15px}
+
+/* --------------------------------------------------------------- keypad */
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:12px}
+.pad button{height:58px;border:0;background:none;border-radius:var(--r);font-family:var(--display);
+            font-weight:700;font-size:23px;cursor:pointer;transition:.1s;display:grid;place-items:center}
+.pad button:hover{background:var(--haze)}
+.pad button:active{transform:scale(.93);background:var(--line)}
+
+/* ------------------------------------------------------------ bank card */
+.plastic{position:relative;aspect-ratio:1.586;border-radius:20px;padding:20px;color:#fff;overflow:hidden;
+         background:linear-gradient(140deg,#2E2F33,var(--jet-2) 46%,var(--jet) 100%);
+         box-shadow:0 20px 44px -22px rgba(0,0,0,.5);display:flex;flex-direction:column}
+.plastic .lattice{color:var(--orange-l);opacity:.2}
+.plastic::after{content:"";position:absolute;width:210px;height:210px;right:-84px;bottom:-116px;
+  border-radius:50%;background:radial-gradient(circle,rgba(184,149,46,.36),transparent 68%)}
+.plastic.virtual{background:linear-gradient(150deg,#FFFFFF,#F3F5F7 78%);color:var(--ink)}
+.plastic.virtual .lattice{color:var(--orange);opacity:.22}
+.plastic.virtual::after{background:radial-gradient(circle,rgba(184,149,46,.22),transparent 68%)}
+.plastic.virtual .foot{color:var(--grey)}
+.plastic.frozen{filter:grayscale(.9) brightness(1.04);opacity:.72}
+.plastic > *{position:relative;z-index:1}
+.plastic .brand{display:flex;align-items:center;justify-content:space-between;font-family:var(--display);
+                font-weight:700;font-size:14px;letter-spacing:-.01em}
+.plastic .brand svg{width:17px;height:17px;opacity:.85}
+.plastic .pan{font-family:var(--mono);font-size:15px;letter-spacing:.09em;margin-top:auto}
+.plastic .foot{display:flex;justify-content:space-between;align-items:flex-end;font-size:11px;
+               color:rgba(255,255,255,.62);margin-top:11px;font-weight:600;letter-spacing:.02em}
+.chipimg{width:34px;height:26px;border-radius:5px;margin-top:18px;
+         background:linear-gradient(135deg,#EFE0C4,#B79B69);position:relative}
+.chipimg::after{content:"";position:absolute;inset:5px 7px;border:1px solid rgba(140,110,70,.28);border-radius:2px}
+
+/* ------------------------------------------------------------ responsive */
+/* grids reflow on content width, not on guessed breakpoints */
+.auto2{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr))}
+.auto3{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(210px,100%),1fr))}
+.tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px}
+.tblwrap table{min-width:460px}
+
+/* the product switcher — this is a prototype of four connected products,
+   so every one of them can reach the others */
+.switcher{position:fixed;right:16px;bottom:16px;z-index:200;display:flex;flex-direction:column;
+          align-items:flex-end;gap:8px}
+.switcher .panel{background:var(--white);color:var(--ink);border:1px solid var(--line);border-radius:18px;padding:8px;box-shadow:var(--sh-lg);
+  display:none;flex-direction:column;gap:2px;min-width:230px}
+.switcher.open .panel{display:flex}
+.switcher .panel a{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:12px;
+  color:var(--slate);text-decoration:none;font-size:13.5px;font-weight:600}
+.switcher .panel a:hover{background:var(--haze);color:var(--ink)}
+.switcher .panel a.here{background:var(--orange);color:#fff}
+.switcher .panel a span{display:block;font-size:11.5px;font-weight:500;opacity:.72;margin-top:1px}
+.switcher .panel .hd{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--mist);padding:8px 12px 6px}
+.switcher > button{width:52px;height:52px;border-radius:50%;border:0;color:#fff;
+  background:linear-gradient(135deg,var(--orange-l),var(--orange));
+  cursor:pointer;box-shadow:var(--sh-lg);display:grid;place-items:center;transition:.16s var(--ease)}
+.switcher > button:hover{background:var(--orange-d);transform:scale(1.05)}
+@media (max-width:560px){ .switcher{right:12px;bottom:78px} .switcher > button{width:46px;height:46px} }
+
+/* --------------------------------------------------------- illustrations */
+.art{width:100%;height:auto;display:block}
+.artbox{display:grid;place-items:center;padding:6px 0 2px}
+.artbox .art{max-width:280px}
+.artbox.sm .art{max-width:190px}
+.artbox.xs .art{max-width:140px}
+.arthead{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.arthead > div:first-child{flex:1;min-width:210px}
+.arthead .art{max-width:210px}
+.emptystate{text-align:center;padding:22px 10px 6px}
+.emptystate .art{max-width:210px;margin:0 auto 14px}
+.emptystate b{display:block;font-size:15.5px;margin-bottom:6px}
+
+/* --------------------------------------------------------------- motion */
+.rise{animation:rise .42s var(--ease) both}
+.rise:nth-child(2){animation-delay:.04s} .rise:nth-child(3){animation-delay:.08s}
+.rise:nth-child(4){animation-delay:.12s} .rise:nth-child(5){animation-delay:.16s}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* =========================================================================
+   RESPONSIVE
+   Three real layouts, not one layout that shrinks: a phone that fills the
+   screen, a tablet that keeps the frame, and a desktop that adds context
+   around it. Touch targets never drop below 44px at any width.
+   ========================================================================= */
+.tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px}
+.tblwrap table{min-width:460px}
+
+@media (max-width:1100px){
+  .d1{font-size:clamp(26px,5vw,34px)}
+  .surface{padding:18px;border-radius:18px}
+  .hero{padding:20px;border-radius:22px}
+}
+@media (max-width:640px){
+  body{font-size:14.5px}
+  .surface{padding:16px}
+  .surface.flush{padding:4px 16px}
+  .hairline{margin:14px -16px}
+  .hero{padding:18px}
+  .hero .bal{font-size:clamp(30px,9vw,38px)}
+  .qa{grid-template-columns:repeat(4,1fr);gap:2px}
+  .qa .ic{width:46px;height:46px}
+  .qa span{font-size:10.5px}
+  .btn{height:48px;font-size:14.5px;padding:0 18px}
+  .btn.sm{height:40px}
+  .chip{padding:8px 13px;font-size:13px}
+  .av{width:40px;height:40px;border-radius:12px}
+  .item{padding:12px 0;gap:11px}
+  .item .txt b{font-size:14px}
+  .sheet{padding-left:16px;padding-right:16px;border-radius:22px 22px 0 0}
+  .note dl{grid-template-columns:1fr auto;gap:5px 10px}
+  .note dd{font-size:11.5px}
+  .pad button{height:54px;font-size:21px}
+}
+@media (max-width:380px){
+  .qa{grid-template-columns:repeat(4,1fr)}
+  .qa .ic{width:42px;height:42px}
+  .qa span{font-size:10px}
+  .hero .bal{font-size:29px}
+}
+/* wide screens: let content breathe rather than stretch */
+@media (min-width:1600px){ .surface{padding:22px} }
+</style>
+<style>
+body{background:var(--sand);color:var(--ink)}
+.top{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.9);backdrop-filter:blur(14px);
+     border-bottom:1px solid var(--line)}
+.top .in{max-width:1420px;margin:0 auto;padding:13px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.mark{display:flex;align-items:center;gap:11px}
+.mark .m{width:32px;height:32px;background:var(--orange);display:grid;place-items:center;clip-path:var(--hex)}
+.mark b{font-family:var(--display);font-size:16px;letter-spacing:-.02em;color:var(--ink)}
+.mark span{color:var(--orange);font-weight:700}
+.seg{display:flex;gap:3px;background:var(--haze);border-radius:100px;padding:4px}
+.seg button{background:none;border:0;color:var(--grey);padding:8px 15px;border-radius:100px;font-size:13px;
+            font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:.14s}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--orange);color:#fff}
+.seg svg{width:16px;height:16px}
+.spacer{margin-left:auto;display:flex;gap:10px;align-items:center}
+.state{font-family:var(--mono);font-size:11.5px;color:var(--grey);display:flex;align-items:center;gap:7px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--mist)}
+.dot.live{background:#3FBF8F;box-shadow:0 0 0 3px rgba(63,191,143,.18)}
+.openin{background:var(--white);border:1px solid var(--line);color:var(--slate);border-radius:100px;padding:8px 15px;
+        font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;text-decoration:none}
+.openin:hover{border-color:var(--orange);color:var(--orange-d)}
+
+.hero{max-width:1420px;margin:0 auto;padding:44px 22px 10px}
+.hero h1{font-family:var(--display);font-size:clamp(30px,4.6vw,50px);line-height:1;letter-spacing:-.04em;
+         color:var(--ink);margin-bottom:14px}
+.hero h1 em{font-style:normal;color:var(--orange)}
+.hero p{color:var(--slate);font-size:16px;line-height:1.6;max-width:60ch}
+.hero p b{color:var(--ink);font-weight:700}
+
+.surfaces{max-width:1420px;margin:0 auto;padding:26px 22px 0;display:grid;
+          grid-template-columns:repeat(4,1fr);gap:12px}
+.card{background:var(--white);border:1px solid var(--line);border-radius:18px;padding:16px;cursor:pointer;
+      text-align:left;transition:.16s var(--ease);color:inherit}
+.card:hover{border-color:var(--orange);transform:translateY(-2px)}
+.card[aria-pressed="true"]{border-color:var(--orange);background:var(--orange-t)}
+.card .ic{width:40px;height:40px;display:grid;place-items:center;clip-path:var(--hex);
+          background:rgba(242,111,29,.16);color:var(--orange);margin-bottom:12px}
+.card b{display:block;font-size:15px;margin-bottom:4px;color:var(--ink)}
+.card span{font-size:12.5px;color:var(--grey);line-height:1.5;display:block}
+.card .who{margin-top:10px;font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+           color:var(--orange)}
+
+.stagewrap{max-width:1420px;margin:0 auto;padding:26px 22px 60px}
+.frame{background:var(--white);border:1px solid var(--line);border-radius:22px;padding:18px;
+       display:flex;flex-direction:column;align-items:center;gap:14px;overflow:hidden}
+.framebar{width:100%;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.framebar .url{flex:1;min-width:120px;background:var(--haze);border:1px solid var(--line);border-radius:100px;
+  padding:8px 15px;font-family:var(--mono);font-size:11.5px;color:var(--grey);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.framebar .size{font-family:var(--mono);font-size:11.5px;color:var(--grey)}
+.device{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff;
+        transition:width .3s var(--ease),height .3s var(--ease);max-width:100%}
+.device iframe{border:0;display:block;width:100%;height:100%}
+.fallback{padding:26px;text-align:center;color:var(--grey);font-size:13.5px;line-height:1.6}
+.fallback a{color:var(--orange);font-weight:700}
+
+.tips{max-width:1420px;margin:0 auto;padding:0 22px 70px}
+.tips h2{font-family:var(--display);font-size:20px;color:var(--ink);margin-bottom:14px;letter-spacing:-.02em}
+.tipgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.tip{background:var(--white);border:1px solid var(--line);border-radius:16px;padding:16px}
+.tip b{display:block;color:var(--ink);font-size:13.5px;margin-bottom:5px}
+.tip span{font-size:12.5px;color:var(--grey);line-height:1.55}
+.tip code{font-family:var(--mono);font-size:11.5px;color:var(--orange-d);background:var(--orange-t);
+          padding:2px 6px;border-radius:5px}
+
+@media (max-width:1100px){ .surfaces{grid-template-columns:1fr 1fr} .tipgrid{grid-template-columns:1fr 1fr} }
+@media (max-width:680px){
+  .surfaces{grid-template-columns:1fr} .tipgrid{grid-template-columns:1fr}
+  .hero{padding:30px 16px 6px} .surfaces,.stagewrap,.tips{padding-left:16px;padding-right:16px}
+  .top .in{padding:11px 16px;gap:12px} .seg button{padding:8px 12px;font-size:12.5px}
+  .seg button span{display:none} .frame{padding:12px}
+}
+</style>
+</head>
+<body>
+
+<div class="top"><div class="in">
+  <div class="mark"><div class="m" id="logomark"></div>
+    <b>Fidelity <span>Digital</span></b></div>
+  <div class="seg" id="devices"></div>
+  <div class="spacer">
+    <div class="state"><span class="dot" id="dot"></span><span id="mode">checking service…</span></div>
+    <a class="openin" id="openin" href="fidelity-app.html" target="_blank" rel="noopener">Open full</a>
+  </div>
+</div></div>
+
+<div class="hero"><div class="arthead" style="gap:40px">
+  <div>
+  <h1>Four surfaces, <em>one engine</em></h1>
+  <p>Everything below is live. Send a payment and the balance moves, the statement grows, and if a model
+    declines to decide, the case lands in the reviewer's queue. <b>Resize with the buttons above</b> to see
+    each product at phone, tablet and laptop widths.</p>
+  </div>
+  <div style="width:min(320px,100%)" id="heroart"></div>
+</div></div>
+
+<div class="surfaces" id="surfaces"></div>
+
+<div class="stagewrap"><div class="frame">
+  <div class="framebar">
+    <span class="url" id="url">fidelity-app.html</span>
+    <span class="size" id="size">390 × 844</span>
+  </div>
+  <div class="device" id="device"><iframe id="view" title="Prototype preview"></iframe></div>
+  <div class="fallback" id="fallback" hidden>
+    If the preview stays blank, your browser is blocking local frames.
+    <a id="fallbackLink" href="fidelity-app.html" target="_blank" rel="noopener">Open this surface directly</a>,
+    or serve the folder with <code>python3 decision_api.py</code>.
+  </div>
+</div></div>
+
+<div class="tips">
+  <h2>Worth trying</h2>
+  <div class="tipgrid" id="tips"></div>
+</div>
+
+<script>/* =========================================================================
+   FIDELITY ICONS
+   One hand-built set, 24×24, stroke-based, inheriting currentColor so a single
+   icon works on white, on grey and on matte black. The block / node / chain
+   family carries the distributed-ledger motif that runs through the products.
+   Usage:  I('send')          → 24px
+           I('send', 20)      → sized
+           I('send', 20, 2)   → heavier stroke
+   ========================================================================= */
+const ICONS = {
+  /* --- money movement ------------------------------------------------- */
+  send:      '<path d="M6.5 17.5 17.5 6.5M9 6.5h8.5V15"/>',
+  receive:   '<path d="M17.5 6.5 6.5 17.5M15 17.5H6.5V9"/>',
+  swap:      '<path d="M4 8h13l-3-3M20 16H7l3 3"/>',
+  bills:     '<path d="M13 3 5 13.5h5.5L10 21l8-10.5h-5.5L13 3Z"/>',
+  airtime:   '<rect x="7" y="2.5" width="10" height="19" rx="2.6"/><path d="M10.8 18.4h2.4"/>',
+  card:      '<rect x="2.5" y="5" width="19" height="14" rx="2.8"/><path d="M2.5 9.7h19M6 15h3.4"/>',
+  wallet:    '<path d="M20.5 8.5V7a2 2 0 0 0-2-2H5a2.5 2.5 0 0 0 0 5h13.5a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H5a2.5 2.5 0 0 1-2.5-2.5V7.5"/><circle cx="16.6" cy="14.5" r="1.1" fill="currentColor" stroke="none"/>',
+  cash:      '<rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/>',
+
+  /* --- ledger / blockchain family -------------------------------------- */
+  block:     '<path d="M12 2.8 20.5 7.4v9.2L12 21.2 3.5 16.6V7.4L12 2.8Z"/><path d="M12 12.1 20.5 7.4M12 12.1v9.1M12 12.1 3.5 7.4"/>',
+  node:      '<path d="M12 3.2 19.4 7.6v8.8L12 20.8 4.6 16.4V7.6L12 3.2Z"/><circle cx="12" cy="12" r="2.2"/><path d="M12 9.8V6.1M14 13.2l3.1 1.9M10 13.2l-3.1 1.9"/>',
+  chain:     '<path d="M9.6 14.4a3.6 3.6 0 0 1 0-5l2.1-2.1a3.6 3.6 0 0 1 5.1 5.1l-1 1"/><path d="M14.4 9.6a3.6 3.6 0 0 1 0 5l-2.1 2.1a3.6 3.6 0 0 1-5.1-5.1l1-1"/>',
+  ledger:    '<rect x="3" y="4" width="18" height="5" rx="1.6"/><rect x="3" y="10.5" width="18" height="5" rx="1.6"/><rect x="3" y="17" width="18" height="3.5" rx="1.4"/>',
+  network:   '<circle cx="12" cy="5" r="2.4"/><circle cx="5" cy="18" r="2.4"/><circle cx="19" cy="18" r="2.4"/><path d="M10.4 7 6.6 15.8M13.6 7l3.8 8.8M7.4 18h9.2"/>',
+
+  /* --- saving & investing ---------------------------------------------- */
+  save:      '<path d="M12 3.2 19.4 7.6v8.8L12 20.8 4.6 16.4V7.6L12 3.2Z"/><path d="M9.4 12.2h5.2M12 9.6v5.2"/>',
+  invest:    '<path d="M4 17.5 9.5 12l3.4 3.3L20 8"/><path d="M15.4 8H20v4.5"/>',
+  goal:      '<circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="4.2"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>',
+  vault:     '<rect x="3" y="4" width="18" height="16" rx="2.4"/><circle cx="12" cy="12" r="3.6"/><path d="M12 8.4V6M12 18v-2.4"/>',
+  chart:     '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+
+  /* --- people & business ------------------------------------------------ */
+  user:      '<circle cx="12" cy="8" r="3.6"/><path d="M4.8 20a7.2 7.2 0 0 1 14.4 0"/>',
+  users:     '<circle cx="9" cy="8" r="3.2"/><path d="M2.8 19.5a6.2 6.2 0 0 1 12.4 0"/><path d="M16.2 5.2a3.2 3.2 0 0 1 0 5.9M17.6 19.5a6.3 6.3 0 0 0-2-4.6"/>',
+  invoice:   '<path d="M6 2.8h9.2L19 6.6V21H6a1.2 1.2 0 0 1-1.2-1.2V4a1.2 1.2 0 0 1 1.2-1.2Z"/><path d="M14.6 2.9v4h4M8.4 12.6h7M8.4 16.2h4.6"/>',
+  pos:       '<rect x="4" y="2.8" width="16" height="18.4" rx="2.2"/><path d="M7.6 7.2h8.8M7.6 11.4h3M13.4 11.4h3M7.6 15.4h3M13.4 15.4h3"/>',
+  briefcase: '<rect x="2.8" y="7" width="18.4" height="13" rx="2.2"/><path d="M8.6 7V5.2A1.8 1.8 0 0 1 10.4 3.4h3.2A1.8 1.8 0 0 1 15.4 5.2V7"/>',
+
+  /* --- utilities & billers ---------------------------------------------- */
+  power:     '<path d="M13 2.5 5.5 13.2h5.6L10.5 21.5 18.5 10.8h-5.6L13 2.5Z"/>',
+  water:     '<path d="M12 3.2s6 6.2 6 10.1a6 6 0 0 1-12 0C6 9.4 12 3.2 12 3.2Z"/>',
+  tv:        '<rect x="2.8" y="5.5" width="18.4" height="12.4" rx="2"/><path d="M8.6 21.2h6.8"/>',
+  wifi:      '<path d="M3.4 9.2a13 13 0 0 1 17.2 0M6.6 12.6a8.4 8.4 0 0 1 10.8 0M9.8 16a4 4 0 0 1 4.4 0"/><circle cx="12" cy="19.2" r="1" fill="currentColor" stroke="none"/>',
+  school:    '<path d="M12 4 2.8 8.6 12 13.2l9.2-4.6L12 4Z"/><path d="M6.4 10.8v5.1c0 1.6 2.5 3.1 5.6 3.1s5.6-1.5 5.6-3.1v-5.1"/>',
+  gov:       '<path d="M3.4 9.6 12 4.4l8.6 5.2"/><path d="M5.6 9.6v8.8M10 9.6v8.8M14 9.6v8.8M18.4 9.6v8.8M3 20.4h18"/>',
+  shield:    '<path d="M12 3 5 5.8v5.5c0 4.2 2.9 7.9 7 9.2 4.1-1.3 7-5 7-9.2V5.8L12 3Z"/>',
+
+
+  /* --- banking & business ------------------------------------------------ */
+  bank:      '<path d="M3.2 9.6 12 4.2l8.8 5.4"/><path d="M5.6 11.4v6.4M10 11.4v6.4M14 11.4v6.4M18.4 11.4v6.4"/><path d="M3 20.2h18"/>',
+  transfer:  '<rect x="2.6" y="6.4" width="18.8" height="11.2" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 9.6v.01M18 14.4v.01"/>',
+  banknote:  '<rect x="2.6" y="6.4" width="18.8" height="11.2" rx="2"/><circle cx="12" cy="12" r="2.4"/><path d="M5.8 12h.01M18.2 12h.01"/>',
+  coins:     '<ellipse cx="9" cy="7" rx="6" ry="2.8"/><path d="M3 7v4c0 1.55 2.69 2.8 6 2.8s6-1.25 6-2.8V7"/><path d="M15 11.4c3.03.2 6 1.4 6 2.9v3.3c0 1.55-2.69 2.8-6 2.8-2.5 0-4.66-.71-5.6-1.72"/><path d="M3 11v4c0 1.55 2.69 2.8 6 2.8"/>',
+  piggy:     '<path d="M20.4 12.6c0-3.6-3.6-6.2-8-6.2-1.2 0-2.34.19-3.36.54L6.6 5.2v2.9C4.9 9.2 3.6 10.8 3.6 12.6H2.4v3.4h2c.5.9 1.3 1.68 2.3 2.26V20h2.8v-.86c.62.1 1.26.16 1.9.16.5 0 1-.03 1.48-.1V20h2.8v-1.5c2.28-1.1 3.72-3 3.72-5.2Z"/><circle cx="16.6" cy="12" r=".9" fill="currentColor" stroke="none"/><path d="M12.4 6.5V4.8"/>',
+  vault:     '<rect x="2.8" y="4" width="18.4" height="16" rx="2.4"/><circle cx="11" cy="12" r="4"/><path d="M11 8.4V6.6M11 17.4v-1.8M14.6 12h1.8M5.6 12h1.8"/><path d="M18.6 8v8"/>',
+  receipt:   '<path d="M5.4 2.8h13.2v18.4l-2.4-1.6-2.2 1.6-2.4-1.6-2.2 1.6-2.4-1.6-1.6 1.1V2.8Z"/><path d="M8.6 8h6.8M8.6 12h6.8M8.6 16h4"/>',
+  invoice:   '<path d="M6 2.8h9.2L19 6.6V21H6a1.2 1.2 0 0 1-1.2-1.2V4A1.2 1.2 0 0 1 6 2.8Z"/><path d="M14.6 2.9v4h4M8.4 12.6h7M8.4 16.2h4.6"/>',
+  growth:    '<path d="M3.4 17.6 9 12l3.4 3.3 7-7.4"/><path d="M15 8.2h4.6v4.6"/><path d="M3 20.6h18"/>',
+  exchange:  '<circle cx="7.6" cy="7.6" r="4.4"/><circle cx="16.4" cy="16.4" r="4.4"/><path d="M12.4 6.2h5.2l-1.8-1.9M11.6 17.8H6.4l1.8 1.9"/>',
+  loan:      '<path d="M3.4 14.6a2.1 2.1 0 0 1 2.1-2.1h2.3l2.4 1.7h3.1a1.7 1.7 0 0 1 0 3.4h-3.4"/><path d="M3.4 14.6v5.2M6.6 19.8h6.8l6.4-3.2a1.8 1.8 0 0 0-1.9-3"/><circle cx="15.6" cy="6.4" r="3.6"/>',
+  statement: '<path d="M6.4 2.8h8L19 7.4V21H6.4A1.4 1.4 0 0 1 5 19.6V4.2a1.4 1.4 0 0 1 1.4-1.4Z"/><path d="M13.8 2.9v4.2h4.2"/><path d="M8.6 17.4v-3M11.6 17.4v-5.6M14.6 17.4v-2"/>',
+  scales:    '<path d="M12 3.6v16.8M7.4 20.4h9.2M4.4 6.6l15.2-1.4"/><path d="M4.4 6.6 1.8 13a3.2 3.2 0 0 0 5.2 0L4.4 6.6Z"/><path d="M19.6 5.2 17 11.6a3.2 3.2 0 0 0 5.2 0L19.6 5.2Z"/>',
+  stamp:     '<path d="M9 3.6h6a2 2 0 0 1 2 2.2l-.5 4.4a1.6 1.6 0 0 0 1.6 1.8H19a2 2 0 0 1 2 2v2H3v-2a2 2 0 0 1 2-2h.9a1.6 1.6 0 0 0 1.6-1.8L7 5.8a2 2 0 0 1 2-2.2Z"/><path d="M4.4 20.4h15.2"/>',
+  payroll:   '<circle cx="8.6" cy="7.4" r="3.2"/><path d="M2.6 18.6a6 6 0 0 1 12 0"/><circle cx="18" cy="14.6" r="3.6"/><path d="M18 12.9v3.4M16.9 13.9h1.6a.75.75 0 0 1 0 1.5h-1a.75.75 0 0 0 0 1.5h1.6"/>',
+  bulk:      '<path d="M3.4 6.4h9.2M3.4 12h9.2M3.4 17.6h9.2"/><path d="M16.4 6.4h4.2l-1.8-1.9M16.4 12h4.2l-1.8-1.9M16.4 17.6h4.2l-1.8-1.9"/>',
+  dashboard: '<rect x="3" y="3.2" width="8" height="10" rx="1.8"/><rect x="13" y="3.2" width="8" height="6" rx="1.8"/><rect x="13" y="11.4" width="8" height="9.4" rx="1.8"/><rect x="3" y="15.2" width="8" height="5.6" rx="1.8"/>',
+  headset:   '<path d="M4.4 14.6v-2.8a7.6 7.6 0 0 1 15.2 0v2.8"/><rect x="2.4" y="13.4" width="4.4" height="6" rx="2.2"/><rect x="17.2" y="13.4" width="4.4" height="6" rx="2.2"/><path d="M19.6 19.4v.6a2.4 2.4 0 0 1-2.4 2.4h-2.8"/>',
+  atm:       '<rect x="3.4" y="3.4" width="17.2" height="17.2" rx="2.4"/><rect x="7" y="7" width="10" height="4.4" rx="1"/><path d="M7 15.2h3.4M13.6 15.2H17"/>',
+  cheque:    '<rect x="2.6" y="5.6" width="18.8" height="12.8" rx="2"/><path d="M6 10.4h5.4M6 14h3.2"/><path d="M14 14.6c1.2-2.6 2.2-3.9 3-3.9.8 0 .5 2.6 1.2 2.6.5 0 .9-.6 1.2-1.1"/>',
+  target:    '<circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="4.6"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/>',
+  percent:   '<path d="M19 5 5 19"/><circle cx="7.4" cy="7.4" r="2.8"/><circle cx="16.6" cy="16.6" r="2.8"/>',
+  handshake: '<path d="M11.6 7.4 9.2 9.8a1.9 1.9 0 0 0 2.7 2.7l1.3-1.3 3.4 3.4a1.7 1.7 0 0 1-2.4 2.4"/><path d="M14.2 17a1.7 1.7 0 0 1-2.4 2.4l-.9-.9"/><path d="M2.8 8.6 6.4 6l4 1.4 3.2-1.4 3.4 1.2 4.2-1"/><path d="M21.2 15.4 17.6 17"/>',
+  wallet2:   '<path d="M3 7.4A2.4 2.4 0 0 1 5.4 5h12A1.6 1.6 0 0 1 19 6.6v1.8"/><rect x="3" y="7.4" width="18" height="11.6" rx="2.4"/><circle cx="16.4" cy="13.2" r="1.3" fill="currentColor" stroke="none"/>',
+
+  /* --- interface --------------------------------------------------------- */
+  home:      '<path d="M3.5 10.4 12 3.6l8.5 6.8V20a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1v-9.6Z"/>',
+  grid:      '<rect x="3.4" y="3.4" width="7" height="7" rx="1.8"/><rect x="13.6" y="3.4" width="7" height="7" rx="1.8"/><rect x="3.4" y="13.6" width="7" height="7" rx="1.8"/><rect x="13.6" y="13.6" width="7" height="7" rx="1.8"/>',
+  plus:      '<path d="M12 5v14M5 12h14"/>',
+  close:     '<path d="M6 6l12 12M18 6 6 18"/>',
+  check:     '<path d="M4.5 12.5 9.5 17.5 19.5 7"/>',
+  chevron:   '<path d="M9 5.5 15.5 12 9 18.5"/>',
+  back:      '<path d="M15 5.5 8.5 12 15 18.5"/>',
+  bell:      '<path d="M18 8.6a6 6 0 1 0-12 0c0 5-2 6.4-2 6.4h16s-2-1.4-2-6.4Z"/><path d="M13.7 19a2 2 0 0 1-3.4 0"/>',
+  chat:      '<path d="M20.5 12.4a7.7 7.7 0 0 1-8.3 7.7 8.9 8.9 0 0 1-2.9-.5L4 21l1.5-4.6a7.6 7.6 0 0 1-1-3.8 7.7 7.7 0 0 1 7.7-7.7 7.7 7.7 0 0 1 8.3 7.5Z"/>',
+  doc:       '<path d="M6.4 2.8h8L19 7.4V21H6.4A1.4 1.4 0 0 1 5 19.6V4.2a1.4 1.4 0 0 1 1.4-1.4Z"/><path d="M13.8 2.9v4.2h4.2M8.6 12.4h7M8.6 16h5"/>',
+  pin:       '<path d="M12 21s7-5.6 7-11a7 7 0 0 0-14 0c0 5.4 7 11 7 11Z"/><circle cx="12" cy="10" r="2.6"/>',
+  lock:      '<rect x="4.6" y="10.4" width="14.8" height="10.2" rx="2.2"/><path d="M8.2 10.4V7.6a3.8 3.8 0 0 1 7.6 0v2.8"/>',
+  eye:       '<path d="M2.4 12S5.9 5.8 12 5.8 21.6 12 21.6 12 18.1 18.2 12 18.2 2.4 12 2.4 12Z"/><circle cx="12" cy="12" r="2.8"/>',
+  eyeoff:    '<path d="M2.4 12S5.9 5.8 12 5.8 21.6 12 21.6 12 18.1 18.2 12 18.2 2.4 12 2.4 12Z"/><path d="M3.2 3.2l17.6 17.6"/>',
+  freeze:    '<path d="M12 2.6v18.8M4 7.3l16 9.4M20 7.3 4 16.7"/><path d="M9.4 4.6 12 6.9l2.6-2.3M9.4 19.4 12 17.1l2.6 2.3"/>',
+  repeat:    '<path d="M4 9.4A5 5 0 0 1 9 4.5h9l-2.6-2.4M20 14.6a5 5 0 0 1-5 4.9H6l2.6 2.4"/>',
+  clock:     '<circle cx="12" cy="12" r="8.6"/><path d="M12 7.2V12l3.2 2"/>',
+  search:    '<circle cx="10.8" cy="10.8" r="6.8"/><path d="M15.8 15.8 21 21"/>',
+  alert:     '<path d="M12 3.6 21 19.4H3L12 3.6Z"/><path d="M12 9.8v4.4"/><circle cx="12" cy="16.9" r=".9" fill="currentColor" stroke="none"/>',
+  info:      '<circle cx="12" cy="12" r="8.6"/><path d="M12 11.2v5"/><circle cx="12" cy="8.2" r=".9" fill="currentColor" stroke="none"/>',
+  download:  '<path d="M12 3.6v11.2M7.6 10.6 12 15l4.4-4.4M4.5 19.4h15"/>',
+  settings:  '<circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.6M12 18.6v2.6M4.5 12H2M22 12h-2.5M6.7 6.7 4.9 4.9M19.1 19.1l-1.8-1.8M17.3 6.7l1.8-1.8M4.9 19.1l1.8-1.8"/>',
+  logout:    '<path d="M14.6 16.5V19a1.6 1.6 0 0 1-1.6 1.6H5.6A1.6 1.6 0 0 1 4 19V5A1.6 1.6 0 0 1 5.6 3.4H13a1.6 1.6 0 0 1 1.6 1.6v2.5"/><path d="M9.6 12H20m-3.4-3.4L20 12l-3.4 3.4"/>',
+};
+
+
+/* =========================================================================
+   SOLID SET — the primary banking actions.
+   Stroke icons disappear at tile size. These are filled shapes with a knocked
+   -out counter, so they hold their weight at 26px on a coloured tile and still
+   read on a phone at arm's length.
+   ========================================================================= */
+const SOLIDS = {
+  send:    '<path d="M20.6 3.4 3.9 9.7c-1.2.45-1.15 2.18.07 2.56l6.3 1.95 1.95 6.3c.38 1.22 2.11 1.27 2.56.07L21.1 3.9a.55.55 0 0 0-.5-.5Z"/>',
+  receive: '<path d="M3.4 20.6 20.1 14.3c1.2-.45 1.15-2.18-.07-2.56l-6.3-1.95-1.95-6.3c-.38-1.22-2.11-1.27-2.56-.07L2.9 20.1a.55.55 0 0 0 .5.5Z"/>',
+  swap:    '<path d="M3.4 8.9h12.3v2.6c0 .82.96 1.26 1.58.73l4.3-3.7a.96.96 0 0 0 0-1.46l-4.3-3.7c-.62-.53-1.58-.09-1.58.73V6.3H3.4a1.3 1.3 0 0 0 0 2.6Z"/><path d="M20.6 15.1H8.3v-2.6c0-.82-.96-1.26-1.58-.73l-4.3 3.7a.96.96 0 0 0 0 1.46l4.3 3.7c.62.53 1.58.09 1.58-.73v-2.2h12.3a1.3 1.3 0 0 0 0-2.6Z"/>',
+  bills:   '<path d="M13.9 1.9a.8.8 0 0 1 .74 1.1l-2.3 6.1h4.7c.72 0 1.12.83.67 1.39l-9.1 11.4a.8.8 0 0 1-1.4-.72l2.3-6.9H5.1a.85.85 0 0 1-.72-1.3l8.1-10.6a.8.8 0 0 1 .62-.47Z"/>',
+  airtime: '<rect x="6" y="1.6" width="12" height="20.8" rx="3.2"/><rect x="10.1" y="18.1" width="3.8" height="1.7" rx=".85" fill="#fff"/><rect x="7.7" y="4.2" width="8.6" height="11.6" rx="1.4" fill="#fff" opacity=".28"/>',
+  card:    '<rect x="1.8" y="4.4" width="20.4" height="15.2" rx="3.2"/><rect x="1.8" y="8.2" width="20.4" height="2.9" fill="#fff" opacity=".85"/><rect x="5" y="14.4" width="5.2" height="2" rx="1" fill="#fff" opacity=".6"/>',
+  goal:    '<path d="M12 1.9 21 7.1v9.8L12 22.1 3 16.9V7.1L12 1.9Z"/><circle cx="12" cy="12" r="3.4" fill="#fff"/><circle cx="12" cy="12" r="1.3"/>',
+  invest:  '<path d="M3.2 15.7 9 9.9l3.5 3.4 6.1-6.1h-2.9a1.25 1.25 0 0 1 0-2.5h5.5c.5 0 .9.4.9.9v5.5a1.25 1.25 0 0 1-2.5 0V8.2l-7.1 7.1a1.25 1.25 0 0 1-1.76 0L9 11.9l-4 4a1.27 1.27 0 0 1-1.8-1.8Z"/><rect x="2.6" y="18.4" width="18.8" height="2.5" rx="1.25"/>',
+  vault:   '<rect x="2.2" y="3.4" width="19.6" height="17.2" rx="3.4"/><circle cx="12" cy="12" r="4.6" fill="#fff"/><circle cx="12" cy="12" r="1.7"/><rect x="10.9" y="5.4" width="2.2" height="2.4" rx="1.1" fill="#fff"/>',
+  grid:    '<rect x="2.6" y="2.6" width="8" height="8" rx="2.4"/><rect x="13.4" y="2.6" width="8" height="8" rx="2.4"/><rect x="2.6" y="13.4" width="8" height="8" rx="2.4"/><rect x="13.4" y="13.4" width="8" height="8" rx="2.4"/>',
+  users:   '<circle cx="9" cy="7.4" r="3.9"/><path d="M1.9 20.4a7.1 7.1 0 0 1 14.2 0 1.1 1.1 0 0 1-1.1 1.1H3a1.1 1.1 0 0 1-1.1-1.1Z"/><circle cx="17.4" cy="8.6" r="3"/><path d="M17.6 13.2a5.6 5.6 0 0 1 4.5 6.1 1 1 0 0 1-1 .9h-2.4a9.4 9.4 0 0 0-1.9-6.9Z"/>',
+  invoice: '<path d="M6.2 1.9h7.9L19.4 7v14.2a.9.9 0 0 1-.9.9H6.2a1.5 1.5 0 0 1-1.5-1.5V3.4a1.5 1.5 0 0 1 1.5-1.5Z"/><path d="M13.6 2.2v4.4h4.6" fill="#fff" opacity=".45"/><rect x="7.7" y="11.4" width="8" height="1.8" rx=".9" fill="#fff"/><rect x="7.7" y="15.2" width="5.2" height="1.8" rx=".9" fill="#fff" opacity=".75"/>',
+  pos:     '<rect x="3.4" y="1.9" width="17.2" height="20.2" rx="3.2"/><rect x="6.6" y="5.2" width="10.8" height="4" rx="1.4" fill="#fff"/><circle cx="8.4" cy="13" r="1.35" fill="#fff"/><circle cx="12" cy="13" r="1.35" fill="#fff"/><circle cx="15.6" cy="13" r="1.35" fill="#fff"/><circle cx="8.4" cy="17.4" r="1.35" fill="#fff"/><circle cx="12" cy="17.4" r="1.35" fill="#fff"/><circle cx="15.6" cy="17.4" r="1.35" fill="#fff"/>',
+  home:    '<path d="M11.1 2.4 3 8.9a2.2 2.2 0 0 0-.8 1.7v9.1a1.9 1.9 0 0 0 1.9 1.9h4.6v-6.2a1.4 1.4 0 0 1 1.4-1.4h3.8a1.4 1.4 0 0 1 1.4 1.4v6.2h4.6a1.9 1.9 0 0 0 1.9-1.9v-9.1a2.2 2.2 0 0 0-.8-1.7l-8.1-6.5a1.9 1.9 0 0 0-2.4 0Z"/>',
+  user:    '<circle cx="12" cy="7.6" r="4.3"/><path d="M3.4 21a8.6 8.6 0 0 1 17.2 0 1 1 0 0 1-1 1H4.4a1 1 0 0 1-1-1Z"/>',
+  chat:    '<path d="M12 2.6c5.6 0 9.6 3.9 9.6 8.7 0 4.8-4 8.7-9.6 8.7a11 11 0 0 1-2.9-.4l-4.7 1.7a.7.7 0 0 1-.9-.9l1.5-4.2a8.2 8.2 0 0 1-2.2-5.6C2.8 6.5 6.7 2.6 12 2.6Z"/>',
+  shield:  '<path d="M12 1.9 4.4 5v6.2c0 4.7 3.2 8.9 7.6 10.1 4.4-1.2 7.6-5.4 7.6-10.1V5L12 1.9Z"/><path d="m8.6 11.9 2.4 2.4 4.6-4.6" stroke="#fff" stroke-width="2.1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+  plus:    '<rect x="10.6" y="3.4" width="2.8" height="17.2" rx="1.4"/><rect x="3.4" y="10.6" width="17.2" height="2.8" rx="1.4"/>',
+  doc:     '<path d="M6.4 1.9h7.7L19.4 7v13.6a1.5 1.5 0 0 1-1.5 1.5H6.4a1.5 1.5 0 0 1-1.5-1.5V3.4a1.5 1.5 0 0 1 1.5-1.5Z"/><path d="M13.7 2.2v4.5h4.5" fill="#fff" opacity=".45"/>',
+  node:    '<path d="M12 1.9 21 7.1v9.8L12 22.1 3 16.9V7.1L12 1.9Z" opacity=".22"/><circle cx="12" cy="12" r="2.6"/><circle cx="12" cy="4.4" r="1.9"/><circle cx="5.2" cy="16.4" r="1.9"/><circle cx="18.8" cy="16.4" r="1.9"/><path d="M12 6.3v3.1M13.9 13.6l3.2 1.9M10.1 13.6l-3.2 1.9" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/>',
+  freeze:  '<path d="M12 1.8a1.2 1.2 0 0 1 1.2 1.2v3l1.6-1.6a1.15 1.15 0 0 1 1.65 1.6L13.2 9.2v2.1l1.85-1.07 1.1-4.1a1.15 1.15 0 1 1 2.22.6l-.6 2.22 2.6-1.5a1.2 1.2 0 0 1 1.2 2.08l-2.6 1.5 2.22.6a1.15 1.15 0 1 1-.6 2.22l-4.1-1.1L14.6 12l1.85 1.07 4.1-1.1a1.15 1.15 0 0 1 .6 2.22l-2.22.6 2.6 1.5a1.2 1.2 0 0 1-1.2 2.08l-2.6-1.5.6 2.22a1.15 1.15 0 1 1-2.22.6l-1.1-4.1-1.85-1.07v2.1l3.25 3.25a1.15 1.15 0 0 1-1.65 1.6l-1.6-1.6v3a1.2 1.2 0 0 1-2.4 0v-3l-1.6 1.6a1.15 1.15 0 0 1-1.65-1.6l3.25-3.25v-2.1l-1.85 1.07-1.1 4.1a1.15 1.15 0 1 1-2.22-.6l.6-2.22-2.6 1.5a1.2 1.2 0 1 1-1.2-2.08l2.6-1.5-2.22-.6a1.15 1.15 0 1 1 .6-2.22l4.1 1.1L9.4 12l-1.85-1.07-4.1 1.1a1.15 1.15 0 1 1-.6-2.22l2.22-.6-2.6-1.5A1.2 1.2 0 0 1 3.67 5.63l2.6 1.5-.6-2.22a1.15 1.15 0 1 1 2.22-.6l1.1 4.1L10.8 9.5V7.4L7.55 4.15a1.15 1.15 0 0 1 1.65-1.6l1.6 1.6v-3A1.2 1.2 0 0 1 12 1.8Z"/>',
+  bell:    '<path d="M12 1.9a6.9 6.9 0 0 0-6.9 6.9c0 4.4-1.9 6-1.9 6a1.1 1.1 0 0 0 .9 1.8h15.8a1.1 1.1 0 0 0 .9-1.8s-1.9-1.6-1.9-6A6.9 6.9 0 0 0 12 1.9Z"/><path d="M9.6 18.4a2.6 2.6 0 0 0 4.8 0Z"/>',
+  check:   '<circle cx="12" cy="12" r="10.2"/><path d="m7.4 12.3 3.1 3.1 6.1-6.7" stroke="#fff" stroke-width="2.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+  alert:   '<path d="M13.7 3.3 22.6 18.9a2 2 0 0 1-1.7 3H3.1a2 2 0 0 1-1.7-3L10.3 3.3a2 2 0 0 1 3.4 0Z"/><rect x="10.8" y="8.3" width="2.4" height="6.4" rx="1.2" fill="#fff"/><circle cx="12" cy="17.6" r="1.35" fill="#fff"/>',
+  wallet:  '<path d="M4.4 3.9h13.2a2 2 0 0 1 2 2v1.6H4.9a1.8 1.8 0 0 1 0-3.6Z" opacity=".55"/><path d="M3.1 8.2a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10.1a2 2 0 0 1-2 2H5.1a2 2 0 0 1-2-2Z"/><circle cx="16.8" cy="13.3" r="1.7" fill="#fff"/>',
+  chart:   '<rect x="2.4" y="11.4" width="4.4" height="9.8" rx="1.6"/><rect x="9.8" y="4.6" width="4.4" height="16.6" rx="1.6"/><rect x="17.2" y="8.4" width="4.4" height="12.8" rx="1.6"/>',
+  ledger:  '<rect x="2.6" y="3.4" width="18.8" height="5.2" rx="1.9"/><rect x="2.6" y="10.4" width="18.8" height="5.2" rx="1.9" opacity=".7"/><rect x="2.6" y="17.4" width="18.8" height="3.4" rx="1.6" opacity=".45"/>',
+  lock:    '<rect x="3.9" y="10" width="16.2" height="11.6" rx="3"/><path d="M7.6 10V7.4a4.4 4.4 0 0 1 8.8 0V10" stroke="currentColor" stroke-width="2.3" fill="none" stroke-linecap="round"/><circle cx="12" cy="15.4" r="1.9" fill="#fff"/>',
+  pin:     '<path d="M12 1.9a7.7 7.7 0 0 0-7.7 7.7c0 5.6 6.8 11.9 7.1 12.2a.9.9 0 0 0 1.2 0c.3-.3 7.1-6.6 7.1-12.2A7.7 7.7 0 0 0 12 1.9Z"/><circle cx="12" cy="9.5" r="2.9" fill="#fff"/>',
+  power:   '<path d="M13.9 1.9a.8.8 0 0 1 .74 1.1l-2.3 6.1h4.7c.72 0 1.12.83.67 1.39l-9.1 11.4a.8.8 0 0 1-1.4-.72l2.3-6.9H5.1a.85.85 0 0 1-.72-1.3l8.1-10.6a.8.8 0 0 1 .62-.47Z"/>',
+};
+
+/** Solid icon, for tiles and tab bars. Falls back to the stroke set. */
+function IS(name, size = 26){
+  const p = SOLIDS[name];
+  if (!p) return I(name, size, 2.1);
+  return `<svg class="ico" width="${size}" height="${size}" viewBox="0 0 24 24" fill="currentColor"
+    aria-hidden="true" focusable="false">${p}</svg>`;
+}
+
+/** Render an icon. Returns an inline SVG string using currentColor. */
+function I(name, size = 24, w = 2){
+  const p = ICONS[name] || ICONS.info;
+  return `<svg class="ico" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"
+    aria-hidden="true" focusable="false">${p}</svg>`;
+}
+
+/** The lattice that textures dark surfaces — nodes and links, not decoration
+    for its own sake: it is the same motif as the block/node/chain icons. */
+function lattice(id = 'lat'){
+  return `<svg class="lattice" aria-hidden="true"><defs>
+    <pattern id="${id}" width="58" height="50" patternUnits="userSpaceOnUse">
+      <g fill="none" stroke="currentColor" stroke-width="1">
+        <path d="M29 2 51 14.5v25L29 52 7 39.5v-25L29 2Z"/>
+        <path d="M29 2v12.5M7 14.5 29 27M51 14.5 29 27M29 27v25"/>
+      </g>
+      <circle cx="29" cy="27" r="2" fill="currentColor"/>
+      <circle cx="29" cy="2" r="1.6" fill="currentColor"/>
+      <circle cx="7" cy="14.5" r="1.6" fill="currentColor"/>
+      <circle cx="51" cy="14.5" r="1.6" fill="currentColor"/>
+    </pattern></defs>
+    <rect width="100%" height="100%" fill="url(#${id})"/></svg>`;
+}
+
+/* =========================================================================
+   FIDELITY ILLUSTRATIONS
+   Built in the language of the strategy deck: flat geometry, three oranges,
+   two greys, white space doing the work. No black anywhere. Every scene is
+   inline SVG, so it scales, recolours with the theme and costs no request.
+       ART.goal()      → savings
+       ART.welcome()   → the bank itself
+   All return a full <svg> sized by its container.
+   ========================================================================= */
+const ART = (() => {
+  const O  = '#F07C1C', OD = '#D2610A', OL = '#FFA65C', OT = '#FFE3CA';
+  const G  = '#C3CAD2', GD = '#9AA3AD', GL = '#E8ECF0', W = '#FFFFFF';
+
+  const wrap = (vb, body, cls = '') =>
+    `<svg class="art ${cls}" viewBox="${vb}" fill="none" xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true" focusable="false">${body}</svg>`;
+
+  /* hexagon path helper — the node motif, reused across scenes */
+  const hex = (cx, cy, r, fill, stroke, sw = 0) => {
+    const p = [0,1,2,3,4,5].map(i => {
+      const a = Math.PI/180 * (60*i - 90);
+      return `${(cx + r*Math.cos(a)).toFixed(1)},${(cy + r*Math.sin(a)).toFixed(1)}`;
+    }).join(' ');
+    return `<polygon points="${p}" fill="${fill||'none'}" ${stroke?`stroke="${stroke}" stroke-width="${sw||2}"`:''}
+      stroke-linejoin="round"/>`;
+  };
+
+  /* ---------------------------------------------------- the bank itself */
+  const welcome = () => wrap('0 0 340 240', `
+    <circle cx="252" cy="82" r="74" fill="${OT}"/>
+    <rect x="28" y="52" width="176" height="112" rx="18" fill="${W}" stroke="${GL}" stroke-width="2"/>
+    <rect x="28" y="52" width="176" height="30" rx="18" fill="${O}"/>
+    <rect x="28" y="68" width="176" height="14" fill="${O}"/>
+    <rect x="46" y="98" width="86" height="9" rx="4.5" fill="${G}"/>
+    <rect x="46" y="116" width="126" height="16" rx="8" fill="${GL}"/>
+    <rect x="46" y="142" width="52" height="9" rx="4.5" fill="${OT}"/>
+    <rect x="112" y="142" width="34" height="9" rx="4.5" fill="${GL}"/>
+    <rect x="150" y="96" width="122" height="76" rx="16" fill="${W}" stroke="${GL}" stroke-width="2"/>
+    <rect x="166" y="112" width="44" height="8" rx="4" fill="${GD}"/>
+    <rect x="166" y="128" width="80" height="20" rx="10" fill="${OT}"/>
+    <rect x="166" y="128" width="46" height="20" rx="10" fill="${O}"/>
+    <rect x="166" y="158" width="30" height="6" rx="3" fill="${GL}"/>
+    ${hex(300, 168, 26, OT)}
+    ${hex(300, 168, 26, 'none', O, 2)}
+    <circle cx="300" cy="168" r="6" fill="${O}"/>
+    ${hex(58, 196, 18, W, G, 2)}
+    <circle cx="58" cy="196" r="4.5" fill="${GD}"/>
+    <path d="M76 196h56" stroke="${G}" stroke-width="2" stroke-dasharray="4 5" stroke-linecap="round"/>
+    ${hex(150, 196, 18, OT, O, 2)}
+    <circle cx="150" cy="196" r="4.5" fill="${O}"/>
+    <path d="M168 196h56" stroke="${G}" stroke-width="2" stroke-dasharray="4 5" stroke-linecap="round"/>
+    ${hex(242, 196, 18, W, G, 2)}
+    <circle cx="242" cy="196" r="4.5" fill="${GD}"/>
+    <circle cx="214" cy="44" r="9" fill="${OL}"/>
+    <circle cx="20" cy="120" r="6" fill="${G}"/>`);
+
+  /* ------------------------------------------------------------ savings */
+  const goal = () => wrap('0 0 320 220', `
+    <circle cx="160" cy="112" r="88" fill="${OT}" opacity=".55"/>
+    <circle cx="160" cy="112" r="66" fill="none" stroke="${W}" stroke-width="14"/>
+    <circle cx="160" cy="112" r="66" fill="none" stroke="${GL}" stroke-width="10"/>
+    <circle cx="160" cy="112" r="66" fill="none" stroke="${O}" stroke-width="10" stroke-linecap="round"
+      stroke-dasharray="414" stroke-dashoffset="128" transform="rotate(-90 160 112)"/>
+    <rect x="120" y="128" width="80" height="14" rx="7" fill="${W}"/>
+    <rect x="126" y="110" width="68" height="14" rx="7" fill="${OL}"/>
+    <rect x="132" y="92" width="56" height="14" rx="7" fill="${O}"/>
+    <rect x="138" y="74" width="44" height="14" rx="7" fill="${OD}"/>
+    ${hex(56, 62, 22, W, G, 2)}
+    <circle cx="56" cy="62" r="6" fill="${OL}"/>
+    ${hex(268, 170, 20, OT, O, 2)}
+    <circle cx="268" cy="170" r="5" fill="${O}"/>
+    <circle cx="272" cy="52" r="10" fill="${G}"/>
+    <circle cx="44" cy="168" r="7" fill="${OL}"/>`);
+
+  /* ------------------------------------------------------------- growth */
+  const growth = () => wrap('0 0 320 200', `
+    <rect x="24" y="24" width="272" height="152" rx="20" fill="${W}" stroke="${GL}" stroke-width="2"/>
+    <rect x="48" y="112" width="30" height="42" rx="9" fill="${GL}"/>
+    <rect x="94" y="92" width="30" height="62" rx="9" fill="${G}"/>
+    <rect x="140" y="70" width="30" height="84" rx="9" fill="${OL}"/>
+    <rect x="186" y="52" width="30" height="102" rx="9" fill="${O}"/>
+    <rect x="232" y="34" width="30" height="120" rx="9" fill="${OD}"/>
+    <path d="M56 96c40-26 78-40 122-56 22-8 44-12 66-14" stroke="${O}" stroke-width="3"
+      stroke-linecap="round" stroke-dasharray="6 7"/>
+    <circle cx="244" cy="26" r="9" fill="${W}" stroke="${O}" stroke-width="3"/>`);
+
+  /* --------------------------------------------------------- protection */
+  const secure = () => wrap('0 0 300 220', `
+    <circle cx="150" cy="108" r="86" fill="${OT}" opacity=".5"/>
+    <path d="M150 34 84 60v50c0 40 27 74 66 86 39-12 66-46 66-86V60l-66-26Z"
+      fill="${W}" stroke="${O}" stroke-width="3"/>
+    <path d="M150 52 100 72v38c0 31 21 57 50 67 29-10 50-36 50-67V72l-50-20Z" fill="${OT}"/>
+    <path d="M126 112l18 18 32-36" stroke="${OD}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    ${hex(46, 56, 18, W, G, 2)}<circle cx="46" cy="56" r="4.5" fill="${GD}"/>
+    ${hex(258, 158, 18, W, O, 2)}<circle cx="258" cy="158" r="4.5" fill="${O}"/>
+    <circle cx="262" cy="52" r="8" fill="${OL}"/>
+    <circle cx="40" cy="164" r="6" fill="${G}"/>`);
+
+  /* ------------------------------------------------------------- cards */
+  const cards = () => wrap('0 0 320 200', `
+    <circle cx="238" cy="70" r="66" fill="${OT}" opacity=".6"/>
+    <rect x="42" y="66" width="168" height="104" rx="16" fill="${GL}" transform="rotate(-8 126 118)"/>
+    <rect x="64" y="48" width="168" height="104" rx="16" fill="${W}" stroke="${G}" stroke-width="2"
+      transform="rotate(-3 148 100)"/>
+    <rect x="86" y="34" width="168" height="104" rx="16" fill="${O}"/>
+    <rect x="104" y="56" width="30" height="22" rx="5" fill="${OT}"/>
+    <rect x="104" y="96" width="96" height="9" rx="4.5" fill="${W}" opacity=".85"/>
+    <rect x="104" y="114" width="46" height="7" rx="3.5" fill="${W}" opacity=".55"/>
+    ${hex(226, 62, 15, 'none', W, 2)}
+    <circle cx="226" cy="62" r="4" fill="${W}"/>
+    <circle cx="44" cy="42" r="8" fill="${OL}"/>
+    ${hex(276, 156, 18, W, G, 2)}<circle cx="276" cy="156" r="4.5" fill="${GD}"/>`);
+
+  /* ------------------------------------------------------------ support */
+  const support = () => wrap('0 0 300 210', `
+    <circle cx="150" cy="104" r="84" fill="${OT}" opacity=".5"/>
+    <rect x="42" y="46" width="146" height="88" rx="20" fill="${W}" stroke="${GL}" stroke-width="2"/>
+    <path d="M74 134v22l26-22H74Z" fill="${W}" stroke="${GL}" stroke-width="2"/>
+    <rect x="64" y="72" width="82" height="9" rx="4.5" fill="${G}"/>
+    <rect x="64" y="92" width="54" height="9" rx="4.5" fill="${GL}"/>
+    <rect x="136" y="96" width="124" height="72" rx="20" fill="${O}"/>
+    <path d="M226 168v20l-24-20h24Z" fill="${O}"/>
+    <rect x="156" y="118" width="72" height="9" rx="4.5" fill="${W}" opacity=".9"/>
+    <rect x="156" y="136" width="44" height="9" rx="4.5" fill="${W}" opacity=".6"/>
+    <circle cx="252" cy="52" r="22" fill="${W}" stroke="${O}" stroke-width="3"/>
+    <circle cx="252" cy="45" r="7" fill="${OL}"/>
+    <path d="M240 63a12 12 0 0 1 24 0" stroke="${OL}" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="36" cy="150" r="7" fill="${G}"/>`);
+
+  /* ------------------------------------------------ nothing here yet */
+  const empty = () => wrap('0 0 280 180', `
+    <circle cx="140" cy="90" r="66" fill="${GL}" opacity=".7"/>
+    <rect x="72" y="52" width="136" height="86" rx="16" fill="${W}" stroke="${GL}" stroke-width="2"/>
+    <rect x="92" y="76" width="60" height="8" rx="4" fill="${GL}"/>
+    <rect x="92" y="94" width="94" height="8" rx="4" fill="${GL}"/>
+    <rect x="92" y="112" width="42" height="8" rx="4" fill="${OT}"/>
+    ${hex(220, 132, 17, W, O, 2)}<circle cx="220" cy="132" r="4.5" fill="${O}"/>
+    <circle cx="58" cy="46" r="7" fill="${G}"/>`);
+
+  /* --------------------------------------------------- the network idea */
+  const network = () => wrap('0 0 320 200', `
+    <circle cx="160" cy="100" r="82" fill="${OT}" opacity=".45"/>
+    <path d="M96 62 160 40l64 22M96 62v66l64 30 64-30V62M96 128l64-30 64 30M160 40v58"
+      stroke="${G}" stroke-width="2" stroke-linejoin="round"/>
+    ${hex(160, 40, 18, W, O, 2.5)}<circle cx="160" cy="40" r="5" fill="${O}"/>
+    ${hex(96, 62, 15, W, G, 2)}<circle cx="96" cy="62" r="4" fill="${GD}"/>
+    ${hex(224, 62, 15, W, G, 2)}<circle cx="224" cy="62" r="4" fill="${GD}"/>
+    ${hex(96, 128, 15, OT, O, 2)}<circle cx="96" cy="128" r="4" fill="${O}"/>
+    ${hex(224, 128, 15, W, G, 2)}<circle cx="224" cy="128" r="4" fill="${GD}"/>
+    ${hex(160, 158, 18, O, OD, 2.5)}<circle cx="160" cy="158" r="5" fill="${W}"/>
+    <circle cx="40" cy="52" r="8" fill="${OL}"/>
+    <circle cx="284" cy="150" r="6" fill="${G}"/>`);
+
+  /* --------------------------------------------------------- celebration */
+  const done = () => wrap('0 0 280 200', `
+    <circle cx="140" cy="98" r="72" fill="${OT}"/>
+    <circle cx="140" cy="98" r="52" fill="${W}"/>
+    <path d="M114 98l18 19 36-40" stroke="${O}" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="34" y="40" width="12" height="12" rx="3" fill="${OL}" transform="rotate(20 40 46)"/>
+    <rect x="234" y="52" width="10" height="10" rx="3" fill="${O}" transform="rotate(-15 239 57)"/>
+    <circle cx="52" cy="140" r="7" fill="${G}"/>
+    <circle cx="228" cy="146" r="9" fill="${OL}"/>
+    ${hex(258, 96, 14, W, O, 2)}
+    ${hex(28, 92, 12, W, G, 2)}`);
+
+  return {welcome, goal, growth, secure, cards, support, empty, network, done};
+})();
+
+/* =========================================================================
+   FIDELITY CUSTOMER CORE
+   Browser port of aibank_engine.py. Every agent keeps the engine contract:
+       infer(input) -> { action, confidence, explanation, adverse }
+   The wrapper FID.decide() applies the confidence floor, routes adverse
+   outcomes to human adjudication, and writes the customer-visible receipt
+   that mirrors the engine's audit record.
+   ========================================================================= */
+const FID = (() => {
+
+  const CCY = 'GHS';
+  const money  = n => CCY + ' ' + Number(n).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const money0 = n => CCY + ' ' + Math.round(n).toLocaleString('en-GB');
+  const pct    = n => (n*100).toFixed(0) + '%';
+
+  /* deterministic pseudo-random from a string, so demos repeat exactly */
+  const seed = s => { let h = 2166136261; for (const c of String(s)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return ((h >>> 0) % 100000) / 100000; };
+
+  /* ---------------------------------------------------------------- people */
+  const PERSONAL = {
+    id:'personal', label:'Personal', holder:'Ama Boateng', since:'2019',
+    accounts:[
+      {name:'Everyday account', num:'•••• 3391', balance:4182.60, type:'current'},
+      {name:'Target savings',   num:'•••• 7742', balance:11500.00, type:'savings'},
+    ],
+    card:{num:'•••• •••• •••• 3391', exp:'09/29', frozen:false},
+    credit:{bureau:648, dti:0.31, income:6400, thinFile:false},
+    beneficiaries:[
+      {name:'Kojo Mensah', bank:'Fidelity', acct:'•••• 2210', last:'GHS 200'},
+      {name:'MTN MoMo 024 447 8812', bank:'MoMo', acct:'024 447 8812', last:'GHS 50'},
+      {name:'Electro World Accra', bank:'GCB', acct:'•••• 9931', last:'GHS 1,240'},
+      {name:'Global Marine Ltd', bank:'Correspondent · Dubai', acct:'AE07 •••• 3311', last:'first payment'},
+    ],
+    transactions:[
+      {d:'Today 07:42', m:'Bolt Ghana', a:-38.00},
+      {d:'Yesterday',   m:'Melcom Osu', a:-214.50},
+      {d:'Yesterday',   m:'Salary — Ashesi University', a:6400.00},
+      {d:'24 Aug',      m:'ECG prepaid', a:-150.00},
+      {d:'23 Aug',      m:'Bolt Ghana', a:-42.00},
+      {d:'22 Aug',      m:'Shoprite Accra Mall', a:-388.20},
+      {d:'21 Aug',      m:'Bolt Ghana', a:-51.00},
+    ],
+  };
+
+  const BUSINESS = {
+    id:'business', label:"Ama's Kitchen Ltd", holder:"Ama's Kitchen Ltd", since:'2022',
+    accounts:[
+      {name:'Business current', num:'•••• 5108', balance:38470.15, type:'current'},
+      {name:'Tax reserve',      num:'•••• 5109', balance:9200.00,  type:'savings'},
+    ],
+    card:{num:'•••• •••• •••• 5108', exp:'02/28', frozen:false},
+    credit:{bureau:702, dti:0.24, income:41000, thinFile:true},
+    beneficiaries:[
+      {name:'Adom Poultry Farms', bank:'CalBank', acct:'•••• 8820', last:'GHS 12,400'},
+      {name:'Payroll — 14 staff', bank:'Fidelity', acct:'batch', last:'GHS 18,900'},
+      {name:'Global Marine Ltd', bank:'Correspondent · Dubai', acct:'AE07 •••• 3311', last:'first payment'},
+    ],
+    transactions:[
+      {d:'Today 06:10', m:'Card settlement — 214 covers', a:12840.00},
+      {d:'Yesterday',   m:'Adom Poultry Farms', a:-12400.00},
+      {d:'25 Aug',      m:'Payroll — 14 staff', a:-18900.00},
+      {d:'24 Aug',      m:'Card settlement — 188 covers', a:10120.00},
+      {d:'23 Aug',      m:'Ghana Water', a:-640.00},
+    ],
+    /* 8-week net cash position, engine forecast from week 4 */
+    cashflow:[42100, 38400, 44900, 38470, 31200, 22600, -4800, 9100],
+  };
+
+  const ENTITIES = { personal: PERSONAL, business: BUSINESS };
+
+  /* -------------------------------------------------------------- language */
+  const LANG = {
+    English:{base:.93, writes:true}, Twi:{base:.80, writes:true},
+    Ga:{base:.74, writes:false}, Ewe:{base:.72, writes:false}, Hausa:{base:.71, writes:false},
+  };
+
+  /* ----------------------------------------------------------------- floors */
+  const FLOOR = { chat:0.70, fraud:0.80, loan:0.78, sanctions:0.90, doc:0.85 };
+
+  /* ================================================================= agents */
+
+  /* retail.fraud_detection — azureml://fidelity/retail-fraud-lgbm/v3 */
+  function assessPayment(tx){
+    const s = seed(tx.to + tx.amount);
+    const foreign = /Dubai|Correspondent|AE07/.test(tx.bankLine || '');
+    const night = tx.hour < 5;
+    const unseen = tx.newBeneficiary === true;
+    let score = 0.05 + 0.35*foreign + 0.20*night + 0.18*unseen + Math.min(0.35, tx.amount/60000) + (s-0.5)*0.08;
+    score = Math.max(0, Math.min(0.98, score));
+    const reasons = [];
+    if (foreign) reasons.push('first payment to a correspondent bank outside Ghana');
+    if (night) reasons.push('sent outside your usual hours');
+    if (unseen) reasons.push('beneficiary added today');
+    if (tx.amount > 5000) reasons.push(`amount ${money0(tx.amount)} above your 90-day average`);
+    if (!reasons.length) reasons.push('matches your usual pattern for this beneficiary');
+    return score > 0.42
+      ? {action:'STEP_UP', confidence:0.62 + score/3, explanation:reasons.join('; '), adverse:false, reasons}
+      : {action:'APPROVE', confidence:0.96 - score/2, explanation:reasons.join('; '), adverse:false, reasons};
+  }
+
+  /* fcc.sanctions — lexisnexis://bridger/screen/v1 */
+  const WATCH = ['global marine', 'oceanic freight', 'transcontinental holdings'];
+  function screenBeneficiary(name){
+    const hit = WATCH.find(w => name.toLowerCase().includes(w));
+    if (hit){
+      const sim = 0.62 + seed(name)*0.2;
+      return {action:'HOLD_FOR_L2_REVIEW', confidence:0.55 + sim,
+        explanation:`name similarity ${sim.toFixed(2)} against a sanctions and PEP watchlist entry`,
+        adverse:false, similarity:sim};
+    }
+    const sim = seed(name) * 0.24;
+    return {action:'CLEAR', confidence:0.96,
+      explanation:`no match above 0.30 (closest ${sim.toFixed(2)})`, adverse:false, similarity:sim};
+  }
+
+  /* retail.loan_preapproval / credit.scoring — datarobot://fidelity/thin-file-scorecard/v5 */
+  function preapprove(amount, profile){
+    const pd = Math.max(0.01, Math.min(0.9, (750 - profile.bureau)/900 + profile.dti/3));
+    const cap = profile.income * 4;
+    const limit = Math.round((1 - pd) * cap / 100) * 100;
+    const conf = (profile.thinFile ? 0.82 : 0.94) - pd/2;
+    if (pd > 0.28)
+      return {action:'DECLINE', confidence:0.70, adverse:true, pd, cap, limit:0,
+        explanation:`modelled default probability ${(pd*100).toFixed(1)}% is above appetite`};
+    if (amount > limit)
+      return {action:'ABOVE_LIMIT', confidence:conf, adverse:true, pd, cap, limit,
+        explanation:`requested ${money0(amount)} exceeds the affordability cap of ${money0(limit)}`};
+    return {action:'PRE_APPROVE', confidence:conf, adverse:false, pd, cap, limit,
+      explanation:`default probability ${(pd*100).toFixed(1)}%, capped at 4× monthly income`};
+  }
+
+  /* retail.chatbot — rasa://fidelity/multilingual-nlu/v4 */
+  const INTENTS = [
+    [/balance|how much|sika|akonta|ahe/i, 'balance_enquiry'],
+    [/card|block|freeze|lost|stolen/i, 'card_block'],
+    [/branch|atm|where|near|baabi/i, 'branch_locator'],
+    [/loan|borrow|credit|bosea/i, 'loan_enquiry'],
+    [/complain|wrong|twice|charge|refund|angry/i, 'complaint'],
+    [/airtime|top ?up|data|bundle/i, 'airtime_topup'],
+    [/statement|transactions|history/i, 'statement'],
+    [/cash ?flow|forecast|working capital|invoice/i, 'cashflow'],
+  ];
+  function parse(text, lang){
+    const hit = INTENTS.find(([re]) => re.test(text));
+    const intent = hit ? hit[1] : 'unknown';
+    let conf = LANG[lang].base - 0.15 + seed(text)*0.24;
+    if (intent === 'unknown') conf -= 0.19;
+    conf = Math.max(0.18, Math.min(0.99, conf));
+    return {action: intent === 'unknown' ? 'CLARIFY' : 'SERVE_' + intent.toUpperCase(),
+      confidence:conf, intent, adverse:false,
+      explanation:`intent=${intent}, language=${lang}`};
+  }
+
+  /* sme.cashflow — prophet://fidelity/sme-cashflow/v1 */
+  function forecastCashflow(entity){
+    const s = entity.cashflow || [];
+    if (!s.length) return {action:'NO_DATA', confidence:0, adverse:false, trough:0, week:0,
+      explanation:'no settlement history on this account yet'};
+    const trough = Math.min(...s.slice(4));
+    const week = s.indexOf(trough) - 3;
+    return {action: trough < 0 ? 'OFFER_WORKING_CAPITAL' : 'NO_ACTION',
+      confidence:0.78, adverse:false, trough, week,
+      explanation: trough < 0
+        ? `projected shortfall of ${money0(Math.abs(trough))} in week ${week}, driven by payroll landing before card settlement`
+        : 'no financing gap projected over eight weeks'};
+  }
+
+  /* sme.doc_verification — tesseract+layoutlm://fidelity/lpo-verify/v2 */
+  function verifyDocument(filename){
+    const legible = /\.pdf$/i.test(filename) && !/blur|scan0|photo/i.test(filename);
+    const q = legible ? 0.55 + seed(filename)*0.40 : seed(filename)*0.29;
+    if (q < 0.30)
+      return {action:'REJECT_RESUBMIT', confidence:0.55 + q, adverse:false, quality:q,
+        explanation:`scan quality ${q.toFixed(2)} below the OCR threshold — buyer name and amount could not be read`};
+    return {action:'VERIFIED', confidence:0.80 + q*0.18, adverse:false, quality:q,
+      explanation:'buyer, amount and delivery date matched against the purchase order registry'};
+  }
+
+  /* ops.categorisation — supporting the spending insight */
+  const CATS = [[/bolt|uber|yango|trotro/i,'Transport'],[/melcom|shoprite|market|palace/i,'Groceries'],
+                [/ecg|water|dstv|surfline/i,'Utilities'],[/salary|settlement/i,'Income'],
+                [/poultry|payroll|supplier/i,'Cost of sales']];
+  const categorise = m => (CATS.find(([re]) => re.test(m)) || [null,'Other'])[1];
+
+  /* ================================================== decision + receipts */
+  const ledger = [];
+  const subs = [];
+  const onDecision = fn => subs.push(fn);
+
+  function decide(useCase, result, opts = {}){
+    const floor = opts.floor ?? 0.75;
+    const review = result.confidence < floor || result.adverse === true;
+    const rec = {
+      ts: new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),
+      useCase, action: review && result.adverse ? 'HUMAN_ADJUDICATION' : result.action,
+      confidence: result.confidence, explanation: result.explanation,
+      review, ref: opts.ref || ('DEC-' + (4400 + ledger.length)),
+      hash: '0x' + Math.floor(seed(useCase + result.explanation + ledger.length) * 0xfffffff)
+              .toString(16).padStart(7,'0'),
+      title: opts.title || useCase,
+    };
+    ledger.unshift(rec);
+    sync(rec, {customer: opts.customer, channel: opts.channel, amount: opts.amount,
+               evidence: opts.evidence});
+    subs.forEach(f => f(rec));
+    return {...result, review, record: rec};
+  }
+
+  /* When served by decision_api.py, every decision goes to the shared spine: the audit log
+     the control tower reads, and — if a person is needed — the reviewer's queue. Opened as a
+     bare file the products still work; they just decide alone. */
+  const API = (typeof location !== 'undefined' && location.protocol.startsWith('http')) ? '' : null;
+  let apiUp = API !== null;
+  function sync(rec, extra){
+    if (!apiUp) return;
+    fetch(API + '/api/decisions', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({...rec, ...extra})}).catch(() => { apiUp = false; });
+  }
+
+  /* receipt markup, shared by both products */
+  function slip(title, pairs, footer){
+    return `<div class="slip"><div class="slip-hd">${title}</div><dl>` +
+      pairs.map(([k,v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('') +
+      `</dl><div class="slip-ft">${footer}</div></div>`;
+  }
+
+  /* tiny SVG column chart for cash-flow */
+  function columns(values, opts = {}){
+    if (!values || !values.length) return '';
+    const w = opts.w || 460, h = opts.h || 130, n = values.length, bw = w/n;
+    const max = Math.max(...values.map(Math.abs)) * 1.15;
+    const zero = h/2 + 10;
+    const scale = v => (v/max) * (h/2);
+    let s = `<svg viewBox="0 0 ${w} ${h+28}" class="cols" role="img" aria-label="Cash position by week">`;
+    s += `<line x1="0" y1="${zero}" x2="${w}" y2="${zero}" stroke="var(--hair)"/>`;
+    values.forEach((v,i) => {
+      const x = i*bw + bw*0.2, bwid = bw*0.6, hgt = Math.abs(scale(v));
+      const y = v >= 0 ? zero - hgt : zero;
+      const fill = v < 0 ? 'var(--alert)' : (i >= (opts.forecastFrom ?? n) ? 'var(--orange)' : 'var(--ink)');
+      const op = i >= (opts.forecastFrom ?? n) ? '1' : '.82';
+      s += `<rect x="${x}" y="${y}" width="${bwid}" height="${Math.max(hgt,2)}" fill="${fill}" opacity="${op}"/>`;
+      s += `<text x="${x+bwid/2}" y="${h+20}" text-anchor="middle" class="colslab">${opts.labels?.[i] ?? ('w'+(i+1))}</text>`;
+    });
+    return s + '</svg>';
+  }
+
+  return { CCY, money, money0, pct, seed, ENTITIES, LANG, FLOOR, get live(){ return apiUp; },
+           assessPayment, screenBeneficiary, preapprove, parse,
+           forecastCashflow, verifyDocument, categorise,
+           ledger, onDecision, decide, slip, columns };
+})();
+
+/* =========================================================================
+   DIGITAL BANK EXTENSION
+   Everything a branch used to do, expressed as data and agents the products
+   can call. Same contract as before: infer(input) -> {action, confidence,
+   explanation, adverse}.
+   ========================================================================= */
+Object.assign(FID, (() => {
+
+  const BILLERS = [
+    {id:'ecg',    name:'ECG Prepaid',        cat:'Utilities',  hint:'Meter number',   icon:'power'},
+    {id:'gwcl',   name:'Ghana Water',        cat:'Utilities',  hint:'Account number', icon:'water'},
+    {id:'dstv',   name:'DStv / GOtv',        cat:'TV',         hint:'Smartcard',      icon:'tv'},
+    {id:'surf',   name:'Surfline / Busy',    cat:'Internet',   hint:'Account number', icon:'wifi'},
+    {id:'school', name:'School fees',        cat:'Education',  hint:'Student ID',     icon:'school'},
+    {id:'ssnit',  name:'SSNIT contributions',cat:'Statutory',  hint:'Employer number',icon:'gov'},
+    {id:'gra',    name:'GRA tax payment',    cat:'Statutory',  hint:'TIN',            icon:'invoice'},
+    {id:'insure', name:'Insurance premium',  cat:'Insurance',  hint:'Policy number',  icon:'shield'},
+  ];
+
+  const NETWORKS = [
+    {id:'mtn',  name:'MTN',        colour:'#FFCC00'},
+    {id:'telec',name:'Telecel',    colour:'#E4002B'},
+    {id:'at',   name:'AT',         colour:'#0057B8'},
+  ];
+
+  /* indicative, refreshed hourly in production from treasury */
+  const FX = {
+    USD:{buy:11.82, sell:12.14, name:'US Dollar'},
+    GBP:{buy:14.90, sell:15.35, name:'Pound Sterling'},
+    EUR:{buy:12.71, sell:13.08, name:'Euro'},
+    NGN:{buy:0.0072, sell:0.0079, name:'Naira'},
+  };
+
+  const TBILLS = [
+    {tenor:91,  rate:0.2685, label:'91-day'},
+    {tenor:182, rate:0.2810, label:'182-day'},
+    {tenor:364, rate:0.2925, label:'364-day'},
+  ];
+
+  const DEPOSITS = [
+    {months:3,  rate:0.185}, {months:6, rate:0.205}, {months:12, rate:0.235},
+  ];
+
+  const GOALS = [
+    {id:'g1', name:'Rent — Dansoman',  target:14400, saved:9600,  monthly:1200, due:'Mar 2027', icon:'home'},
+    {id:'g2', name:'Emergency fund',   target:20000, saved:4350,  monthly:500,  due:'open',     icon:'shield'},
+    {id:'g3', name:'Kofi — school fees',target:6000, saved:5400,  monthly:600,  due:'Jan 2027', icon:'school'},
+  ];
+
+  const STANDING = [
+    {name:'Rent — Mensah Properties', amount:1200, when:'1st of each month', next:'1 Sep'},
+    {name:'Emergency fund transfer',  amount:500,  when:'28th of each month',next:'28 Aug'},
+    {name:'DStv Compact',             amount:390,  when:'5th of each month', next:'5 Sep'},
+  ];
+
+  const KYC = {tier:2, label:'Tier 2', dailyLimit:20000, singleLimit:10000,
+               toTier3:['Ghana Card verified','Proof of address','Income declaration']};
+
+  /* ---- agents ---------------------------------------------------------- */
+
+  /* treasury.fx — quote with the spread made explicit */
+  function fxQuote(amount, ccy, side){
+    const r = FX[ccy], rate = side === 'buy' ? r.sell : r.buy;   // bank sells to you at 'sell'
+    const cedis = side === 'buy' ? amount * rate : amount * rate;
+    const midRate = (r.buy + r.sell) / 2;
+    const spread = Math.abs(rate - midRate) * amount;
+    return {action:'QUOTE', confidence:0.99, adverse:false, rate, cedis, spread,
+      explanation:`${side === 'buy' ? 'You buy' : 'You sell'} ${ccy} at ${rate.toFixed(4)}; ` +
+                  `mid-market is ${midRate.toFixed(4)}, so our margin on this trade is ${money0(spread)}`};
+  }
+
+  /* investments.tbill — Bank of Ghana auction, net of the 8% withholding tax */
+  function tbillQuote(amount, tenor){
+    const t = TBILLS.find(x => x.tenor === tenor);
+    const gross = amount * t.rate * (tenor / 364);
+    const tax = gross * 0.08;
+    return {action:'QUOTE', confidence:0.98, adverse:false,
+      gross, tax, net:gross - tax, maturity:amount + gross - tax, rate:t.rate,
+      explanation:`${(t.rate*100).toFixed(2)}% for ${tenor} days on ${money0(amount)}; ` +
+                  `${money0(gross)} interest less ${money0(tax)} withholding tax`};
+  }
+
+  /* savings.goal — will this goal land on time at the current rate? */
+  function goalProject(g){
+    const left = g.target - g.saved;
+    const months = Math.ceil(left / g.monthly);
+    const onTrack = g.due === 'open' || months <= 6;
+    return {action: onTrack ? 'ON_TRACK' : 'BEHIND', confidence:0.84, adverse:false, months, left,
+      explanation: left <= 0 ? 'goal reached'
+        : `${money0(left)} to go; ${months} more month${months>1?'s':''} at ${money0(g.monthly)}`};
+  }
+
+  /* ops.payroll — maker-checker with a screen on every payee */
+  function payrollCheck(batch){
+    const flagged = batch.filter(p => FID.screenBeneficiary(p.name).action !== 'CLEAR');
+    const total = batch.reduce((s,p) => s + p.amount, 0);
+    return {action: flagged.length ? 'HOLD_BATCH' : 'READY_FOR_APPROVAL',
+      confidence: flagged.length ? 0.64 : 0.93, adverse:false, flagged, total,
+      explanation: flagged.length
+        ? `${flagged.length} of ${batch.length} payees matched a watchlist entry; batch cannot be released`
+        : `${batch.length} payees, ${money0(total)}, all screened clear — needs a second approver`};
+  }
+
+  /* limits.check — Bank of Ghana KYC tiering, before anything else runs */
+  function limitCheck(amount){
+    if (amount > KYC.singleLimit)
+      return {action:'BLOCKED_BY_TIER', confidence:1, adverse:true,
+        explanation:`${money0(amount)} is over your ${KYC.label} single-transaction limit of ${money0(KYC.singleLimit)}`};
+    return {action:'WITHIN_LIMIT', confidence:1, adverse:false,
+      explanation:`within your ${KYC.label} limits`};
+  }
+
+  const money0 = n => 'GHS ' + Math.round(n).toLocaleString('en-GB');
+
+  const PAYROLL = [
+    {name:'Kojo Mensah', role:'Head chef', amount:3200},
+    {name:'Adjoa Nyarko', role:'Sous chef', amount:2400},
+    {name:'Yaw Darko', role:'Server', amount:1400},
+    {name:'Efua Sarpong', role:'Server', amount:1400},
+    {name:'Global Marine Ltd', role:'Contract cleaning', amount:2100},
+    {name:'Akosua Frimpong', role:'Kitchen porter', amount:1200},
+  ];
+
+  return {BILLERS, NETWORKS, FX, TBILLS, DEPOSITS, GOALS, STANDING, KYC, PAYROLL,
+          fxQuote, tbillQuote, goalProject, payrollCheck, limitCheck};
+})());
+
+/* =========================================================================
+   MERCHANTS, LEDGER AND FUNDING
+   A statement is only readable if you can recognise a row at a glance, which
+   is what a logo does. Real brand assets are licensed, so each merchant here
+   carries a `logo` field that is null by default and a generated brand tile
+   as the fallback. Drop a URL or an inline SVG into `logo` and the tile is
+   replaced with it — nothing else has to change.
+   ========================================================================= */
+Object.assign(FID, (() => {
+
+  const slugify = n => n.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+  const M = (match, label, colour, mark, cat, slug = null) =>
+    ({match, label, colour, mark, cat, slug: slug || slugify(label)});
+
+  const MERCHANTS = [
+    M(/bolt/i,            'Bolt',                '#34D186', 'BO', 'Transport'),
+    M(/uber/i,            'Uber',                '#4A5058', 'UB', 'Transport'),
+    M(/yango/i,           'Yango',               '#FF3D00', 'YA', 'Transport'),
+    M(/trotro|stc/i,      'STC',                 '#0B6E4F', 'ST', 'Transport'),
+    M(/melcom/i,          'Melcom',              '#E4002B', 'ME', 'Shopping'),
+    M(/shoprite/i,        'Shoprite',            '#E31E24', 'SH', 'Groceries'),
+    M(/palace|maxmart/i,  'Palace Mall',         '#7A3E9D', 'PA', 'Groceries'),
+    M(/jumia/i,           'Jumia',               '#F68B1E', 'JU', 'Shopping'),
+    M(/kfc/i,             'KFC',                 '#A3080C', 'KF', 'Eating out'),
+    M(/papaye/i,          'Papaye',              '#D42027', 'PP', 'Eating out'),
+    M(/ecg|electricity/i, 'ECG',                 '#F5A623', 'EC', 'Utilities'),
+    M(/ghana water|gwcl/i,'Ghana Water',         '#0A7CC1', 'GW', 'Utilities'),
+    M(/dstv|gotv/i,       'DStv',                '#0D5AA7', 'DS', 'TV'),
+    M(/surfline|busy/i,   'Surfline',            '#00A9E0', 'SU', 'Internet'),
+    M(/mtn|momo/i,        'MTN',                 '#FFCB05', 'MT', 'Airtime', null),
+    M(/telecel|vodafone/i,'Telecel',             '#E4002B', 'TC', 'Airtime'),
+    M(/airteltigo|\bat\b/i,'AT',                 '#0057B8', 'AT', 'Airtime'),
+    M(/ashesi|university/i,'Ashesi University',  '#8C1D40', 'AU', 'Income'),
+    M(/adom poultry/i,    'Adom Poultry Farms',  '#5E8C31', 'AP', 'Cost of sales'),
+    M(/coastal foods/i,   'Coastal Foods Ltd',   '#0E6BA8', 'CF', 'Income'),
+    M(/ridge hotel/i,     'Ridge Hotel',         '#8A6D3B', 'RH', 'Income'),
+    M(/global marine/i,   'Global Marine Ltd',   '#455A64', 'GM', 'Transfer'),
+    M(/payroll/i,         'Payroll',             '#37474F', 'PR', 'Salaries'),
+    M(/gra|tax/i,         'GRA',                 '#006B3F', 'GR', 'Statutory'),
+    M(/ssnit/i,           'SSNIT',               '#1A5632', 'SS', 'Statutory'),
+    M(/netflix/i,         'Netflix',             '#E50914', 'NF', 'Subscriptions'),
+    M(/spotify/i,         'Spotify',             '#1DB954', 'SP', 'Subscriptions'),
+    M(/mensah properties|rent/i,'Mensah Properties','#6D4C41','MP','Housing'),
+    M(/fidelity|settlement|card settlement/i,'Fidelity','#F26F1D','FD','Income'),
+  ];
+
+  /** Resolve a raw transaction description to a known merchant, or synthesise one. */
+  function merchant(name){
+    const hit = MERCHANTS.find(m => m.match.test(name));
+    if (hit) return hit;
+    const slug = slugify(String(name));
+    const words = String(name).replace(/[^A-Za-z ]/g,'').trim().split(/\s+/);
+    const mark = (words[0]?.[0] || '?') + (words[1]?.[0] || words[0]?.[1] || '');
+    /* deterministic grey-blue so unknown merchants never look broken */
+    const hue = Math.floor(FID.seed(name) * 360);
+    return {label:name, colour:`hsl(${hue} 34% 42%)`, mark:mark.toUpperCase(), cat:'Other', slug};
+  }
+
+  /* Where partner logo files live. Drop `bolt.svg`, `mtn.svg`, `ecg.svg` … into this
+     folder and every statement row picks them up with no other change. The filename is
+     the merchant slug, which `merchant()` returns. */
+  let LOGO_DIR = 'logos/';
+  const setLogoDir = dir => { LOGO_DIR = dir.endsWith('/') ? dir : dir + '/'; };
+
+  /** Swap a missing logo for the generated mark. Called by the <img> onerror. */
+  function logoFail(img){
+    const span = document.createElement('span');
+    span.className = 'brandtile fallback';
+    span.setAttribute('style', img.dataset.fallback);
+    span.textContent = img.dataset.mark;
+    img.replaceWith(span);
+  }
+
+  /** The statement row mark: the partner's own logo when the file is there, a
+      generated mark in their brand colour when it is not. */
+  function brandTile(name, size = 44, radius = 14){
+    const m = merchant(name);
+    const fb = `width:${size}px;height:${size}px;border-radius:${radius}px;flex:none;` +
+      `background:${m.colour};color:#fff;display:grid;place-items:center;font-weight:800;` +
+      `font-size:${Math.round(size * 0.34)}px;letter-spacing:-.04em`;
+    return `<img class="brandtile" src="${LOGO_DIR}${m.slug}.svg" alt="${m.label}" loading="lazy"
+      data-mark="${m.mark}" data-fallback="${fb}" onerror="FID.logoFail(this)"
+      style="width:${size}px;height:${size}px;border-radius:${radius}px;flex:none;object-fit:contain;
+             background:#fff;padding:${Math.round(size*0.13)}px;border:1px solid var(--line)">`;
+  }
+
+  /* ------------------------------------------------------------- wallets */
+  const MOMO = [
+    {id:'mtn',    network:'MTN MoMo',    msisdn:'024 447 8812', balance:1240.50},
+    {id:'telecel',network:'Telecel Cash',msisdn:'050 118 2204', balance:310.00},
+  ];
+
+  /* --------------------------------------------------------- the ledger */
+  let txSeq = 9000;
+
+  const dayLabel = ts => {
+    const d = new Date(ts), now = new Date();
+    const days = Math.floor((new Date(now.getFullYear(),now.getMonth(),now.getDate()) -
+                             new Date(d.getFullYear(),d.getMonth(),d.getDate())) / 86400000);
+    if (days === 0) return 'Today';
+    if (days === 1) return 'Yesterday';
+    return d.toLocaleDateString('en-GB',{day:'numeric', month:'short'});
+  };
+  const timeLabel = ts => new Date(ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+
+  /** Post a real movement. Balances change, the statement grows, and the row
+      carries the record the decision layer already wrote. */
+  function post(entity, {merchant:name, amount, account = 0, method = 'Fidelity account',
+                         category, status = 'Completed', note = '', hash}){
+    const acct = entity.accounts[account];
+    const m = merchant_(name);
+    const tx = {
+      id: 'TX' + (++txSeq), ts: Date.now(), m: name, a: amount,
+      cat: category || m.cat, method, status, note,
+      ref: 'FID' + (txSeq * 7 % 999999).toString().padStart(6,'0'),
+      hash: hash || ('0x' + Math.floor(FID.seed(name + amount + txSeq) * 0xfffffff).toString(16).padStart(7,'0')),
+      balanceAfter: 0,
+    };
+    if (status === 'Completed'){
+      acct.balance += amount;
+      tx.balanceAfter = acct.balance;
+    } else {
+      tx.balanceAfter = acct.balance;
+    }
+    tx.d = dayLabel(tx.ts) + ' ' + timeLabel(tx.ts);
+    entity.transactions.unshift(tx);
+    return tx;
+  }
+  const merchant_ = merchant;
+
+  /** Move money into a goal from an account or a mobile money wallet. */
+  function fundGoal(entity, goal, amount, source){
+    if (source.kind === 'account'){
+      const acct = entity.accounts[source.index];
+      if (acct.balance < amount)
+        return {action:'INSUFFICIENT', confidence:1, adverse:true,
+          explanation:`${acct.name} holds ${money0(acct.balance)}, which is less than ${money0(amount)}`};
+      /* the debit itself is posted by the caller through post(), so the movement
+         appears on the statement exactly once */
+      goal.saved = Math.min(goal.target, goal.saved + amount);
+      return {action:'FUNDED', confidence:1, adverse:false, from:acct.name,
+        explanation:`moved from ${acct.name} instantly, no charge`};
+    }
+    const w = MOMO.find(x => x.id === source.id);
+    if (w.balance < amount)
+      return {action:'INSUFFICIENT', confidence:1, adverse:true,
+        explanation:`${w.network} holds ${money0(w.balance)}, which is less than ${money0(amount)}`};
+    w.balance -= amount;
+    goal.saved = Math.min(goal.target, goal.saved + amount);
+    return {action:'FUNDED', confidence:0.97, adverse:false, from:w.network,
+      explanation:`collected from ${w.network} ${w.msisdn}; the network confirms within a minute`};
+  }
+
+  const money0 = n => 'GHS ' + Math.round(n).toLocaleString('en-GB');
+
+  /* ------------------------------------ richer seeded statement history */
+  const H = (days, hours, name, amount, method = 'Card', status = 'Completed') => {
+    const ts = Date.now() - days*86400000 - hours*3600000;
+    return {id:'TX'+(++txSeq), ts, m:name, a:amount, cat:merchant(name).cat, method, status,
+            d: dayLabel(ts) + ' ' + timeLabel(ts),
+            ref:'FID'+(txSeq*7%999999).toString().padStart(6,'0'),
+            hash:'0x'+Math.floor(FID.seed(name+amount+ts)*0xfffffff).toString(16).padStart(7,'0'),
+            balanceAfter:0};
+  };
+
+  FID.ENTITIES.personal.transactions = [
+    H(0,2,'Bolt Ghana',-38.00), H(0,4,'Papaye Osu',-72.00,'Card'),
+    H(1,3,'Melcom Osu',-214.50), H(1,9,'Salary — Ashesi University',6400.00,'Transfer in'),
+    H(1,11,'MTN airtime',-20.00,'Mobile money'), H(2,5,'ECG prepaid',-150.00,'Bill payment'),
+    H(2,8,'Bolt Ghana',-42.00), H(3,4,'Shoprite Accra Mall',-388.20),
+    H(3,10,'Netflix',-71.00,'Card'), H(4,6,'Bolt Ghana',-51.00),
+    H(5,2,'DStv Compact',-390.00,'Bill payment'), H(5,7,'Jumia order',-249.00,'Card'),
+    H(6,3,'Rent — Mensah Properties',-1200.00,'Standing order'),
+    H(7,5,'Ghana Water',-96.40,'Bill payment'), H(8,4,'KFC Airport City',-118.00),
+    H(9,6,'Bolt Ghana',-44.00), H(10,3,'Palace Mall',-176.30),
+    H(11,8,'Spotify',-29.00,'Card'), H(12,5,'Surfline data',-150.00,'Bill payment'),
+  ];
+
+  FID.ENTITIES.business.transactions = [
+    H(0,3,'Card settlement — 214 covers',12840.00,'Settlement'),
+    H(1,4,'Adom Poultry Farms',-12400.00,'Transfer'),
+    H(2,2,'Payroll — 14 staff',-18900.00,'Bulk payment'),
+    H(3,3,'Card settlement — 188 covers',10120.00,'Settlement'),
+    H(4,5,'Ghana Water',-640.00,'Bill payment'),
+    H(5,6,'Coastal Foods Ltd',8600.00,'Transfer in'),
+    H(6,4,'GRA VAT return',-4180.00,'Bill payment'),
+    H(7,2,'Ridge Hotel',6200.00,'Transfer in'),
+    H(8,7,'SSNIT contributions',-2340.00,'Bill payment'),
+  ];
+
+  /* running balance backwards from today's position, so the statement adds up */
+  for (const e of Object.values(FID.ENTITIES)){
+    let bal = e.accounts[0].balance;
+    for (const t of e.transactions){ t.balanceAfter = bal; bal -= t.a; }
+  }
+
+  return {MERCHANTS, merchant, brandTile, logoFail, setLogoDir, slugify,
+          MOMO, post, fundGoal, dayLabel, timeLabel};
+})());
+</script>
+<script>
+const SURFACES = [
+  {id:'app',      file:'fidelity-app.html',      icon:'airtime', name:'Mobile app',
+   who:'Customer', desc:'Five tabs, keypad payments, goals funded from MoMo or an account, live statement.'},
+  {id:'web',      file:'fidelity-web.html',      icon:'dashboard', name:'Fidelity Online',
+   who:'Customer', desc:'Personal and business banking: transfers, bills, cards, treasury bills, FX, payroll.'},
+  {id:'reviewer', file:'reviewer-console.html',  icon:'stamp',   name:'Reviewer console',
+   who:'Staff',    desc:'The escalation queue, sorted by SLA. Agree, override or return every model decision.'},
+  {id:'tower',    file:'control-tower.html',     icon:'network', name:'AI Control Tower',
+   who:'Staff',    desc:'The whole portfolio, its governance gates, and what the confidence floors cost.'},
+];
+
+const DEVICES = [
+  {id:'phone',  icon:'airtime', label:'Phone',  w:390,  h:844},
+  {id:'tablet', icon:'atm',     label:'Tablet', w:834,  h:1000},
+  {id:'laptop', icon:'card',    label:'Laptop', w:1280, h:820},
+  {id:'fit',    icon:'dashboard', label:'Fit',  w:0,    h:900},
+];
+
+const TIPS = [
+  ['Watch money actually move','Send GHS 200 to Kojo Mensah in the app. The balance drops, the row appears at the top of the statement with a reference, and the running balance recalculates.'],
+  ['Fund a goal from MoMo','Save › Rent — Dansoman › MTN MoMo. The wallet is debited, not your account. Try GHS 99,999 and it stops, naming the source that is short.'],
+  ['Trip the sanctions screen','Pay Global Marine Ltd. The money never moves and a compliance officer gets the case.'],
+  ['Get declined by a person','Push the loan slider past your limit. No model declines you — it names a credit officer and gives a reference.'],
+  ['Hit the language floor','Ask about a loan in Ga or Hausa. Below 0.70 confidence it hands to a person and says why. Ask your balance in Twi and it answers.'],
+  ['See both sides of one queue','Escalate something in the app, then open the reviewer console. With the service running it appears within four seconds.'],
+];
+
+let surface = SURFACES[0], device = DEVICES[0];
+const $ = id => document.getElementById(id);
+
+$('logomark').innerHTML = I('node', 18, 2).replace('currentColor', '#fff');
+
+function paint(){
+  $('surfaces').innerHTML = SURFACES.map(s => `
+    <button class="card" data-s="${s.id}" aria-pressed="${s.id===surface.id}">
+      <div class="ic">${I(s.icon,20)}</div>
+      <b>${s.name}</b><span>${s.desc}</span>
+      <span class="who">${s.who}</span></button>`).join('');
+
+  $('devices').innerHTML = DEVICES.map(d => `
+    <button data-d="${d.id}" aria-pressed="${d.id===device.id}">${I(d.icon,16)}<span>${d.label}</span></button>`).join('');
+
+  const w = device.w || Math.min(window.innerWidth - 90, 1420);
+  const box = $('device');
+  box.style.width  = w + 'px';
+  box.style.height = Math.min(device.h, window.innerHeight * 0.82) + 'px';
+  $('url').textContent  = surface.file;
+  $('size').textContent = `${w} × ${Math.round(Math.min(device.h, window.innerHeight * 0.82))}`;
+  $('openin').setAttribute('href', surface.file);
+  $('fallbackLink').setAttribute('href', surface.file);
+  if ($('view').getAttribute('src') !== surface.file) $('view').setAttribute('src', surface.file);
+
+  $('tips').innerHTML = TIPS.map(([t,d]) => `<div class="tip"><b>${t}</b><span>${d}</span></div>`).join('');
+}
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-s],[data-d]');
+  if (!el) return;
+  if (el.dataset.s) surface = SURFACES.find(s => s.id === el.dataset.s);
+  if (el.dataset.d) device  = DEVICES.find(d => d.id === el.dataset.d);
+  paint();
+});
+addEventListener('resize', () => { if (!device.w) paint(); });
+
+/* is the decision service up? then the four surfaces share one queue */
+(async () => {
+  try {
+    const r = await fetch('/api/health', {cache:'no-store'});
+    if (!r.ok) throw 0;
+    const d = await r.json();
+    $('dot').className = 'dot live';
+    $('mode').textContent = `service live · ${d.open} in the queue`;
+  } catch {
+    $('dot').className = 'dot';
+    $('mode').textContent = location.protocol === 'file:'
+      ? 'offline files · each surface decides alone'
+      : 'service not reachable';
+  }
+})();
+
+/* if a frame refuses to load locally, offer the direct link instead */
+$('view').addEventListener('error', () => { $('fallback').hidden = false; });
+setTimeout(() => {
+  try { if (!$('view').contentDocument && location.protocol === 'file:') $('fallback').hidden = false; }
+  catch { $('fallback').hidden = false; }
+}, 1800);
+
+document.getElementById('heroart').innerHTML = ART.welcome();
+paint();
+</script>
+</body>
+</html>

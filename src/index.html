@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#15161A">
+<title>Fidelity Digital — prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Geist+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>__UI__</style>
+<style>
+body{background:var(--sand);color:var(--ink)}
+.top{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.9);backdrop-filter:blur(14px);
+     border-bottom:1px solid var(--line)}
+.top .in{max-width:1420px;margin:0 auto;padding:13px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.mark{display:flex;align-items:center;gap:11px}
+.mark .m{width:32px;height:32px;background:var(--orange);display:grid;place-items:center;clip-path:var(--hex)}
+.mark b{font-family:var(--display);font-size:16px;letter-spacing:-.02em;color:var(--ink)}
+.mark span{color:var(--orange);font-weight:700}
+.seg{display:flex;gap:3px;background:var(--haze);border-radius:100px;padding:4px}
+.seg button{background:none;border:0;color:var(--grey);padding:8px 15px;border-radius:100px;font-size:13px;
+            font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:.14s}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--orange);color:#fff}
+.seg svg{width:16px;height:16px}
+.spacer{margin-left:auto;display:flex;gap:10px;align-items:center}
+.state{font-family:var(--mono);font-size:11.5px;color:var(--grey);display:flex;align-items:center;gap:7px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--mist)}
+.dot.live{background:#3FBF8F;box-shadow:0 0 0 3px rgba(63,191,143,.18)}
+.openin{background:var(--white);border:1px solid var(--line);color:var(--slate);border-radius:100px;padding:8px 15px;
+        font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;text-decoration:none}
+.openin:hover{border-color:var(--orange);color:var(--orange-d)}
+
+.hero{max-width:1420px;margin:0 auto;padding:44px 22px 10px}
+.hero h1{font-family:var(--display);font-size:clamp(30px,4.6vw,50px);line-height:1;letter-spacing:-.04em;
+         color:var(--ink);margin-bottom:14px}
+.hero h1 em{font-style:normal;color:var(--orange)}
+.hero p{color:var(--slate);font-size:16px;line-height:1.6;max-width:60ch}
+.hero p b{color:var(--ink);font-weight:700}
+
+.surfaces{max-width:1420px;margin:0 auto;padding:26px 22px 0;display:grid;
+          grid-template-columns:repeat(4,1fr);gap:12px}
+.card{background:var(--white);border:1px solid var(--line);border-radius:18px;padding:16px;cursor:pointer;
+      text-align:left;transition:.16s var(--ease);color:inherit}
+.card:hover{border-color:var(--orange);transform:translateY(-2px)}
+.card[aria-pressed="true"]{border-color:var(--orange);background:var(--orange-t)}
+.card .ic{width:40px;height:40px;display:grid;place-items:center;clip-path:var(--hex);
+          background:rgba(242,111,29,.16);color:var(--orange);margin-bottom:12px}
+.card b{display:block;font-size:15px;margin-bottom:4px;color:var(--ink)}
+.card span{font-size:12.5px;color:var(--grey);line-height:1.5;display:block}
+.card .who{margin-top:10px;font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+           color:var(--orange)}
+
+.stagewrap{max-width:1420px;margin:0 auto;padding:26px 22px 60px}
+.frame{background:var(--white);border:1px solid var(--line);border-radius:22px;padding:18px;
+       display:flex;flex-direction:column;align-items:center;gap:14px;overflow:hidden}
+.framebar{width:100%;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.framebar .url{flex:1;min-width:120px;background:var(--haze);border:1px solid var(--line);border-radius:100px;
+  padding:8px 15px;font-family:var(--mono);font-size:11.5px;color:var(--grey);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.framebar .size{font-family:var(--mono);font-size:11.5px;color:var(--grey)}
+.device{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff;
+        transition:width .3s var(--ease),height .3s var(--ease);max-width:100%}
+.device iframe{border:0;display:block;width:100%;height:100%}
+.fallback{padding:26px;text-align:center;color:var(--grey);font-size:13.5px;line-height:1.6}
+.fallback a{color:var(--orange);font-weight:700}
+
+.tips{max-width:1420px;margin:0 auto;padding:0 22px 70px}
+.tips h2{font-family:var(--display);font-size:20px;color:var(--ink);margin-bottom:14px;letter-spacing:-.02em}
+.tipgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.tip{background:var(--white);border:1px solid var(--line);border-radius:16px;padding:16px}
+.tip b{display:block;color:var(--ink);font-size:13.5px;margin-bottom:5px}
+.tip span{font-size:12.5px;color:var(--grey);line-height:1.55}
+.tip code{font-family:var(--mono);font-size:11.5px;color:var(--orange-d);background:var(--orange-t);
+          padding:2px 6px;border-radius:5px}
+
+@media (max-width:1100px){ .surfaces{grid-template-columns:1fr 1fr} .tipgrid{grid-template-columns:1fr 1fr} }
+@media (max-width:680px){
+  .surfaces{grid-template-columns:1fr} .tipgrid{grid-template-columns:1fr}
+  .hero{padding:30px 16px 6px} .surfaces,.stagewrap,.tips{padding-left:16px;padding-right:16px}
+  .top .in{padding:11px 16px;gap:12px} .seg button{padding:8px 12px;font-size:12.5px}
+  .seg button span{display:none} .frame{padding:12px}
+}
+</style>
+</head>
+<body>
+
+<div class="top"><div class="in">
+  <div class="mark"><div class="m" id="logomark"></div>
+    <b>Fidelity <span>Digital</span></b></div>
+  <div class="seg" id="devices"></div>
+  <div class="spacer">
+    <div class="state"><span class="dot" id="dot"></span><span id="mode">checking service…</span></div>
+    <a class="openin" id="openin" href="fidelity-app.html" target="_blank" rel="noopener">Open full</a>
+  </div>
+</div></div>
+
+<div class="hero"><div class="arthead" style="gap:40px">
+  <div>
+  <h1>Four surfaces, <em>one engine</em></h1>
+  <p>Everything below is live. Send a payment and the balance moves, the statement grows, and if a model
+    declines to decide, the case lands in the reviewer's queue. <b>Resize with the buttons above</b> to see
+    each product at phone, tablet and laptop widths.</p>
+  </div>
+  <div style="width:min(320px,100%)" id="heroart"></div>
+</div></div>
+
+<div class="surfaces" id="surfaces"></div>
+
+<div class="stagewrap"><div class="frame">
+  <div class="framebar">
+    <span class="url" id="url">fidelity-app.html</span>
+    <span class="size" id="size">390 × 844</span>
+  </div>
+  <div class="device" id="device"><iframe id="view" title="Prototype preview"></iframe></div>
+  <div class="fallback" id="fallback" hidden>
+    If the preview stays blank, your browser is blocking local frames.
+    <a id="fallbackLink" href="fidelity-app.html" target="_blank" rel="noopener">Open this surface directly</a>,
+    or serve the folder with <code>python3 decision_api.py</code>.
+  </div>
+</div></div>
+
+<div class="tips">
+  <h2>Worth trying</h2>
+  <div class="tipgrid" id="tips"></div>
+</div>
+
+<script>__CORE__</script>
+<script>
+const SURFACES = [
+  {id:'app',      file:'fidelity-app.html',      icon:'airtime', name:'Mobile app',
+   who:'Customer', desc:'Five tabs, keypad payments, goals funded from MoMo or an account, live statement.'},
+  {id:'web',      file:'fidelity-web.html',      icon:'dashboard', name:'Fidelity Online',
+   who:'Customer', desc:'Personal and business banking: transfers, bills, cards, treasury bills, FX, payroll.'},
+  {id:'reviewer', file:'reviewer-console.html',  icon:'stamp',   name:'Reviewer console',
+   who:'Staff',    desc:'The escalation queue, sorted by SLA. Agree, override or return every model decision.'},
+  {id:'tower',    file:'control-tower.html',     icon:'network', name:'AI Control Tower',
+   who:'Staff',    desc:'The whole portfolio, its governance gates, and what the confidence floors cost.'},
+];
+
+const DEVICES = [
+  {id:'phone',  icon:'airtime', label:'Phone',  w:390,  h:844},
+  {id:'tablet', icon:'atm',     label:'Tablet', w:834,  h:1000},
+  {id:'laptop', icon:'card',    label:'Laptop', w:1280, h:820},
+  {id:'fit',    icon:'dashboard', label:'Fit',  w:0,    h:900},
+];
+
+const TIPS = [
+  ['Watch money actually move','Send GHS 200 to Kojo Mensah in the app. The balance drops, the row appears at the top of the statement with a reference, and the running balance recalculates.'],
+  ['Fund a goal from MoMo','Save › Rent — Dansoman › MTN MoMo. The wallet is debited, not your account. Try GHS 99,999 and it stops, naming the source that is short.'],
+  ['Trip the sanctions screen','Pay Global Marine Ltd. The money never moves and a compliance officer gets the case.'],
+  ['Get declined by a person','Push the loan slider past your limit. No model declines you — it names a credit officer and gives a reference.'],
+  ['Hit the language floor','Ask about a loan in Ga or Hausa. Below 0.70 confidence it hands to a person and says why. Ask your balance in Twi and it answers.'],
+  ['See both sides of one queue','Escalate something in the app, then open the reviewer console. With the service running it appears within four seconds.'],
+];
+
+let surface = SURFACES[0], device = DEVICES[0];
+const $ = id => document.getElementById(id);
+
+$('logomark').innerHTML = I('node', 18, 2).replace('currentColor', '#fff');
+
+function paint(){
+  $('surfaces').innerHTML = SURFACES.map(s => `
+    <button class="card" data-s="${s.id}" aria-pressed="${s.id===surface.id}">
+      <div class="ic">${I(s.icon,20)}</div>
+      <b>${s.name}</b><span>${s.desc}</span>
+      <span class="who">${s.who}</span></button>`).join('');
+
+  $('devices').innerHTML = DEVICES.map(d => `
+    <button data-d="${d.id}" aria-pressed="${d.id===device.id}">${I(d.icon,16)}<span>${d.label}</span></button>`).join('');
+
+  const w = device.w || Math.min(window.innerWidth - 90, 1420);
+  const box = $('device');
+  box.style.width  = w + 'px';
+  box.style.height = Math.min(device.h, window.innerHeight * 0.82) + 'px';
+  $('url').textContent  = surface.file;
+  $('size').textContent = `${w} × ${Math.round(Math.min(device.h, window.innerHeight * 0.82))}`;
+  $('openin').setAttribute('href', surface.file);
+  $('fallbackLink').setAttribute('href', surface.file);
+  if ($('view').getAttribute('src') !== surface.file) $('view').setAttribute('src', surface.file);
+
+  $('tips').innerHTML = TIPS.map(([t,d]) => `<div class="tip"><b>${t}</b><span>${d}</span></div>`).join('');
+}
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-s],[data-d]');
+  if (!el) return;
+  if (el.dataset.s) surface = SURFACES.find(s => s.id === el.dataset.s);
+  if (el.dataset.d) device  = DEVICES.find(d => d.id === el.dataset.d);
+  paint();
+});
+addEventListener('resize', () => { if (!device.w) paint(); });
+
+/* is the decision service up? then the four surfaces share one queue */
+(async () => {
+  try {
+    const r = await fetch('/api/health', {cache:'no-store'});
+    if (!r.ok) throw 0;
+    const d = await r.json();
+    $('dot').className = 'dot live';
+    $('mode').textContent = `service live · ${d.open} in the queue`;
+  } catch {
+    $('dot').className = 'dot';
+    $('mode').textContent = location.protocol === 'file:'
+      ? 'offline files · each surface decides alone'
+      : 'service not reachable';
+  }
+})();
+
+/* if a frame refuses to load locally, offer the direct link instead */
+$('view').addEventListener('error', () => { $('fallback').hidden = false; });
+setTimeout(() => {
+  try { if (!$('view').contentDocument && location.protocol === 'file:') $('fallback').hidden = false; }
+  catch { $('fallback').hidden = false; }
+}, 1800);
+
+document.getElementById('heroart').innerHTML = ART.welcome();
+paint();
+</script>
+</body>
+</html>
