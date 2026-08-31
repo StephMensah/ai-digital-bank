@@ -1,0 +1,26 @@
+name: Keep Render service awake
+
+# Render's free web-service plan spins the instance down after ~15 minutes with no
+# inbound traffic, so the next real visitor eats a 30-60s cold boot. This job pings
+# the health endpoint every 10 minutes (comfortably under that 15-minute window) so
+# the service never sees enough idle time to sleep in the first place.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /api/health
+        run: |
+          # Generous timeout: if the service *did* sleep despite this job (e.g. GitHub
+          # delayed a run), this ping is also what wakes it back up, and a cold boot
+          # can take a while to answer.
+          code=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 90 \
+            https://ai-digital-bank.onrender.com/api/health || echo "000")
+          echo "Health check responded: $code"
+          if [ "$code" != "200" ]; then
+            echo "::warning::Health check did not return 200 (got $code) — service may be redeploying or down."
+          fi
