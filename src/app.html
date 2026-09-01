@@ -169,7 +169,8 @@ body{background:var(--sand)}
 const S = { entity:'personal', tab:'home', acct:0, lang:'English', frozen:{physical:false, virtual:false},
             consent:{offers:true, insights:true}, flow:null, chat:[], hideBal:false,
             stmtQuery:'', stmtFilter:'all', src:null, goalId:null, insightOpen:false,
-            goals:JSON.parse(JSON.stringify(FID.GOALS)) };
+            goals:JSON.parse(JSON.stringify(FID.GOALS)), auth:null, pendingResume:null,
+            cardLimits:{tx:5000, day:10000, online:3000, atm:2000}, invoice:null, branchFilter:'all' };
 const E = () => FID.ENTITIES[S.entity];
 const $ = id => document.getElementById(id);
 const m0 = FID.money0, m2 = FID.money;
@@ -180,7 +181,7 @@ const initials = n => n.split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join(
 
 function openSheet(html){ $('sheet').innerHTML = `<div class="grab"></div>${html}`;
   $('sheet').classList.add('on'); $('scrim').classList.add('on'); }
-function closeSheet(){ $('sheet').classList.remove('on'); $('scrim').classList.remove('on'); S.flow = null; }
+function closeSheet(){ $('sheet').classList.remove('on'); $('scrim').classList.remove('on'); S.flow = null; S.auth = null; }
 $('scrim').onclick = closeSheet;
 
 function note(title, pairs, footer){
@@ -399,15 +400,16 @@ function vCards(){
       <button class="chip" data-sheet="limits">Spending limits</button>
       <button class="chip" data-sheet="pin">Change PIN</button></div>
 
-    <div class="hd" style="margin-top:26px"><h3>Virtual card</h3><span class="badge j">For online</span></div>
-    <div class="plastic virtual ${S.frozen.virtual?'frozen':''}">${lattice('c2')}
+    <div class="hd" style="margin-top:26px"><h3>Virtual cards</h3><span class="badge j">For online</span></div>
+    ${e.virtualCards.map((vc,i) => `
+    <div class="plastic virtual ${vc.frozen?'frozen':''}">${lattice('c2-' + i)}
       <div class="brand"><span>AI-DIGITAL BANK</span>${I('node',18)}</div><div class="chipimg"></div>
-      <div class="pan">4821 •••• •••• 7719</div>
-      <div class="foot"><span>MERCHANT LOCK ON</span><span>11/28</span></div></div>
+      <div class="pan">${vc.num}</div>
+      <div class="foot"><span>LOCKED · ${vc.locked.toUpperCase()}</span><span>${vc.exp}</span></div></div>
     <div class="chiprow" style="margin-top:14px">
-      <button class="chip" data-which="virtual">${I('freeze',16)} ${S.frozen.virtual?'Unfreeze':'Freeze'}</button>
-      <button class="chip" data-sheet="reveal">Show details</button>
-      <button class="chip" data-sheet="newvirtual">+ New card</button></div>
+      <button class="chip" data-vfreeze="${i}">${I('freeze',16)} ${vc.frozen?'Unfreeze':'Freeze'}</button>
+      <button class="chip" data-reveal="${i}">Show details</button></div>`).join('')}
+    <button class="chip" style="margin-top:14px" data-act="newvirtual">+ New virtual card</button>
 
     <div class="hd" style="margin-top:26px"><h3>On this card</h3></div>
     <div class="surface flush">${e.transactions.filter(t=>t.a<0).map(t=>`
@@ -551,10 +553,22 @@ function fundGoalNow(){
     <p class="sub">${r.explanation.charAt(0).toUpperCase()+r.explanation.slice(1)}. Nothing has moved.</p>
     <button class="btn primary wide" style="margin-top:18px" data-goal="${g.id}">Pick another source</button>`);
 
+  /* a bank-account source needs the same PIN+OTP gate as any other payment; a mobile-money
+     collection is authorized by an external telco prompt, not our PIN/OTP, so it settles
+     the way it always has */
   if (S.src.kind === 'account')
-    FID.post(e, {merchant:'Transfer to ' + g.name, amount:-amount, account:S.src.index,
-      method:'Goal transfer', category:'Savings'});
+    return requireAuthForPayment({account:S.src.index, merchant:'Transfer to ' + g.name, amount:-amount,
+      category:'Savings', method:'Goal transfer'}, result => goalFunded(g, amount, r, result));
 
+  goalFunded(g, amount, r, null);
+}
+
+function goalFunded(g, amount, r, result){
+  const e = E();
+  if (result){
+    e.accounts[result.tx.account].balance = result.account.accounts[result.tx.account].balance;
+    e.transactions.unshift(fromServerTx(result.tx));
+  }
   const done = g.saved >= g.target;
   openSheet(`<div style="text-align:center;padding:6px 0 2px">
       <div class="artbox sm">${done ? ART.done() : ART.goal()}</div>
@@ -572,6 +586,166 @@ function fundGoalNow(){
 function keypad(){
   return `<div class="pad">${['1','2','3','4','5','6','7','8','9','.','0','⌫']
     .map(k=>`<button data-key="${k}">${k}</button>`).join('')}</div>`;
+}
+
+/* ----------------------------------------------------- pin + otp: the standing gate
+   Every action that moves money calls requireAuthForPayment(txPayload, onSuccess); anything
+   sensitive but non-money (reveal card details, raise a limit) calls requireAuth(commitFn,
+   onSuccess, 'verify') directly. If the persona still has the seeded default PIN, this forces
+   a PIN change — itself gated behind an OTP — before anything else can happen; then it collects
+   a PIN and an OTP and only calls onSuccess(result) once the server has confirmed both. Nothing
+   here falls back to a client-only mutation if the API is down. */
+function fromServerTx(tx){
+  const ts = Date.parse(tx.ts);
+  return {id:tx.id, ts, m:tx.merchant, a:tx.amount, cat:tx.category, method:tx.method,
+          status:tx.status, note:'', ref:tx.ref, hash:tx.hash, balanceAfter:tx.balanceAfter,
+          d: FID.dayLabel(ts) + ' ' + FID.timeLabel(ts)};
+}
+
+function authError(e){
+  const [title, body] = ({
+    offline: ['Can’t connect', 'AI-Digital Bank is unreachable right now. This needs a live connection and cannot be completed offline.'],
+    invalid_pin: ['Wrong PIN', 'That PIN is not right. Nothing has moved.'],
+    invalid_step_up: ['Code expired', 'That code is no longer valid or was already used. Start again.'],
+    insufficient_funds: ['Not enough there', 'That account does not hold enough to cover this. Nothing has moved.'],
+    pin_change_required: ['Set your PIN first', 'You need to set a PIN before this can go through.'],
+  })[e.code] || ['Not sent', 'Something went wrong and nothing has moved.'];
+  S.auth = null;
+  openSheet(`<span class="badge r">${title}</span>
+    <h3 style="margin-top:12px">Nothing has moved</h3>
+    <p class="sub">${body}</p>
+    <button class="btn primary wide" style="margin-top:16px" data-act="close">Close</button>`);
+}
+
+/* pulls real balances/mustChangePin/transactions from the database on load and on entity
+   switch; if the API is down this is a no-op and the bundled demo data keeps showing — viewing
+   degrades gracefully even though committing a transaction (requireAuth, above) does not */
+async function syncAccountsFromServer(){
+  try {
+    const data = await FID.fetchAccount(S.entity);
+    const e = E();
+    data.accounts.forEach((a,i) => { if (e.accounts[i]) e.accounts[i].balance = a.balance; });
+    e.mustChangePin = data.mustChangePin;
+    const known = new Set(e.transactions.map(t => t.id));
+    const fresh = (data.transactions || []).filter(t => !known.has(t.id)).map(fromServerTx);
+    if (fresh.length) e.transactions = [...fresh, ...e.transactions].sort((a,b) => b.ts - a.ts);
+    render();
+  } catch (err) { /* offline: keep bundled demo data for viewing */ }
+}
+
+/* commitFn(pin, stepUpToken) does the actual work once both are proven — a payment, or just
+   proof-of-you for something sensitive that doesn't move money. purpose picks which kind of
+   OTP challenge the server issues ('commit' vs 'verify'); either way PIN + OTP are required. */
+function requireAuth(commitFn, onSuccess, purpose = 'commit'){
+  if (E().mustChangePin) return startPinChange(() => requireAuth(commitFn, onSuccess, purpose));
+  S.auth = {stage:'pin', value:'', commitFn, onSuccess, purpose};
+  authPinSheet();
+}
+
+/* the common case: authorize and post a real transaction */
+function requireAuthForPayment(txPayload, onSuccess){
+  requireAuth((pin, stepUpToken) =>
+    FID.commitTransaction(S.entity, {...txPayload, pin, stepUpToken}), onSuccess, 'commit');
+}
+
+function startPinChange(resume){
+  const voluntary = !E().mustChangePin;
+  S.auth = {stage: voluntary ? 'currentpin' : 'setpin1', value:'', newPin:'', currentPin:null, resume};
+  pinChangeSheet();
+}
+
+function authDots(len){
+  const filled = S.auth.value.length;
+  return `<div class="amtbig" id="authDots" style="letter-spacing:.4em">${'•'.repeat(filled)}${'·'.repeat(len-filled)}</div>`;
+}
+
+function pinChangeSheet(){
+  const copy = {
+    currentpin: ['Enter your current PIN', 'Confirms it is you before setting a new one.'],
+    setpin1: ['Set a new PIN', 'You need a PIN before you can send money, pay a bill, or move funds.'],
+    setpin2: ['Confirm your new PIN', 'Enter it again to make sure it matches.'],
+  }[S.auth.stage];
+  openSheet(`<h3>${copy[0]}</h3><p class="sub">${copy[1]}</p>
+    ${authDots(4)}
+    ${keypad()}
+    <button class="btn quiet wide" style="margin-top:10px" data-act="authcancel">Cancel</button>`);
+}
+
+function authPinSheet(){
+  openSheet(`<h3>Enter your PIN</h3><p class="sub">Confirms it is you before anything moves.</p>
+    ${authDots(4)}
+    ${keypad()}
+    <button class="btn quiet wide" style="margin-top:10px" data-act="authcancel">Cancel</button>`);
+}
+
+function otpSheet(){
+  openSheet(`<h3>Enter the code</h3>
+    <p class="sub">Demo code: <b>${S.auth.challenge.demoCode}</b> — sent to 024 ••• 8812</p>
+    ${authDots(6)}
+    ${keypad()}
+    <button class="btn quiet wide" style="margin-top:10px" data-act="authcancel">Cancel</button>`);
+}
+
+function authPadKey(k){
+  const maxLen = S.auth.stage === 'otp' ? 6 : 4;
+  let v = S.auth.value || '';
+  if (k === '⌫') v = v.slice(0,-1);
+  else if (k === '.') return;
+  else if (v.length < maxLen) v += k;
+  S.auth.value = v;
+  const dots = $('authDots');
+  if (dots) dots.innerHTML = '•'.repeat(v.length) + '·'.repeat(maxLen - v.length);
+  if (v.length === maxLen) authSubmit();
+}
+
+async function authSubmit(){
+  const v = S.auth.value;
+  try {
+    if (S.auth.stage === 'currentpin'){
+      S.auth.currentPin = v; S.auth.stage = 'setpin1'; S.auth.value = '';
+      return pinChangeSheet();
+    }
+    if (S.auth.stage === 'setpin1'){
+      S.auth.newPin = v; S.auth.stage = 'setpin2'; S.auth.value = '';
+      return pinChangeSheet();
+    }
+    if (S.auth.stage === 'setpin2'){
+      if (v !== S.auth.newPin){
+        S.auth.stage = 'setpin1'; S.auth.newPin = ''; S.auth.value = '';
+        return openSheet(`<span class="badge r">Didn’t match</span>
+          <h3 style="margin-top:12px">Try again</h3><p class="sub">Enter your new 4-digit PIN.</p>
+          ${authDots(4)}${keypad()}`);
+      }
+      const {challengeId, demoCode} = await FID.requestOtp(S.entity, 'pin_change');
+      S.auth.stage = 'otp'; S.auth.value = ''; S.auth.otpPurpose = 'pin_change';
+      S.auth.challenge = {challengeId, demoCode};
+      return otpSheet();
+    }
+    if (S.auth.stage === 'pin'){
+      S.auth.pin = v;
+      const {challengeId, demoCode} = await FID.requestOtp(S.entity, S.auth.purpose);
+      S.auth.stage = 'otp'; S.auth.value = ''; S.auth.otpPurpose = S.auth.purpose;
+      S.auth.challenge = {challengeId, demoCode};
+      return otpSheet();
+    }
+    if (S.auth.stage === 'otp'){
+      if (S.auth.otpPurpose === 'pin_change'){
+        const {stepUpToken} = await FID.verifyOtp(S.auth.challenge.challengeId, v);
+        await FID.setPin(S.entity, S.auth.currentPin, S.auth.newPin, stepUpToken);
+        E().mustChangePin = false;
+        S.pendingResume = S.auth.resume; S.auth = null;
+        return openSheet(`<div style="text-align:center;padding:12px 0 4px">
+            <div class="av p hex" style="width:70px;height:70px;margin:0 auto">${I('check',30,2.2)}</div>
+            <h3 style="margin-top:16px">PIN set</h3>
+            <p class="sub">Use it to confirm every payment from now on.</p></div>
+            <button class="btn primary wide" style="margin-top:16px" data-act="authcontinue">Continue</button>`);
+      }
+      const {stepUpToken} = await FID.verifyOtp(S.auth.challenge.challengeId, v);
+      const result = await S.auth.commitFn(S.auth.pin, stepUpToken);
+      const onSuccess = S.auth.onSuccess; S.auth = null;
+      onSuccess(result);
+    }
+  } catch (e){ authError(e); }
 }
 
 function openPay(){
@@ -656,31 +830,38 @@ function flowReview(){
   if (fr.action === 'STEP_UP' || dec.review)
     return openSheet(`<span class="badge o">Confirm it is you</span>
       <h3 style="margin-top:12px">This is not your usual payment</h3>
-      <p class="sub">${fr.reasons.map(r=>r[0].toUpperCase()+r.slice(1)).join('. ')}. Nothing has been sent yet.</p>
-      <label class="field" style="margin-top:16px"><span>Code sent to 024 ••• 8812</span>
-        <input inputmode="numeric" placeholder="• • • • • •" style="letter-spacing:.3em;text-align:center"></label>
+      <p class="sub">${fr.reasons.map(r=>r[0].toUpperCase()+r.slice(1)).join('. ')}. Nothing has been sent yet.
+        You will still need your PIN and a one-time code to send it.</p>
       <div style="display:flex;gap:8px">
-        <button class="btn primary" style="flex:1" data-act="sent">Confirm and send</button>
+        <button class="btn primary" style="flex:1" data-act="stepupcontinue">Continue</button>
         <button class="btn danger" data-act="notme">Not me</button></div>
       ${note('WHY WE STOPPED IT',[['Beneficiary',b.name],['Amount',m0(amount)],
         ...fr.reasons.map((r,i)=>['Signal '+(i+1), r]),['Confidence',fr.confidence.toFixed(2)]],
         'Fraud model v3. This note is kept whether or not you complain — it is what an investigation reads.')}`);
 
-  flowSent();
+  flowSendAuthorize();
 }
 
-function flowSent(){
+/* every send — risky or not — needs a PIN and an OTP before it actually moves money */
+function flowSendAuthorize(){
+  const e = E(), b = e.beneficiaries[S.flow.i], amount = +S.flow.amount;
+  requireAuthForPayment({account:S.acct, merchant:b.name, amount:-amount,
+    category:'Transfer', method:'Transfer · ' + b.bank}, result => flowSent(result));
+}
+
+function flowSent(result){
   const e = E(), b = e.beneficiaries[S.flow.i], amount = +S.flow.amount;
   b.last = m0(amount);
-  const tx = FID.post(e, {merchant:b.name, amount:-amount, account:S.acct,
-    method:'Transfer · ' + b.bank, category:'Transfer'});
+  e.accounts[result.tx.account].balance = result.account.accounts[result.tx.account].balance;
+  const tx = fromServerTx(result.tx);
+  e.transactions.unshift(tx);
   openSheet(`<div style="text-align:center;padding:12px 0 4px">
       <div class="av p hex" style="width:70px;height:70px;margin:0 auto">${I('check',30,2.2)}</div>
       <h3 style="margin-top:16px">${m0(amount)} sent</h3>
       <p class="sub">to ${b.name} · ${b.bank}</p></div>
     ${note('WHAT WE CHECKED FIRST',[['Tier limit','within'],['Sanctions screen','clear'],
       ['Fraud model','approve'],['Reference',tx.ref],['New balance',m0(tx.balanceAfter)]],
-      'Both checks ran before the money moved, not after.')}
+      'Both checks, and your PIN and OTP, ran before the money moved, not after.')}
     <button class="btn primary wide" style="margin-top:16px" data-act="close">Done</button>`);
 }
 
@@ -720,8 +901,15 @@ function payBill(id){
   const fr = FID.assessPayment({to:b.name, amount, bankLine:'biller', hour:new Date().getHours()});
   FID.decide('retail.bill_payment', fr, {floor:FID.FLOOR.fraud, title:'Bill payment screened',
     customer:E().holder, channel:'app', amount, evidence:{'Biller':b.name,'Amount':m0(amount)}});
-  const tx = FID.post(E(), {merchant:b.name, amount:-amount, account:S.acct,
-    method:'Bill payment', category:b.cat});
+  requireAuthForPayment({account:S.acct, merchant:b.name, amount:-amount, category:b.cat, method:'Bill payment'},
+    result => billPaid(b, amount, result));
+}
+
+function billPaid(b, amount, result){
+  const e = E();
+  e.accounts[result.tx.account].balance = result.account.accounts[result.tx.account].balance;
+  const tx = fromServerTx(result.tx);
+  e.transactions.unshift(tx);
   openSheet(`<div style="text-align:center;padding:12px 0 4px">
       <div class="av p hex" style="width:70px;height:70px;margin:0 auto">${I('check',30,2.2)}</div>
       <h3 style="margin-top:16px">${m0(amount)} paid</h3><p class="sub">${b.name} · token arrives by SMS</p></div>
@@ -736,14 +924,32 @@ function flowAirtime(){
     <div class="chiprow" style="margin:14px 0">${FID.NETWORKS.map((n,i)=>
       `<button class="chip" aria-pressed="${i===0}" data-pick="net">${n.name}</button>`).join('')}</div>
     <label class="field"><span>Phone number</span><input value="024 447 8812" inputmode="tel"></label>
-    <div class="chiprow" style="margin-bottom:16px">${[5,10,20,50,100].map(v=>
-      `<button class="chip" data-pick="amt">${m0(v)}</button>`).join('')}</div>
+    <div class="chiprow" style="margin-bottom:16px">${[5,10,20,50,100].map((v,i)=>
+      `<button class="chip" aria-pressed="${i===2}" data-pick="amt" data-v="${v}">${m0(v)}</button>`).join('')}</div>
     <div class="surface" style="box-shadow:none;background:var(--line-2);margin-bottom:16px">
       <b style="font-size:13.5px">Data bundles</b>
       ${[['1.5 GB · 7 days',15],['6 GB · 30 days',50],['20 GB · 30 days',120]].map(([l,p])=>`
         <div class="item static" style="padding:9px 0"><div class="txt"><b style="font-weight:500">${l}</b></div>
           <div class="amt">${m0(p)}</div></div>`).join('')}</div>
-    <button class="btn primary wide" data-act="close">Buy airtime</button>`);
+    <button class="btn primary wide" data-act="airtimebuy">Buy airtime</button>`);
+}
+
+function flowAirtimeBuy(){
+  const chosen = document.querySelector('[data-pick="amt"][aria-pressed="true"]');
+  const amount = +(chosen?.dataset.v || 20);
+  requireAuthForPayment({account:S.acct, merchant:'Airtime top-up', amount:-amount,
+    category:'Airtime', method:'Mobile money'}, result => airtimeBought(amount, result));
+}
+
+function airtimeBought(amount, result){
+  const e = E();
+  e.accounts[result.tx.account].balance = result.account.accounts[result.tx.account].balance;
+  e.transactions.unshift(fromServerTx(result.tx));
+  openSheet(`<div style="text-align:center;padding:12px 0 4px">
+      <div class="av p hex" style="width:70px;height:70px;margin:0 auto">${I('check',30,2.2)}</div>
+      <h3 style="margin-top:16px">${m0(amount)} airtime bought</h3>
+      <p class="sub">Reference ${result.tx.ref}</p></div>
+    <button class="btn primary wide" style="margin-top:16px" data-act="close">Done</button>`);
 }
 
 function flowFx(){
@@ -770,11 +976,33 @@ function flowFxQuote(ccy){
     ${note('OUR MARGIN ON THIS TRADE',[['You get', ccy+' 500'],['At', q.rate.toFixed(4)],
       ['Mid-market', ((FID.FX[ccy].buy+FID.FX[ccy].sell)/2).toFixed(4)],['Our margin', m0(q.spread)]],
       'We show the margin because you would find it anyway. No separate transfer fee on top.')}
-    <button class="btn primary wide" style="margin-top:16px" data-act="close">Buy ${ccy} 500</button>`);
+    <button class="btn primary wide" style="margin-top:16px" data-act="fxbuy">Buy ${ccy} ${(+($('fxamt')?.value||500)).toLocaleString('en-GB')}</button>`);
+}
+
+function flowFxBuy(){
+  const ccy = S.flow.ccy, units = +($('fxamt')?.value || 500);
+  const q = FID.fxQuote(units, ccy, 'buy');
+  requireAuthForPayment({account:S.acct, merchant:'FX purchase · ' + ccy, amount:-q.cedis,
+    category:'FX purchase', method:'Foreign exchange'}, result => fxBought(ccy, units, q, result));
+}
+
+function fxBought(ccy, units, q, result){
+  const e = E();
+  e.accounts[result.tx.account].balance = result.account.accounts[result.tx.account].balance;
+  e.transactions.unshift(fromServerTx(result.tx));
+  openSheet(`<div style="text-align:center;padding:12px 0 4px">
+      <div class="av p hex" style="width:70px;height:70px;margin:0 auto">${I('check',30,2.2)}</div>
+      <h3 style="margin-top:16px">${ccy} ${units.toLocaleString('en-GB')} bought</h3>
+      <p class="sub">${m0(q.cedis)} debited at ${q.rate.toFixed(4)}</p></div>
+    ${note('RECEIPT',[['Reference',result.tx.ref],['Rate',q.rate.toFixed(4)],
+      ['You paid',m0(q.cedis)],['New balance',m0(result.tx.balanceAfter)]],
+      'Settles instantly into your foreign currency sub-account.')}
+    <button class="btn primary wide" style="margin-top:16px" data-act="close">Done</button>`);
 }
 
 function flowTbill(tenor){
   const q = FID.tbillQuote(20000, tenor);
+  S.flow = {kind:'tbill', tenor};
   openSheet(`<h3>${tenor}-day treasury bill</h3>
     <p class="sub">Government of Ghana. Locked until maturity; you can sell early at market price.</p>
     <label class="field" style="margin-top:16px"><span>Amount to invest</span>
@@ -787,7 +1015,63 @@ function flowTbill(tenor){
     ${note('HOW THAT IS WORKED OUT',[['Invested',m0(20000)],['Gross interest',m0(q.gross)],
       ['Withholding tax (8%)','−'+m0(q.tax)],['Net interest',m0(q.net)],['Maturity',tenor+' days']],
       'The 8% withholding tax on treasury bill interest is deducted at source and remitted to GRA.')}
-    <button class="btn primary wide" style="margin-top:16px" data-act="close">Invest ${m0(20000)}</button>`);
+    <button class="btn primary wide" style="margin-top:16px" data-act="tbillbuy">Invest ${m0(20000)}</button>`);
+}
+
+function flowTbillBuy(){
+  const tenor = S.flow.tenor, amount = 20000;
+  const q = FID.tbillQuote(amount, tenor);
+  requireAuthForPayment({account:S.acct, merchant:tenor + '-day treasury bill', amount:-amount,
+    category:'Treasury bill', method:'Investment'}, result => tbillBought(tenor, amount, q, result));
+}
+
+function tbillBought(tenor, amount, q, result){
+  const e = E();
+  e.accounts[result.tx.account].balance = result.account.accounts[result.tx.account].balance;
+  e.transactions.unshift(fromServerTx(result.tx));
+  openSheet(`<div style="text-align:center;padding:12px 0 4px">
+      <div class="av p hex" style="width:70px;height:70px;margin:0 auto">${I('check',30,2.2)}</div>
+      <h3 style="margin-top:16px">${m0(amount)} invested</h3>
+      <p class="sub">${tenor}-day treasury bill · matures at ${m0(q.maturity)}</p></div>
+    ${note('RECEIPT',[['Reference',result.tx.ref],['Rate',(q.rate*100).toFixed(2)+'%'],
+      ['New balance',m0(result.tx.balanceAfter)]],
+      'Held to maturity unless you choose to sell early at market price.')}
+    <button class="btn primary wide" style="margin-top:16px" data-act="close">Done</button>`);
+}
+
+function flowDeposit(months){
+  const dep = FID.DEPOSITS.find(x => x.months === months);
+  S.flow = {kind:'deposit', months};
+  openSheet(`<h3>${months}-month fixed deposit</h3>
+    <p class="sub">Locked for ${months} months at ${(dep.rate*100).toFixed(1)}% a year.
+      Breaking early forfeits accrued interest.</p>
+    <label class="field" style="margin-top:16px"><span>Amount</span>
+      <input type="number" id="depamt" value="10000"></label>
+    <button class="btn primary wide" data-act="depopen">Open deposit</button>`);
+}
+
+function flowDepositOpen(){
+  const months = S.flow.months, dep = FID.DEPOSITS.find(x => x.months === months);
+  const amount = +($('depamt')?.value || 0);
+  if (!amount) return;
+  requireAuthForPayment({account:S.acct, merchant:months + '-month fixed deposit', amount:-amount,
+    category:'Fixed deposit', method:'Term deposit'}, result => depositOpened(months, dep, amount, result));
+}
+
+function depositOpened(months, dep, amount, result){
+  const e = E();
+  e.accounts[result.tx.account].balance = result.account.accounts[result.tx.account].balance;
+  e.transactions.unshift(fromServerTx(result.tx));
+  e.deposits = e.deposits || [];
+  e.deposits.push({months, rate:dep.rate, amount, opened:Date.now()});
+  openSheet(`<div style="text-align:center;padding:12px 0 4px">
+      <div class="av p hex" style="width:70px;height:70px;margin:0 auto">${I('check',30,2.2)}</div>
+      <h3 style="margin-top:16px">${m0(amount)} locked away</h3>
+      <p class="sub">${months}-month fixed deposit at ${(dep.rate*100).toFixed(1)}% a year</p></div>
+    ${note('RECEIPT',[['Reference',result.tx.ref],['Rate',(dep.rate*100).toFixed(1)+'%'],
+      ['New balance',m0(result.tx.balanceAfter)]],
+      'Interest is paid at maturity; breaking the term early forfeits it.')}
+    <button class="btn primary wide" style="margin-top:16px" data-act="close">Done</button>`);
 }
 
 function flowBorrow(){
@@ -837,8 +1121,198 @@ function flowLoanResult(){
       ['Confidence',r.confidence.toFixed(2)]],
       'Automated pre-approval with a SHAP explainer. Ask for a person to check it under You › Decisions.')}
     <div style="display:flex;gap:8px;margin-top:16px">
-      <button class="btn primary" style="flex:1" data-act="close">Accept and draw down</button>
+      <button class="btn primary" style="flex:1" data-act="loandraw">Accept and draw down</button>
       <button class="btn quiet" data-act="close">Later</button></div>`);
+}
+
+function flowLoanDraw(){
+  const amount = S.flow.amount;
+  const monthly = amount * (0.265/12) / (1 - Math.pow(1+0.265/12, -24));
+  requireAuthForPayment({account:S.acct, merchant:'Personal loan drawdown', amount,
+    category:'Loan drawdown', method:'Personal loan'}, result => loanDrawn(amount, monthly, result));
+}
+
+function loanDrawn(amount, monthly, result){
+  const e = E();
+  e.accounts[result.tx.account].balance = result.account.accounts[result.tx.account].balance;
+  e.transactions.unshift(fromServerTx(result.tx));
+  openSheet(`<div style="text-align:center;padding:12px 0 4px">
+      <div class="av p hex" style="width:70px;height:70px;margin:0 auto">${I('check',30,2.2)}</div>
+      <h3 style="margin-top:16px">${m0(amount)} drawn down</h3>
+      <p class="sub">${m0(monthly)} a month for 24 months at 26.5% a year</p></div>
+    ${note('RECEIPT',[['Reference',result.tx.ref],['Monthly repayment',m0(monthly)],
+      ['New balance',m0(result.tx.balanceAfter)]],
+      'First repayment is due one month from today.')}
+    <button class="btn primary wide" style="margin-top:16px" data-act="close">Done</button>`);
+}
+
+/* full PAN/CVV is sensitive but doesn't move money — proof-of-you only, no transaction */
+function flowRevealCard(i){
+  requireAuth((pin, stepUpToken) => FID.verifyPinOnly(S.entity, pin, stepUpToken),
+    () => cardRevealed(E().virtualCards[i]), 'verify');
+}
+
+function cardRevealed(vc){
+  openSheet(`<h3>Card details</h3>
+    <div class="plastic virtual">${lattice('reveal')}
+      <div class="brand"><span>AI-DIGITAL BANK</span>${I('node',18)}</div><div class="chipimg"></div>
+      <div class="pan">${vc.fullNum}</div>
+      <div class="foot"><span>CVV ${vc.cvv}</span><span>${vc.exp}</span></div></div>
+    <p class="tiny" style="margin-top:12px;text-align:center">Hides again in 20 seconds.</p>
+    <button class="btn quiet wide" style="margin-top:16px" data-act="close">Close</button>`);
+  clearTimeout(window.__revealTimer);
+  window.__revealTimer = setTimeout(() => { closeSheet(); render(); }, 20000);
+}
+
+/* raising a limit is sensitive but doesn't move money — proof-of-you only, no transaction */
+function flowUpgradeTier(){
+  requireAuth((pin, stepUpToken) => FID.verifyPinOnly(S.entity, pin, stepUpToken),
+    () => tierUpgraded(), 'verify');
+}
+
+function tierUpgraded(){
+  FID.KYC.tier = 3; FID.KYC.label = 'Tier 3'; FID.KYC.singleLimit = 100000; FID.KYC.dailyLimit = 200000;
+  FID.KYC.toTier3 = FID.KYC.toTier3.map(() => 'Verified');
+  FID.decide('retail.tier_upgrade', {action:'TIER_UPGRADED', confidence:1, adverse:false,
+    explanation:'Ghana Card verified; limits raised to Tier 3'},
+    {title:'Upgraded to Tier 3', customer:E().holder, channel:'app'});
+  openSheet(`<div style="text-align:center;padding:12px 0 4px">
+      <div class="av p hex" style="width:70px;height:70px;margin:0 auto">${I('check',30,2.2)}</div>
+      <h3 style="margin-top:16px">You’re now Tier 3</h3>
+      <p class="sub">Single-transaction limit is now ${m0(FID.KYC.singleLimit)}.</p></div>
+    <button class="btn primary wide" style="margin-top:16px" data-act="close">Done</button>`);
+}
+
+/* ----------------------------------------------------------- request money */
+function flowRequestMoney(){
+  const reqs = E().requests || [];
+  openSheet(`<h3>Request money</h3>
+    <p class="sub">Share a link — whoever opens it can pay you directly. No money moves until they do.</p>
+    <label class="field" style="margin-top:14px"><span>Amount</span><input id="reqAmount" type="number" placeholder="0.00"></label>
+    <label class="field"><span>What's it for?</span><input id="reqNote" placeholder="e.g. Lunch, rent share…"></label>
+    <button class="btn primary wide" style="margin-top:16px" data-act="createrequest">Generate link</button>
+    ${reqs.length ? `<div class="eyebrow" style="margin:20px 0 10px">Your requests</div>
+      <div class="surface flush">${reqs.map(r=>`
+        <div class="item static"><div class="av o">${I('receive',18)}</div>
+          <div class="txt"><b>${m0(r.amount)}</b><span>${r.note || 'Payment request'}</span></div></div>
+        <input readonly value="${r.link}" style="width:100%;margin:4px 0 12px;font-size:12px;color:var(--sub);
+          border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--line-2)">`).join('')}</div>` : ''}
+    <button class="btn quiet wide" style="margin-top:16px" data-act="close">Close</button>`);
+}
+
+/* ----------------------------------------------------------- cheque services */
+function flowCheque(){
+  openSheet(`<h3>Cheque services</h3><div style="margin-top:14px">${[
+      ['chequedeposit','doc','Deposit by photo','Credits your account once we read it'],
+      ['chequebook','cheque','Request a chequebook','Arrives in 5-7 working days'],
+      ['chequestop','block','Stop a cheque','We block it before it clears'],
+    ].map(([k,ic,t,s])=>`<button class="item" data-act="${k}"><div class="av o hex">${IS(ic,23)}</div>
+      <div class="txt"><b>${t}</b><span>${s}</span></div><span class="go">${I('chevron',17)}</span></button>`).join('')}</div>`);
+}
+
+function flowChequeDeposit(){
+  openSheet(`<h3>Deposit by photo</h3>
+    <p class="sub">A clear photo of the front. We read the amount and payer before crediting you.</p>
+    <label class="field" style="margin-top:14px"><span>Amount on the cheque</span><input id="chqAmount" type="number" value="1200"></label>
+    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+      <button class="btn sm" data-chqupload="cheque_front.jpg">Upload a clear photo</button>
+      <button class="btn quiet sm" data-chqupload="blurred_cheque_2026.jpg">Upload a blurry one</button></div>
+    <div id="chqResult"></div>`);
+}
+
+function chequeScanned(file){
+  const amount = +($('chqAmount')?.value || 0);
+  const v = FID.verifyDocument(file);
+  FID.decide('sme.doc_verification', v, {floor:FID.FLOOR.doc, title:'Cheque scan checked',
+    customer:E().holder, channel:'app', amount, evidence:{'File':file,'Scan quality':v.quality.toFixed(2)}});
+  if (v.action !== 'VERIFIED'){
+    $('chqResult').innerHTML = `<div class="surface" style="margin-top:14px;background:var(--rose-t);box-shadow:none">
+      <span class="badge r">Could not read it</span>
+      <p class="sub" style="margin-top:8px">${v.explanation}. Try a clearer photo — nothing has been credited.</p></div>`;
+    return;
+  }
+  if (!amount) return;
+  requireAuthForPayment({account:S.acct, merchant:'Cheque deposit', amount,
+    category:'Cheque deposit', method:'Cheque'}, result => chequeDeposited(amount, result));
+}
+
+function chequeDeposited(amount, result){
+  const e = E();
+  e.accounts[result.tx.account].balance = result.account.accounts[result.tx.account].balance;
+  e.transactions.unshift(fromServerTx(result.tx));
+  openSheet(`<div style="text-align:center;padding:12px 0 4px">
+      <div class="av p hex" style="width:70px;height:70px;margin:0 auto">${I('check',30,2.2)}</div>
+      <h3 style="margin-top:16px">${m0(amount)} credited</h3>
+      <p class="sub">Cheque deposit · reference ${result.tx.ref}</p></div>
+    ${note('RECEIPT',[['Reference',result.tx.ref],['New balance',m0(result.tx.balanceAfter)]],
+      'Funds are available immediately; the physical cheque is not needed once scanned.')}
+    <button class="btn primary wide" style="margin-top:16px" data-act="close">Done</button>`);
+}
+
+/* -------------------------------------------------------- branches and atms */
+function flowBranches(){
+  S.branchFilter = S.branchFilter || 'all';
+  const items = FID.BRANCHES.filter(b => S.branchFilter === 'all' || (S.branchFilter === 'atm') === b.atm);
+  openSheet(`<h3>Branches and ATMs</h3>
+    <div class="chiprow" style="margin:14px 0">
+      <button class="chip" aria-pressed="${S.branchFilter==='all'}" data-branchf="all">All</button>
+      <button class="chip" aria-pressed="${S.branchFilter==='branch'}" data-branchf="branch">Branches</button>
+      <button class="chip" aria-pressed="${S.branchFilter==='atm'}" data-branchf="atm">ATMs</button></div>
+    <div class="surface flush">${items.map(b=>`
+      <div class="item static"><div class="av ${b.atm?'o':''}">${I(b.atm?'atm':'bank',19)}</div>
+        <div class="txt"><b>${b.name}</b><span>${b.address} · ${b.hours}</span></div></div>`).join('')}</div>
+    <button class="btn quiet wide" style="margin-top:16px" data-act="close">Close</button>`);
+}
+
+/* --------------------------------------------------------- security & devices */
+function flowSecurity(){
+  openSheet(`<h3>Security and devices</h3>
+    <div class="eyebrow" style="margin-bottom:10px">Signed-in devices</div>
+    <div class="surface flush">${FID.DEVICES.map((d,i)=>`
+      <div class="item static"><div class="av ${d.current?'p':''}">${I('user',19)}</div>
+        <div class="txt"><b>${d.name}${d.current?' · this device':''}</b><span>${d.location} · ${d.lastActive}</span></div>
+        ${d.current ? '' : `<button class="chip sm" data-device="${i}">Log out</button>`}</div>`).join('')}</div>
+    <div class="eyebrow" style="margin:20px 0 10px">Sign-in</div>
+    <div class="chiprow"><button class="chip" aria-pressed="true">Biometric login on</button></div>
+    <button class="btn quiet wide" style="margin-top:16px" data-act="close">Close</button>`);
+}
+
+/* -------------------------------------------------------------- pos settlement (business) */
+function flowPos(){
+  const settlements = E().transactions.filter(t => t.method === 'Settlement').slice(0,8);
+  openSheet(`<h3>POS settlement</h3>
+    <p class="sub">Card terminal takings, settled to your business current account overnight.</p>
+    <div class="surface flush" style="margin-top:14px">${settlements.length ? settlements.map(t=>`
+      <div class="item static"><div class="av p">${I('card',19)}</div>
+        <div class="txt"><b>${t.m}</b><span>${t.d}</span></div><div class="amt">${m0(t.a)}</div></div>`).join('')
+      : '<p class="sub" style="padding:14px">No settlements yet on this account.</p>'}</div>
+    <button class="btn primary wide" style="margin-top:16px" data-act="requestterminal">Request a terminal</button>
+    <button class="btn quiet wide" style="margin-top:10px" data-act="close">Close</button>`);
+}
+
+/* --------------------------------------------------------------- invoices (business) */
+function flowInvoices(){
+  const inv = S.invoice;
+  openSheet(`<h3>Invoices &amp; purchase orders</h3>
+    <p class="sub">Upload a purchase order and we read it against the buyer registry before it counts toward financing.</p>
+    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+      <button class="btn sm" data-invupload="LPO-Adom-4471.pdf">Upload LPO-Adom-4471.pdf</button>
+      <button class="btn quiet sm" data-invupload="photo_2026-08-27_blurred.jpg">Upload a photo</button></div>
+    ${!inv ? '' : inv.ok
+      ? `<div class="surface" style="margin-top:16px;background:var(--jade-t);box-shadow:none">
+          <span class="badge j">Verified</span>
+          <h4 style="margin:8px 0 6px">${m0(24800)} from Adom Poultry Farms, due 12 October</h4>
+          <p class="sub">${inv.explanation}. This now counts toward your invoice financing limit.</p></div>`
+      : `<div class="surface" style="margin-top:16px;background:var(--rose-t);box-shadow:none">
+          <span class="badge r">Could not read it</span>
+          <h4 style="margin:8px 0 6px">Send this one again</h4>
+          <p class="sub">${inv.explanation}. Lay it flat, fill the frame, avoid shadows on the amount line.</p></div>`}
+    <div class="eyebrow" style="margin:20px 0 10px">Outstanding invoices</div>
+    <div class="surface flush">${[['Adom Poultry Farms',24800,'due 12 Oct'],['Coastal Foods Ltd',9400,'due 30 Sep'],
+       ['Ridge Hotel',6200,'overdue 14 days']].map(([n,a,d])=>`
+      <div class="item static"><div class="av ${d.includes('overdue')?'n':''}">${initials(n)}</div>
+        <div class="txt"><b>${n}</b><span>${d}</span></div><div class="amt">${m0(a)}</div></div>`).join('')}</div>
+    <button class="btn quiet wide" style="margin-top:16px" data-act="close">Close</button>`);
 }
 
 function flowPayroll(){
@@ -858,7 +1332,7 @@ function flowPayroll(){
     ${note('MAKER-CHECKER',[['Prepared by','you'],['Screened payees',FID.PAYROLL.length],
       ['Flagged',r.flagged.length],['Needs','a second approver'],['Status',r.action.replace(/_/g,' ').toLowerCase()]],
       'No single person can release a payroll batch. Your second approver sees this same screen.')}
-    <button class="btn primary wide" style="margin-top:16px" data-act="close">Send for approval</button>`);
+    <button class="btn primary wide" style="margin-top:16px" data-act="sendpayroll">Send for approval</button>`);
 }
 
 /* ---------------------------------------------------------------- support */
@@ -948,23 +1422,38 @@ function sheets(k){
     standing:`<h3>Standing orders</h3><div class="surface flush" style="margin-top:12px">${FID.STANDING.map(o=>`
       <div class="item static"><div class="av">${I('repeat',21,2.2)}</div><div class="txt"><b>${o.name}</b>
         <span>${o.when} · next ${o.next}</span></div><div class="amt">${m0(o.amount)}</div></div>`).join('')}</div>
-      <button class="btn primary wide" style="margin-top:16px" data-act="close">New standing order</button>`,
+      <button class="btn primary wide" style="margin-top:16px" data-sheet="newstanding">New standing order</button>`,
+    newstanding:`<h3>New standing order</h3>
+      <label class="field" style="margin-top:14px"><span>Pay to</span>
+        <input id="soName" placeholder="e.g. Landlord, insurer…"></label>
+      <label class="field"><span>Amount</span><input id="soAmount" type="number" placeholder="0.00"></label>
+      <label class="field"><span>Day of month</span><input id="soDay" type="number" min="1" max="28" placeholder="1"></label>
+      <button class="btn primary wide" style="margin-top:16px" data-act="createstanding">Create standing order</button>`,
     statement:`<h3>Statements</h3><p class="sub">Emailed as PDF, or stamped for a visa or loan application.</p>
       <div class="surface flush" style="margin-top:12px">${['August 2026','July 2026','June 2026','Q2 2026 summary','2025 tax certificate']
         .map(x=>`<button class="item"><div class="av">${I('statement',19)}</div><div class="txt"><b>${x}</b></div>
         <span class="go">${I('download',18)}</span></button>`).join('')}</div>`,
     limits:`<h3>Spending limits</h3><p class="sub">Applies to this card only, and takes effect immediately.</p>
-      ${[['Per transaction',5000],['Per day',10000],['Online',3000],['ATM withdrawal',2000]].map(([l,v])=>`
+      ${[['Per transaction','tx'],['Per day','day'],['Online','online'],['ATM withdrawal','atm']].map(([l,k])=>`
         <div style="margin-top:18px"><div style="display:flex;justify-content:space-between">
-        <b style="font-size:14px">${l}</b><span class="money" style="font-size:15px">${m0(v)}</span></div>
-        <input type="range" min="500" max="20000" value="${v}" style="width:100%;accent-color:var(--orange);margin-top:6px"></div>`).join('')}
-      <button class="btn primary wide" style="margin-top:22px" data-act="close">Save limits</button>`,
+        <b style="font-size:14px">${l}</b><span class="money" id="limval-${k}" style="font-size:15px">${m0(S.cardLimits[k])}</span></div>
+        <input type="range" min="500" max="20000" value="${S.cardLimits[k]}" data-lim="${k}"
+          style="width:100%;accent-color:var(--orange);margin-top:6px"></div>`).join('')}
+      <button class="btn primary wide" style="margin-top:22px" data-act="savelimits">Save limits</button>`,
     upgrade:`<h3>Upgrade to Tier 3</h3><p class="sub">Raises your single-transaction limit to GHS 100,000 and
       unlocks international transfers.</p>
       <div class="surface flush" style="margin-top:14px">${FID.KYC.toTier3.map((x,i)=>`
         <div class="item static"><div class="av ${i===0?'p':''}">${i===0?I('check',18):i+1}</div>
         <div class="txt"><b>${x}</b><span>${i===0?'Verified 12 Mar 2026':'Not yet provided'}</span></div></div>`).join('')}</div>
-      <button class="btn primary wide" style="margin-top:16px" data-act="close">Continue with Ghana Card</button>`,
+      <button class="btn primary wide" style="margin-top:16px" data-act="upgradetier">Continue with Ghana Card</button>`,
+    newaccount:`<h3>Open an account</h3>
+      <p class="sub">Opens instantly, no minimum balance.</p>
+      <div class="chiprow" style="margin:14px 0">
+        <button class="chip" aria-pressed="true" data-pick="accttype">Current</button>
+        <button class="chip" data-pick="accttype">Savings</button>
+        <button class="chip" data-pick="accttype">Foreign currency (USD)</button></div>
+      <label class="field"><span>Name it</span><input id="acctName" placeholder="e.g. Rent, Travel fund…"></label>
+      <button class="btn primary wide" style="margin-top:16px" data-act="createaccount">Open account</button>`,
     cashflow:`<h3>Eight-week cash flow</h3>
       <div style="margin-top:14px">${FID.columns(e.cashflow || [0],{forecastFrom:4,h:120,
         labels:['w-4','w-3','w-2','now','+1','+2','+3','+4']})}</div>
@@ -1035,7 +1524,8 @@ document.addEventListener('click', ev => {
   const el = ev.target.closest('[data-tab],[data-act],[data-acct],[data-sheet],[data-ben],[data-bill],'
     + '[data-billpay],[data-billamt],[data-fx],[data-tenor],[data-months],[data-goal],[data-consent],'
     + '[data-note],[data-key],[data-padset],[data-lang],[data-quick],[data-which],[data-pick],'
-    + '[data-tx],[data-stmtf],[data-goalamt],[data-src]');
+    + '[data-tx],[data-stmtf],[data-goalamt],[data-src],[data-vfreeze],[data-reveal],[data-branchf],'
+    + '[data-device],[data-req],[data-invupload],[data-chqupload]');
   if (!el) return;
   const d = el.dataset;
 
@@ -1061,6 +1551,27 @@ document.addEventListener('click', ev => {
       confidence:1, adverse:false, explanation:'you changed this yourself in the app'},
       {title:S.frozen[d.which]?'Card frozen':'Card unfrozen', customer:E().holder, channel:'app'});
     render(); return; }
+  if (d.vfreeze !== undefined && d.vfreeze !== ''){ const vc = E().virtualCards[+d.vfreeze];
+    vc.frozen = !vc.frozen;
+    FID.decide('retail.card_controls', {action:vc.frozen?'FREEZE_CARD':'UNFREEZE_CARD',
+      confidence:1, adverse:false, explanation:'you changed this yourself in the app'},
+      {title:vc.frozen?'Virtual card frozen':'Virtual card unfrozen', customer:E().holder, channel:'app'});
+    render(); return; }
+  if (d.reveal !== undefined && d.reveal !== ''){ flowRevealCard(+d.reveal); return; }
+  if (d.branchf){ S.branchFilter = d.branchf; flowBranches(); return; }
+  if (d.device !== undefined && d.device !== ''){ const dev = FID.DEVICES[+d.device];
+    FID.DEVICES.splice(+d.device, 1);
+    FID.decide('retail.card_controls', {action:'DEVICE_LOGGED_OUT', confidence:1, adverse:false,
+      explanation:'you signed this device out yourself'},
+      {title:'Device signed out', customer:E().holder, channel:'app'});
+    flowSecurity(); return; }
+  if (d.invupload){ const v = FID.verifyDocument(d.invupload);
+    FID.decide('sme.doc_verification', v, {floor:FID.FLOOR.doc, title:'Purchase order checked',
+      customer:E().holder, channel:'app'});
+    S.invoice = {ok: v.action === 'VERIFIED', file:d.invupload, conf:v.confidence, q:v.quality,
+                 explanation:v.explanation};
+    flowInvoices(); return; }
+  if (d.chqupload){ chequeScanned(d.chqupload); return; }
   if (d.lang){ S.lang = d.lang; flowSupport(); return; }
   if (d.quick){ send(d.quick); return; }
   if (d.ben !== undefined && d.ben !== ''){ flowAmount(+d.ben); return; }
@@ -1069,18 +1580,61 @@ document.addEventListener('click', ev => {
   if (d.billpay){ payBill(d.billpay); return; }
   if (d.fx){ flowFxQuote(d.fx); return; }
   if (d.tenor){ flowTbill(+d.tenor); return; }
-  if (d.months){ const dep = FID.DEPOSITS.find(x => x.months == d.months);
-    openSheet(`<h3>${d.months}-month fixed deposit</h3>
-      <p class="sub">Locked for ${d.months} months at ${(dep.rate*100).toFixed(1)}% a year.
-        Breaking early forfeits accrued interest.</p>
-      <label class="field" style="margin-top:16px"><span>Amount</span><input type="number" value="10000"></label>
-      <button class="btn primary wide" data-act="close">Open deposit</button>`); return; }
+  if (d.months){ flowDeposit(+d.months); return; }
   if (d.goal){ goalSheet(d.goal); return; }
   if (d.src){ S.src = JSON.parse(d.src); goalSheet(S.goalId); return; }
+  if (d.sheet === 'pin') return startPinChange(() => { closeSheet(); render(); });
   if (d.sheet) return sheets(d.sheet);
 
   switch (d.act){
     case 'close': closeSheet(); render(); break;
+    case 'authcancel': S.auth = null; closeSheet(); render(); break;
+    case 'authcontinue': { const r = S.pendingResume; S.pendingResume = null; if (r) r(); break; }
+    case 'stepupcontinue': flowSendAuthorize(); break;
+    case 'fxbuy': flowFxBuy(); break;
+    case 'tbillbuy': flowTbillBuy(); break;
+    case 'depopen': flowDepositOpen(); break;
+    case 'upgradetier': flowUpgradeTier(); break;
+    case 'createaccount': { const name = $('acctName')?.value.trim();
+      if (!name) break;
+      const kind = document.querySelector('[data-pick="accttype"][aria-pressed="true"]')?.textContent || 'Current';
+      const type = kind.startsWith('Savings') ? 'savings' : kind.startsWith('Foreign') ? 'fx' : 'current';
+      /* not a payment — no PIN/OTP — but it still has to exist server-side, or a deposit or
+         transfer into this account later would have nothing real to find */
+      (async () => {
+        try {
+          const {account} = await FID.openAccount(S.entity, name, type);
+          E().accounts.push(account);
+          FID.decide('retail.account_opening', {action:'ACCOUNT_OPENED', confidence:1, adverse:false,
+            explanation:'opened instantly in-app, no minimum balance'},
+            {title:'New account opened', customer:E().holder, channel:'app'});
+          closeSheet(); render();
+        } catch (e) { authError(e); }
+      })();
+      break; }
+    case 'newvirtual': openSheet(`<h3>New virtual card</h3>
+      <p class="sub">Issued instantly. Freeze or reveal it any time.</p>
+      <label class="field" style="margin-top:14px"><span>Lock to (optional)</span>
+        <input id="vcardMerchant" placeholder="e.g. Netflix, Amazon…"></label>
+      <button class="btn primary wide" style="margin-top:16px" data-act="createvirtual">Create card</button>`); break;
+    case 'createvirtual': { const merchant = $('vcardMerchant')?.value.trim();
+      const p4 = () => String(Math.floor(1000 + Math.random() * 9000));
+      const last4 = p4();
+      const vc = {num:'4821 •••• •••• ' + last4, fullNum:`4821 ${p4()} ${p4()} ${last4}`,
+        cvv:String(Math.floor(100 + Math.random() * 900)),
+        exp:`${new Date().getMonth() + 1}/${String((new Date().getFullYear() + 3) % 100).padStart(2,'0')}`,
+        locked: merchant || 'one merchant', frozen:false};
+      E().virtualCards.push(vc);
+      FID.decide('retail.card_controls', {action:'VIRTUAL_CARD_ISSUED', confidence:1, adverse:false,
+        explanation:'issued instantly in-app'}, {title:'Virtual card issued', customer:E().holder, channel:'app'});
+      closeSheet(); render(); break; }
+    case 'savelimits': { ['tx','day','online','atm'].forEach(k => {
+        const el = document.querySelector(`[data-lim="${k}"]`); if (el) S.cardLimits[k] = +el.value; });
+      FID.decide('retail.card_controls', {action:'SET_LIMITS', confidence:1, adverse:false,
+        explanation:'you changed these yourself in the app'},
+        {title:'Spending limits updated', customer:E().holder, channel:'app'});
+      closeSheet(); render(); break; }
+    case 'airtimebuy': flowAirtimeBuy(); break;
     case 'statement': S.tab = 'statement'; closeSheet(); render(); $('scroll').scrollTop = 0; break;
     case 'hidebal': S.hideBal = !S.hideBal; render(); break;
     case 'toggleinsight': S.insightOpen = !S.insightOpen; render(); break;
@@ -1098,6 +1652,7 @@ document.addEventListener('click', ev => {
     case 'sent': flowSent(); break;
     case 'notme': flowNotMe(); break;
     case 'loancheck': flowLoanResult(); break;
+    case 'loandraw': flowLoanDraw(); break;
     case 'sendmoney': flowWho(); break;
     case 'bulk': flowPayroll(); break;
     case 'newben': openSheet(`<h3>New beneficiary</h3>
@@ -1106,18 +1661,103 @@ document.addEventListener('click', ev => {
         <button class="chip" aria-pressed="true" data-pick="dest">Another bank</button>
         <button class="chip" data-pick="dest">AI-Digital Bank account</button>
         <button class="chip" data-pick="dest">Mobile money</button></div>
-      <label class="field"><span>Account name</span><input placeholder="As it appears at their bank"></label>
-      <label class="field"><span>Account number</span><input inputmode="numeric" placeholder="0000000000"></label>
-      <label class="field"><span>Bank</span><select><option>CalBank</option><option>GCB Bank</option>
+      <label class="field"><span>Account name</span><input id="benName" placeholder="As it appears at their bank"></label>
+      <label class="field"><span>Account number</span><input id="benAcct" inputmode="numeric" placeholder="0000000000"></label>
+      <label class="field"><span>Bank</span><select id="benBank"><option>CalBank</option><option>GCB Bank</option>
         <option>Absa Ghana</option><option>Stanbic</option><option>Ecobank</option></select></label>
-      <button class="btn primary wide" data-act="close">Screen and save</button>`); break;
-    case 'invoice': case 'pos': case 'request': case 'cheque': case 'branches': case 'security':
-    case 'newaccount': openSheet(`<h3>${{invoice:'Invoices', pos:'POS settlement', request:'Request money',
-        cheque:'Cheque services', branches:'Branches and ATMs', security:'Security and devices',
-        newaccount:'Open an account'}[d.act]}</h3>
-      <p class="sub">Mapped in the engine's portfolio, agent not built yet. The control tower counts every time
-        you land here as roadmap demand — that is how this list gets prioritised.</p>
-      <button class="btn quiet wide" style="margin-top:18px" data-act="close">Close</button>`); break;
+      <button class="btn primary wide" data-act="savebene">Screen and save</button>`); break;
+    case 'createstanding': { const name = $('soName')?.value.trim(), amount = +($('soAmount')?.value || 0),
+        day = +($('soDay')?.value || 1);
+      if (!name || !amount) break;
+      const ord = day === 1 ? '1st' : day === 2 ? '2nd' : day === 3 ? '3rd' : day + 'th';
+      FID.STANDING.push({name, amount, when:`${ord} of each month`, next:`${ord} next month`});
+      FID.decide('savings.goal_funding', {action:'STANDING_ORDER_CREATED', confidence:1, adverse:false,
+        explanation:'you created this standing order yourself'},
+        {title:'New standing order created', customer:E().holder, channel:'app'});
+      sheets('standing'); break; }
+    case 'savebene': { const name = $('benName')?.value.trim(), acctNum = $('benAcct')?.value.trim() || '0000';
+      if (!name) break;
+      const dest = document.querySelector('[data-pick="dest"][aria-pressed="true"]')?.textContent || 'Another bank';
+      const bank = dest === 'Another bank' ? ($('benBank')?.value || 'CalBank')
+                 : dest === 'Mobile money' ? 'MoMo' : 'AI-Digital Bank';
+      const sanc = FID.screenBeneficiary(name);
+      FID.decide('fcc.sanctions', sanc, {floor:FID.FLOOR.sanctions, title:'Beneficiary screened',
+        customer:E().holder, channel:'app',
+        evidence:{'Beneficiary':name,'Match score':sanc.similarity.toFixed(2),'Threshold':'0.30'}});
+      if (sanc.action === 'HOLD_FOR_L2_REVIEW'){
+        const ref = 'CMP-' + (7700 + FID.ledger.length);
+        return openSheet(`<span class="badge r">Held · not saved</span>
+          <h3 style="margin-top:12px">A compliance officer is checking this</h3>
+          <p class="sub">${name} matched a sanctions and PEP watchlist entry closely enough that we cannot save it
+            automatically. We call you by 16:00. Reference ${ref}.</p>
+          <button class="btn quiet wide" style="margin-top:16px" data-act="close">Close</button>`);
+      }
+      E().beneficiaries.push({name, bank, acct:'•••• ' + acctNum.slice(-4).padStart(4,'0'), last:'first payment'});
+      closeSheet(); render(); break; }
+    case 'invoice': flowInvoices(); break;
+    case 'pos': flowPos(); break;
+    case 'request': flowRequestMoney(); break;
+    case 'cheque': flowCheque(); break;
+    case 'branches': flowBranches(); break;
+    case 'security': flowSecurity(); break;
+    case 'createrequest': { const amount = +($('reqAmount')?.value || 0), note = $('reqNote')?.value.trim();
+      if (!amount) break;
+      const code = 'PAY-' + (100000 + Math.floor(Math.random() * 900000));
+      const e = E(); e.requests = e.requests || [];
+      e.requests.unshift({amount, note, code, link:'pay.aidigitalbank.gh/r/' + code});
+      FID.decide('retail.payment_request', {action:'REQUEST_CREATED', confidence:1, adverse:false,
+        explanation:'payment request link generated'},
+        {title:'Payment request created', customer:e.holder, channel:'app', amount});
+      flowRequestMoney(); break; }
+    case 'chequedeposit': flowChequeDeposit(); break;
+    case 'chequebook': FID.decide('retail.chatbot', {action:'CHEQUEBOOK_REQUESTED', confidence:1, adverse:false,
+        explanation:'requested in-app'}, {title:'Chequebook requested', customer:E().holder, channel:'app'});
+      openSheet(`<div style="text-align:center;padding:12px 0 4px">
+          <div class="av p hex" style="width:70px;height:70px;margin:0 auto">${I('check',30,2.2)}</div>
+          <h3 style="margin-top:16px">Chequebook on its way</h3>
+          <p class="sub">Arrives at your registered address in 5-7 working days.</p></div>
+        <button class="btn primary wide" style="margin-top:16px" data-act="close">Done</button>`); break;
+    case 'chequestop': openSheet(`<h3>Stop a cheque</h3>
+      <label class="field" style="margin-top:14px"><span>Cheque number</span><input id="stopChqNum" placeholder="000000"></label>
+      <label class="field"><span>Reason</span><input id="stopChqReason" placeholder="Lost, stolen, wrong amount…"></label>
+      <button class="btn primary wide" style="margin-top:16px" data-act="dochequestop">Stop this cheque</button>`); break;
+    case 'dochequestop': { const num = $('stopChqNum')?.value.trim();
+      if (!num) break;
+      FID.decide('retail.chatbot', {action:'CHEQUE_STOPPED', confidence:1, adverse:false,
+        explanation:'stopped at customer request'}, {title:'Cheque stopped', customer:E().holder, channel:'app'});
+      openSheet(`<span class="badge j">Stopped</span>
+        <h3 style="margin-top:12px">Cheque ${num} will not clear</h3>
+        <p class="sub">If it is presented, it is returned unpaid. This takes effect immediately.</p>
+        <button class="btn primary wide" style="margin-top:16px" data-act="close">Done</button>`); break; }
+    case 'sendpayroll': { const r = FID.payrollCheck(FID.PAYROLL);
+      S.payrollBatches = S.payrollBatches || [];
+      S.payrollBatches.push({total:r.total, flagged:r.flagged.length,
+        status: r.flagged.length ? 'held' : 'pending_approval', when:Date.now()});
+      FID.decide('ops.payroll', {action: r.flagged.length ? 'HOLD_BATCH' : 'SENT_FOR_APPROVAL',
+        confidence:0.93, adverse:false,
+        explanation: r.flagged.length ? r.explanation : 'sent to second approver'},
+        {title: r.flagged.length ? 'Payroll batch held' : 'Payroll sent for approval',
+         customer:E().holder, channel:'app', amount:r.total});
+      openSheet(r.flagged.length
+        ? `<span class="badge r">Held · not sent</span>
+           <h3 style="margin-top:12px">Batch cannot be released</h3>
+           <p class="sub">${r.explanation}. The rest is ready — remove the flagged payee to release the
+             others, or wait for compliance.</p>
+           <button class="btn quiet wide" style="margin-top:16px" data-act="close">Close</button>`
+        : `<div style="text-align:center;padding:12px 0 4px">
+            <div class="av p hex" style="width:70px;height:70px;margin:0 auto">${I('check',30,2.2)}</div>
+            <h3 style="margin-top:16px">Sent to your second approver</h3>
+            <p class="sub">${m0(r.total)} · ${FID.PAYROLL.length} staff. They see the same screening
+              result you did.</p></div>
+           <button class="btn primary wide" style="margin-top:16px" data-act="close">Done</button>`);
+      break; }
+    case 'requestterminal': FID.decide('ops.payroll', {action:'TERMINAL_REQUESTED', confidence:1, adverse:false,
+        explanation:'requested in-app'}, {title:'POS terminal requested', customer:E().holder, channel:'app'});
+      openSheet(`<div style="text-align:center;padding:12px 0 4px">
+          <div class="av p hex" style="width:70px;height:70px;margin:0 auto">${I('check',30,2.2)}</div>
+          <h3 style="margin-top:16px">Terminal on its way</h3>
+          <p class="sub">Installed within 3 working days. Settlement lands in your business current account.</p></div>
+        <button class="btn primary wide" style="margin-top:16px" data-act="close">Done</button>`); break;
     case 'bills': flowBills(); break;
     case 'airtime': flowAirtime(); break;
     case 'fx': flowFx(); break;
@@ -1128,20 +1768,30 @@ document.addEventListener('click', ev => {
     case 'save': case 'invest': S.tab='save'; closeSheet(); render(); break;
     case 'allservices': openPay(); break;
     case 'switch': S.entity = S.entity==='personal'?'business':'personal'; S.acct=0; S.tab='home';
-      closeSheet(); render(); break;
+      closeSheet(); render(); syncAccountsFromServer(); break;
     case 'addgoal': { const g = S.goals.find(x => x.id === d.g), v = +$('goalAdd').value || 0;
       g.saved = Math.min(g.target, g.saved + v); closeSheet(); render(); break; }
     case 'newgoal': openSheet(`<h3>New savings goal</h3>
       <label class="field" style="margin-top:14px"><span>What are you saving for?</span>
-        <input placeholder="Rent, school fees, a trip…"></label>
-      <label class="field"><span>Target</span><input type="number" placeholder="0.00"></label>
-      <label class="field"><span>Put aside each month</span><input type="number" placeholder="0.00"></label>
-      <button class="btn primary wide" data-act="close">Create goal</button>`); break;
+        <input id="goalName" placeholder="Rent, school fees, a trip…"></label>
+      <label class="field"><span>Target</span><input id="goalTarget" type="number" placeholder="0.00"></label>
+      <label class="field"><span>Put aside each month</span><input id="goalMonthly" type="number" placeholder="0.00"></label>
+      <button class="btn primary wide" data-act="creategoal">Create goal</button>`); break;
+    case 'creategoal': { const name = $('goalName')?.value.trim(), target = +($('goalTarget')?.value || 0),
+        monthly = +($('goalMonthly')?.value || 0);
+      if (!name || !target) break;
+      S.goals.push({id:'g' + Date.now().toString(36), name, target, saved:0,
+        monthly: monthly || Math.ceil(target / 12), due:'open', icon:'goal'});
+      FID.decide('savings.goal_funding', {action:'GOAL_CREATED', confidence:1, adverse:false,
+        explanation:'you created this goal yourself'},
+        {title:'New goal created', customer:E().holder, channel:'app'});
+      closeSheet(); render(); break; }
     default: sheets('__none__');
   }
 });
 
 function padKey(k){
+  if (S.auth) return authPadKey(k);
   if (!S.flow) return;
   let v = S.flow.amount || '';
   if (k === '⌫') v = v.slice(0,-1);
@@ -1160,6 +1810,8 @@ document.addEventListener('input', ev => {
   if (ev.target.id === 'fxamt' && S.flow?.ccy){
     const q = FID.fxQuote(+ev.target.value || 0, S.flow.ccy, 'buy');
     $('fxpay').textContent = m0(q.cedis); }
+  if (ev.target.dataset.lim){ const el = $('limval-' + ev.target.dataset.lim);
+    if (el) el.textContent = m0(+ev.target.value); }
 });
 document.addEventListener('keydown', ev => {
   if (ev.key === 'Escape') closeSheet();
@@ -1196,6 +1848,7 @@ document.addEventListener('keydown', ev => {
 
 render();
 tickClock();
+syncAccountsFromServer();
 </script>
 </body>
 </html>

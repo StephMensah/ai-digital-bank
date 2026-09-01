@@ -278,12 +278,13 @@ const FID = (() => {
 
   /* ---------------------------------------------------------------- people */
   const PERSONAL = {
-    id:'personal', label:'Personal', holder:'Ama Boateng', since:'2019',
+    id:'personal', label:'Personal', holder:'Ama Boateng', since:'2019', mustChangePin:true,
     accounts:[
       {name:'Current account', num:'•••• 3391', balance:4182.60, type:'current'},
       {name:'Target savings',   num:'•••• 7742', balance:11500.00, type:'savings'},
     ],
-    card:{num:'•••• •••• •••• 3391', exp:'09/29', frozen:false},
+    card:{num:'•••• •••• •••• 3391', fullNum:'4556 0198 2231 3391', cvv:'482', exp:'09/29', frozen:false},
+    virtualCards:[{num:'4821 •••• •••• 7719', fullNum:'4821 5507 4413 7719', cvv:'091', exp:'11/28', locked:'one merchant'}],
     credit:{bureau:648, dti:0.31, income:6400, thinFile:false},
     beneficiaries:[
       {name:'Kojo Mensah', bank:'AI-Digital Bank', acct:'•••• 2210', last:'GHS 200'},
@@ -303,12 +304,13 @@ const FID = (() => {
   };
 
   const BUSINESS = {
-    id:'business', label:"Ama's Kitchen Ltd", holder:"Ama's Kitchen Ltd", since:'2022',
+    id:'business', label:"Ama's Kitchen Ltd", holder:"Ama's Kitchen Ltd", since:'2022', mustChangePin:true,
     accounts:[
       {name:'Business current', num:'•••• 5108', balance:38470.15, type:'current'},
       {name:'Tax reserve',      num:'•••• 5109', balance:9200.00,  type:'savings'},
     ],
-    card:{num:'•••• •••• •••• 5108', exp:'02/28', frozen:false},
+    card:{num:'•••• •••• •••• 5108', fullNum:'4556 7702 1145 5108', cvv:'317', exp:'02/28', frozen:false},
+    virtualCards:[{num:'4821 •••• •••• 4402', fullNum:'4821 9931 0087 4402', cvv:'650', exp:'06/28', locked:'one merchant'}],
     credit:{bureau:702, dti:0.24, income:41000, thinFile:true},
     beneficiaries:[
       {name:'Adom Poultry Farms', bank:'CalBank', acct:'•••• 8820', last:'GHS 12,400'},
@@ -427,7 +429,10 @@ const FID = (() => {
 
   /* sme.doc_verification — tesseract+layoutlm://aidigitalbank/lpo-verify/v2 */
   function verifyDocument(filename){
-    const legible = /\.pdf$/i.test(filename) && !/blur|scan0|photo/i.test(filename);
+    /* a PDF purchase order or a plain photo (a cheque, say) both read fine; the filename hints
+       that mark a bad scan — blur, a placeholder scan0, or an explicit "photo" caveat — are what
+       actually knocks quality down, not the file type itself */
+    const legible = /\.(pdf|jpe?g|png)$/i.test(filename) && !/blur|scan0|photo/i.test(filename);
     const q = legible ? 0.55 + seed(filename)*0.40 : seed(filename)*0.29;
     if (q < 0.30)
       return {action:'REJECT_RESUBMIT', confidence:0.55 + q, adverse:false, quality:q,
@@ -477,6 +482,45 @@ const FID = (() => {
       body: JSON.stringify({...rec, ...extra})}).catch(() => { apiUp = false; });
   }
 
+  /* ---- pin + otp: the real authorization gate in front of every transaction -------------
+     Unlike sync() above, none of this tolerates the API being down — a payment cannot be
+     authorized without the server that holds the PIN hash and the account balance, so every
+     call here throws with `.code` set (offline, pin_change_required, invalid_pin,
+     invalid_step_up, insufficient_funds, ...) for the caller to route to the right sheet. */
+  async function apiCall(path, body){
+    if (!apiUp) throw Object.assign(new Error('offline'), {code:'offline'});
+    let res;
+    try { res = await fetch(API + path, {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body || {})}); }
+    catch (e) { throw Object.assign(new Error('offline'), {code:'offline'}); }
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(new Error(json.error || 'request failed'),
+      {code: json.error || 'request_failed', status: res.status});
+    return json;
+  }
+  async function fetchAccount(customerId){
+    if (!apiUp) throw Object.assign(new Error('offline'), {code:'offline'});
+    let res;
+    try { res = await fetch(API + '/api/accounts/' + customerId); }
+    catch (e) { throw Object.assign(new Error('offline'), {code:'offline'}); }
+    if (!res.ok) throw Object.assign(new Error('offline'), {code:'offline'});
+    return res.json();
+  }
+  const requestOtp = (customerId, purpose) => apiCall('/api/otp/request', {customerId, purpose});
+  const verifyOtp = (challengeId, code) => apiCall('/api/otp/verify', {challengeId, code});
+  const setPin = (customerId, currentPin, newPin, stepUpToken) =>
+    apiCall('/api/pin/set', {customerId, currentPin, newPin, stepUpToken});
+  /* proof-of-you for a sensitive action that doesn't move money (reveal card details, raise a
+     limit) — same PIN + step-up-token check as a payment, no transaction written */
+  const verifyPinOnly = (customerId, pin, stepUpToken) =>
+    apiCall('/api/pin/verify', {customerId, pin, stepUpToken});
+  const commitTransaction = (customerId, payload) =>
+    apiCall('/api/transactions', {customerId, ...payload});
+  /* not a payment — no PIN/OTP — but still has to be known server-side, or nothing could ever
+     deposit into or transfer out of it afterwards */
+  const openAccount = (customerId, name, type) =>
+    apiCall('/api/accounts/open', {customerId, name, type});
+
   /* receipt markup, shared by both products */
   function slip(title, pairs, footer){
     return `<div class="slip"><div class="slip-hd">${title}</div><dl>` +
@@ -507,7 +551,8 @@ const FID = (() => {
   return { CCY, money, money0, pct, seed, ENTITIES, LANG, FLOOR, get live(){ return apiUp; },
            assessPayment, screenBeneficiary, preapprove, parse,
            forecastCashflow, verifyDocument, categorise,
-           ledger, onDecision, decide, slip, columns };
+           ledger, onDecision, decide, slip, columns,
+           fetchAccount, requestOtp, verifyOtp, setPin, verifyPinOnly, commitTransaction, openAccount };
 })();
 
 /* =========================================================================
@@ -567,6 +612,23 @@ Object.assign(FID, (() => {
 
   const KYC = {tier:2, label:'Tier 2', dailyLimit:20000, singleLimit:10000,
                toTier3:['Ghana Card verified','Proof of address','Income declaration']};
+
+  const BRANCHES = [
+    {name:'Ridge branch',        area:'Ridge',        address:'12 Liberation Rd, Ridge',        hours:'Mon–Fri 8:30–16:00, Sat 9:00–13:00', atm:false, services:['Teller','Forex','Safe deposit']},
+    {name:'Osu branch',          area:'Osu',          address:'Oxford St, Osu',                  hours:'Mon–Fri 8:30–16:00',                 atm:false, services:['Teller','Business banking']},
+    {name:'Airport City branch', area:'Airport City', address:'Airport City, near Marina Mall',   hours:'Mon–Fri 8:30–17:00, Sat 9:00–13:00', atm:false, services:['Teller','Forex','Premier banking']},
+    {name:'Ridge ATM',           area:'Ridge',        address:'12 Liberation Rd, Ridge',          hours:'24 hours',                            atm:true,  services:['Cash withdrawal','Balance enquiry']},
+    {name:'Accra Mall ATM',      area:'Spintex',      address:'Accra Mall, Spintex Rd',            hours:'24 hours',                            atm:true,  services:['Cash withdrawal','Cash deposit']},
+    {name:'Osu Oxford St ATM',   area:'Osu',          address:'Oxford St, near Republic Bar',      hours:'24 hours',                            atm:true,  services:['Cash withdrawal']},
+    {name:'Dansoman branch',     area:'Dansoman',     address:'High St, Dansoman',                 hours:'Mon–Fri 8:30–16:00',                 atm:false, services:['Teller']},
+    {name:'Tema branch',         area:'Tema',         address:'Community 1, Tema',                 hours:'Mon–Fri 8:30–16:00, Sat 9:00–13:00', atm:false, services:['Teller','Business banking']},
+  ];
+
+  const DEVICES = [
+    {name:'iPhone 15 — Safari',        location:'Accra, Ghana',   lastActive:'Active now',    current:true},
+    {name:'Windows PC — Chrome',       location:'Accra, Ghana',   lastActive:'2 days ago',    current:false},
+    {name:'Samsung Galaxy A54 — App',  location:'Kumasi, Ghana',  lastActive:'11 days ago',   current:false},
+  ];
 
   /* ---- agents ---------------------------------------------------------- */
 
@@ -633,7 +695,7 @@ Object.assign(FID, (() => {
     {name:'Akosua Frimpong', role:'Kitchen porter', amount:1200},
   ];
 
-  return {BILLERS, NETWORKS, FX, TBILLS, DEPOSITS, GOALS, STANDING, KYC, PAYROLL,
+  return {BILLERS, NETWORKS, FX, TBILLS, DEPOSITS, GOALS, STANDING, KYC, PAYROLL, BRANCHES, DEVICES,
           fxQuote, tbillQuote, goalProject, payrollCheck, limitCheck};
 })());
 
