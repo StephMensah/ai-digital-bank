@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Control tower — AI Digital Bank</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;450;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/assets/css/adb.css" />
+<style>
+  body { background: #0E1A20; }
+  .tower { min-height: 100vh; }
+  .bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.8rem 1.4rem; border-bottom: 1px solid var(--line); }
+  .bar .name { font-family: var(--display); font-weight: 600; }
+  .clock { font-family: var(--mono); font-size: 0.8rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+  .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1rem; padding: 1.4rem; }
+  .span-3 { grid-column: span 3; } .span-4 { grid-column: span 4; }
+  .span-5 { grid-column: span 5; } .span-7 { grid-column: span 7; }
+  .span-8 { grid-column: span 8; } .span-12 { grid-column: span 12; }
+
+  .stat b { display: block; font-family: var(--display); font-size: 2.1rem; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .stat span { font-size: 0.84rem; color: var(--ink-3); }
+  .stat.alarm b { color: var(--danger); }
+  .stat.watch b { color: var(--brass); }
+
+  .rails { display: grid; gap: 0.5rem; }
+  .rail-row { display: grid; grid-template-columns: 10px 1fr auto auto; align-items: center; gap: 0.75rem; padding: 0.55rem 0; border-bottom: 1px solid var(--line); }
+  .rail-row:last-child { border-bottom: 0; }
+  .led { width: 10px; height: 10px; border-radius: 50%; background: var(--cedi); }
+  .led.degraded { background: var(--brass); }
+  .led.down { background: var(--danger); }
+  .latency { font-family: var(--mono); font-size: 0.82rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+  .chart { width: 100%; height: 150px; display: block; }
+  .legend { display: flex; gap: 1.2rem; font-size: 0.8rem; color: var(--ink-3); margin-top: 0.5rem; }
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 0.35rem; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  th { text-align: left; font-weight: 500; color: var(--ink-3); padding: 0.4rem 0; border-bottom: 1px solid var(--line); font-size: 0.82rem; }
+  td { padding: 0.5rem 0; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  tr:last-child td { border-bottom: 0; }
+
+  @media (max-width: 1000px) { .grid > * { grid-column: span 12 !important; } }
+</style>
+</head>
+<body class="dark">
+<div class="tower">
+
+<div class="bar">
+  <div class="name">Control tower</div>
+  <div class="row">
+    <span class="clock" id="clock"></span>
+    <button class="btn ghost sm hidden" id="probeBtn">Re-probe rails</button>
+    <button class="btn ghost sm hidden" id="signOut">Sign out</button>
+  </div>
+</div>
+
+<section class="shell hidden" id="authView" style="padding:4rem 0;max-width:420px">
+  <div class="card stack">
+    <h2>Operations sign in</h2>
+    <div id="authError" class="banner hidden"></div>
+    <form id="loginForm">
+      <div class="field"><label for="email">Work email</label><input id="email" type="email" required /></div>
+      <div class="field"><label for="password">Password</label><input id="password" type="password" required /></div>
+      <button class="btn block" type="submit" style="margin-top:1rem">Sign in</button>
+    </form>
+  </div>
+</section>
+
+<main class="grid hidden" id="towerView">
+  <div class="card span-3 stat" id="s-volume"><b>—</b><span>payments in the last hour</span></div>
+  <div class="card span-3 stat" id="s-value"><b>—</b><span>settled in 24 hours</span></div>
+  <div class="card span-3 stat" id="s-stuck"><b>—</b><span>stuck over 15 minutes</span></div>
+  <div class="card span-3 stat" id="s-held"><b>—</b><span>held for review</span></div>
+
+  <div class="card span-5">
+    <h3>Rails</h3>
+    <div class="rails" id="rails" style="margin-top:0.7rem"><span class="skeleton" style="display:block;height:90px"></span></div>
+  </div>
+
+  <div class="card span-7">
+    <div class="spread">
+      <h3>Throughput</h3>
+      <select id="window" style="width:auto;padding:0.25rem 0.5rem;font-size:0.84rem">
+        <option value="6">6 hours</option>
+        <option value="24">24 hours</option>
+        <option value="72">3 days</option>
+      </select>
+    </div>
+    <svg class="chart" id="chart" viewBox="0 0 700 150" preserveAspectRatio="none" role="img" aria-label="Payments settled and failed over time"></svg>
+    <div class="legend">
+      <span><i class="swatch" style="background:var(--cedi)"></i>settled</span>
+      <span><i class="swatch" style="background:var(--danger)"></i>failed</span>
+    </div>
+  </div>
+
+  <div class="card span-4">
+    <h3>Core posting queue</h3>
+    <p class="small muted" style="margin:0.4rem 0 0.8rem">Postings waiting to reach Mambu. Dead jobs need a human.</p>
+    <div class="row" style="gap:2rem">
+      <div class="stat" id="s-queued"><b>—</b><span>queued</span></div>
+      <div class="stat" id="s-dead"><b>—</b><span>dead</span></div>
+    </div>
+    <div id="deadJobs" style="margin-top:0.9rem"></div>
+  </div>
+
+  <div class="card span-8">
+    <div class="spread"><h3>Reconciliation</h3><span class="tag neutral" id="reconState">checking</span></div>
+    <div id="recon" style="margin-top:0.8rem"></div>
+  </div>
+
+  <div class="card span-12">
+    <div class="spread">
+      <h3>Incidents</h3>
+      <button class="btn sm" id="newIncident">Open an incident</button>
+    </div>
+    <div id="incidents" style="margin-top:0.8rem"></div>
+  </div>
+</main>
+</div>
+
+<script src="/assets/js/adb-sdk.js"></script>
+<script>
+const adb = ADB.client();
+const { money } = ADB;
+const $ = (id) => document.getElementById(id);
+const show = (el, on) => el.classList.toggle('hidden', !on);
+const esc = (s) => String(s ?? '').replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
+let stopPoll = null;
+
+adb.onEvent((e) => { if (e === 'signed-out') render(); });
+
+setInterval(() => { $('clock').textContent = new Date().toLocaleTimeString('en-GH', { hour12: false }); }, 1000);
+
+$('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    await adb.staffLogin($('email').value.trim(), $('password').value);
+    show($('authError'), false);
+    render();
+  } catch (err) { $('authError').textContent = err.message; show($('authError'), true); }
+});
+$('signOut').addEventListener('click', () => { adb.signOut(); render(); });
+
+function render() {
+  const inSession = adb.isSignedIn();
+  show($('authView'), !inSession);
+  show($('towerView'), inSession);
+  show($('signOut'), inSession);
+  show($('probeBtn'), inSession);
+  if (stopPoll) { stopPoll(); stopPoll = null; }
+  if (inSession) {
+    refresh();
+    stopPoll = adb.poll(refresh, 15000);
+  }
+}
+
+async function refresh() {
+  await Promise.all([loadOverview(), loadChart(), loadRecon()]);
+}
+
+async function loadOverview() {
+  try {
+    const { volumes, rails, queues, incidents } = await adb.tower.overview();
+
+    setStat('s-volume', volumes.tx_last_hour, '');
+    setStat('s-value', money.formatCompact(volumes.value_last_day_minor), '');
+    setStat('s-stuck', volumes.stuck, Number(volumes.stuck) > 0 ? 'alarm' : '');
+    setStat('s-held', volumes.held, Number(volumes.held) > 0 ? 'watch' : '');
+    setStat('s-queued', queues.outbox_queued, Number(queues.outbox_queued) > 25 ? 'watch' : '');
+    setStat('s-dead', queues.outbox_dead, Number(queues.outbox_dead) > 0 ? 'alarm' : '');
+
+    $('rails').innerHTML = (rails || []).map((r) => `
+      <div class="rail-row">
+        <i class="led ${esc(r.status)}"></i>
+        <span>${esc(label(r.component))}</span>
+        <span class="latency">${r.latency_ms != null ? r.latency_ms + 'ms' : '—'}</span>
+        <span class="small muted">${esc(r.detail || r.status)}</span>
+      </div>`).join('') || '<p class="small muted">No probes recorded yet. Re-probe the rails to populate this.</p>';
+
+    $('incidents').innerHTML = (incidents || []).length
+      ? `<table><thead><tr><th>Opened</th><th>Title</th><th>Severity</th><th></th></tr></thead><tbody>${
+        incidents.map((i) => `<tr>
+          <td>${new Date(i.opened_at).toLocaleString('en-GH')}</td>
+          <td>${esc(i.title)}</td>
+          <td><span class="tag ${i.severity === 'sev1' ? 'failed' : 'held'}">${esc(i.severity)}</span></td>
+          <td style="text-align:right"><button class="btn ghost sm" data-resolve="${i.id}">Resolve</button></td>
+        </tr>`).join('')}</tbody></table>`
+      : '<p class="small muted" style="margin:0">Nothing open. Rails are running clean.</p>';
+
+    $('incidents').querySelectorAll('[data-resolve]').forEach((b) => b.addEventListener('click', async () => {
+      b.disabled = true;
+      await adb.tower.resolveIncident(b.dataset.resolve).catch(() => {});
+      loadOverview();
+    }));
+  } catch (err) {
+    $('rails').innerHTML = `<div class="banner">${esc(err.message)}</div>`;
+  }
+}
+
+const LABELS = { mambu: 'Mambu core', mtn_momo: 'MTN MoMo', paystack: 'Paystack cards', ghipss_gip: 'GhIPSS GIP', identity: 'Identity checks' };
+const label = (k) => LABELS[k] || k;
+
+function setStat(id, value, tone) {
+  const el = $(id);
+  el.querySelector('b').textContent = value ?? '—';
+  el.className = 'card ' + (id.startsWith('s-q') || id === 's-dead' ? 'stat ' : 'stat ') + (tone || '');
+  if (!el.classList.contains('card')) el.classList.add('card');
+}
+
+async function loadChart() {
+  try {
+    const { buckets } = await adb.tower.throughput(Number($('window').value));
+    drawChart(buckets || []);
+  } catch { /* chart is not worth an error state */ }
+}
+$('window').addEventListener('change', loadChart);
+
+function drawChart(buckets) {
+  const svg = $('chart');
+  if (!buckets.length) {
+    svg.innerHTML = '<text x="350" y="78" text-anchor="middle" fill="#7E96A1" font-size="12">No payments in this window</text>';
+    return;
+  }
+  const W = 700, H = 150, pad = 4;
+  const max = Math.max(...buckets.map((b) => Number(b.total)), 1);
+  const barW = (W - pad * 2) / buckets.length;
+
+  svg.innerHTML = buckets.map((b, i) => {
+    const posted = Number(b.posted), failed = Number(b.failed);
+    const x = pad + i * barW;
+    const hp = (posted / max) * (H - 20);
+    const hf = (failed / max) * (H - 20);
+    return `
+      <rect x="${x.toFixed(1)}" y="${(H - hp - hf).toFixed(1)}" width="${Math.max(barW - 1.5, 1).toFixed(1)}" height="${hf.toFixed(1)}" fill="#E0736B"></rect>
+      <rect x="${x.toFixed(1)}" y="${(H - hp).toFixed(1)}" width="${Math.max(barW - 1.5, 1).toFixed(1)}" height="${hp.toFixed(1)}" fill="#35B3A1"></rect>`;
+  }).join('');
+}
+
+async function loadRecon() {
+  try {
+    const { breaks, clean } = await adb.tower.reconciliation();
+    $('reconState').textContent = clean ? 'balanced' : `${breaks.length} break${breaks.length === 1 ? '' : 's'}`;
+    $('reconState').className = 'tag ' + (clean ? '' : 'failed');
+    $('recon').innerHTML = clean
+      ? '<p class="small muted" style="margin:0">Every account balance matches its ledger.</p>'
+      : `<table><thead><tr><th>Account</th><th>Platform</th><th>Ledger</th><th>Variance</th><th>Last synced</th></tr></thead><tbody>${
+        breaks.map((b) => `<tr>
+          <td class="mono">${esc(b.account_number)}</td>
+          <td>${money.format(b.platform_minor)}</td>
+          <td>${money.format(b.ledger_minor)}</td>
+          <td style="color:var(--danger)">${money.format(b.variance_minor)}</td>
+          <td class="small muted">${b.synced_at ? new Date(b.synced_at).toLocaleString('en-GH') : 'never'}</td>
+        </tr>`).join('')}</tbody></table>`;
+  } catch (err) {
+    $('recon').innerHTML = `<div class="banner">${esc(err.message)}</div>`;
+  }
+}
+
+$('probeBtn').addEventListener('click', async (e) => {
+  e.target.disabled = true;
+  e.target.textContent = 'Probing…';
+  try { await adb.tower.healthCheck(); await loadOverview(); }
+  finally { e.target.disabled = false; e.target.textContent = 'Re-probe rails'; }
+});
+
+$('newIncident').addEventListener('click', async () => {
+  const title = prompt('What is happening?');
+  if (!title) return;
+  const severity = prompt('Severity: sev1, sev2 or sev3', 'sev2') || 'sev2';
+  try { await adb.tower.openIncident({ title, severity }); loadOverview(); }
+  catch (err) { alert(err.message); }
+});
+
+render();
+</script>
+</body>
+</html>

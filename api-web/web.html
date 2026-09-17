@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Web banking — AI Digital Bank</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;450;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/assets/css/adb.css" />
+<style>
+  .topbar { border-bottom: 1px solid var(--line); background: var(--paper); }
+  .topbar .shell { display: flex; align-items: center; justify-content: space-between; padding: 0.9rem 0; }
+  .brand { font-family: var(--display); font-weight: 600; letter-spacing: -0.02em; }
+  .brand span { color: var(--cedi); }
+
+  .auth-wrap { display: grid; place-items: center; padding: 4rem 0; }
+  .auth { width: min(420px, 100%); }
+
+  .layout { display: grid; grid-template-columns: 260px 1fr 340px; gap: 1.5rem; padding: 1.75rem 0 4rem; align-items: start; }
+
+  .accounts { list-style: none; margin: 0; padding: 0; }
+  .accounts li + li { margin-top: 0.5rem; }
+  .acct {
+    width: 100%; text-align: left; font: inherit; cursor: pointer;
+    background: var(--paper); border: 1px solid var(--line); border-left: 3px solid transparent;
+    border-radius: var(--r-control); padding: 0.8rem 0.9rem;
+  }
+  .acct[aria-current="true"] { border-left-color: var(--cedi); border-color: var(--line-strong); }
+  .acct .no { font-family: var(--mono); font-size: 0.8rem; color: var(--ink-3); }
+  .acct .bal { font-variant-numeric: tabular-nums; font-weight: 550; margin-top: 0.15rem; }
+
+  .balance { font-family: var(--display); font-size: clamp(2rem, 5vw, 2.9rem); font-variant-numeric: tabular-nums; letter-spacing: -0.03em; }
+  .balance-sub { display: flex; gap: 1.5rem; margin-top: 0.4rem; font-size: 0.88rem; color: var(--ink-3); }
+
+  .seg { display: flex; border: 1px solid var(--line-strong); border-radius: var(--r-control); overflow: hidden; }
+  .seg button { flex: 1; font: inherit; font-size: 0.88rem; padding: 0.45rem; background: transparent; border: 0; cursor: pointer; color: var(--ink-2); }
+  .seg button[aria-pressed="true"] { background: var(--cedi); color: #fff; }
+
+  @media (max-width: 1080px) { .layout { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="shell">
+    <a class="brand" href="/index.html" style="text-decoration:none;color:inherit">AI Digital <span>Bank</span></a>
+    <div class="row">
+      <span class="small muted" id="who"></span>
+      <button class="btn ghost sm hidden" id="signOut">Sign out</button>
+    </div>
+  </div>
+</header>
+
+<!-- signed out -->
+<section class="shell auth-wrap" id="authView">
+  <div class="card auth stack">
+    <h2>Sign in</h2>
+    <p class="small muted" style="margin:0">Use the phone number on your account.</p>
+    <div id="authError" class="banner hidden"></div>
+    <form id="loginForm">
+      <div class="field">
+        <label for="msisdn">Phone number</label>
+        <input id="msisdn" inputmode="tel" placeholder="+233201234567" autocomplete="username" required />
+        <div class="field-note">Ghanaian mobile number, starting +233.</div>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" type="password" autocomplete="current-password" required />
+      </div>
+      <button class="btn block" type="submit" style="margin-top:1.1rem" id="loginBtn">Sign in</button>
+    </form>
+    <p class="small muted" style="margin:0">New here? <a href="/app.html">Open an account in the app</a>.</p>
+  </div>
+</section>
+
+<!-- signed in -->
+<main class="shell layout hidden" id="bankView">
+  <aside class="stack">
+    <div>
+      <h3 style="margin-bottom:0.6rem">Accounts</h3>
+      <ul class="accounts" id="accountList"><li class="skeleton" style="height:64px"></li></ul>
+    </div>
+    <div class="card" id="kycCard">
+      <h3 style="margin-bottom:0.4rem">Verification</h3>
+      <div id="kycBody" class="small muted">Checking…</div>
+    </div>
+  </aside>
+
+  <section class="stack">
+    <div class="card">
+      <div class="spread" style="align-items:flex-start">
+        <div>
+          <div class="small muted">Available balance</div>
+          <div class="balance" id="balance">—</div>
+          <div class="balance-sub">
+            <span>Ledger <b class="num" id="ledgerBal">—</b></span>
+            <span>On hold <b class="num" id="heldBal">—</b></span>
+          </div>
+        </div>
+        <button class="btn ghost sm" id="syncBtn" title="Re-read this account from the core">Sync with core</button>
+      </div>
+    </div>
+
+    <div class="card flush">
+      <div class="card-head">
+        <h3>Transactions</h3>
+        <button class="btn quiet sm" id="statementBtn">Download statement</button>
+      </div>
+      <div id="txList"><div class="tx"><span class="skeleton grow"></span></div></div>
+      <div style="padding:0.9rem 1.25rem"><button class="btn ghost sm hidden" id="moreBtn">Show more</button></div>
+    </div>
+  </section>
+
+  <aside class="stack">
+    <div class="card stack">
+      <h3>Send money</h3>
+      <div class="seg" role="group" aria-label="Destination">
+        <button data-method="mobile_money" aria-pressed="true">Wallet</button>
+        <button data-method="bank" aria-pressed="false">Bank</button>
+        <button data-method="internal" aria-pressed="false">Internal</button>
+      </div>
+
+      <div id="sendError" class="banner hidden"></div>
+      <div id="sendOk" class="banner ok hidden"></div>
+
+      <form id="sendForm" class="stack" style="--gap:0.85rem">
+        <div class="field" data-for="mobile_money">
+          <label for="toMsisdn">Wallet number</label>
+          <input id="toMsisdn" inputmode="tel" placeholder="+233241234567" />
+        </div>
+
+        <div class="field hidden" data-for="bank">
+          <label for="bank">Bank</label>
+          <select id="bank"><option value="">Loading banks…</option></select>
+        </div>
+        <div class="field hidden" data-for="bank">
+          <label for="toAccount">Account number</label>
+          <input id="toAccount" inputmode="numeric" placeholder="1234567890123" />
+        </div>
+
+        <div class="field hidden" data-for="internal">
+          <label for="toInternal">AI Digital Bank account number</label>
+          <input id="toInternal" inputmode="numeric" placeholder="10 digits" />
+        </div>
+
+        <div class="field-note" id="nameCheck"></div>
+
+        <div class="field">
+          <label for="amount">Amount (GH₵)</label>
+          <input id="amount" inputmode="decimal" placeholder="0.00" required />
+        </div>
+        <div class="field">
+          <label for="narration">What is this for?</label>
+          <input id="narration" maxlength="100" placeholder="Rent, June" />
+        </div>
+        <button class="btn block" type="submit" id="sendBtn">Review and send</button>
+      </form>
+    </div>
+
+    <div class="card stack" style="--gap:0.6rem">
+      <h3>Top up</h3>
+      <p class="small muted" style="margin:0">Add money from a wallet or card. Opens a secure checkout.</p>
+      <div class="field"><input id="topupAmount" inputmode="decimal" placeholder="Amount in GH₵" /></div>
+      <div class="row">
+        <button class="btn ghost sm grow" data-topup="mobile_money">From wallet</button>
+        <button class="btn ghost sm grow" data-topup="card">From card</button>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<script src="/assets/js/adb-sdk.js"></script>
+<script>
+const adb = ADB.client();
+const { money, validate } = ADB;
+const $ = (id) => document.getElementById(id);
+
+let accounts = [];
+let current = null;
+let cursor = null;
+let method = 'mobile_money';
+let enquiry = null; // GIP session, carried from name enquiry to the transfer
+
+const show = (el, on) => el.classList.toggle('hidden', !on);
+function notify(el, msg, kind) {
+  el.textContent = msg;
+  el.className = 'banner' + (kind ? ' ' + kind : '');
+  show(el, Boolean(msg));
+}
+
+adb.onEvent((event) => { if (event === 'signed-out') render(); });
+
+// ---------- auth ----------
+$('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msisdn = $('msisdn').value.trim();
+  if (!validate.msisdn(msisdn)) return notify($('authError'), 'That is not a Ghanaian mobile number. Use +233 and nine digits.');
+  $('loginBtn').disabled = true;
+  try {
+    await adb.login(msisdn, $('password').value);
+    notify($('authError'), '');
+    render();
+  } catch (err) {
+    notify($('authError'), err.message);
+  } finally {
+    $('loginBtn').disabled = false;
+  }
+});
+
+$('signOut').addEventListener('click', () => { adb.signOut(); render(); });
+
+function render() {
+  const inSession = adb.isSignedIn();
+  show($('authView'), !inSession);
+  show($('bankView'), inSession);
+  show($('signOut'), inSession);
+  const subject = adb.session()?.subject;
+  $('who').textContent = inSession && subject ? `${subject.firstName || subject.name || ''} ${subject.lastName || ''}`.trim() : '';
+  if (inSession) boot();
+}
+
+// ---------- data ----------
+async function boot() {
+  try {
+    const { accounts: list } = await adb.accounts();
+    accounts = list || [];
+    drawAccounts();
+    if (accounts.length) select(accounts[0].id);
+    loadKyc();
+    loadBanks();
+  } catch (err) {
+    notify($('authError'), err.message);
+  }
+}
+
+function drawAccounts() {
+  const ul = $('accountList');
+  if (!accounts.length) {
+    ul.innerHTML = '<li class="small muted">No accounts yet. Finish verification to open one.</li>';
+    return;
+  }
+  ul.innerHTML = accounts.map((a) => `
+    <li>
+      <button class="acct" data-id="${a.id}" aria-current="${a.id === current?.id}">
+        <div>${a.productName || 'Current account'}</div>
+        <div class="no">${a.accountNumber}</div>
+        <div class="bal">${money.format(a.availableMinor ?? a.balanceMinor, a.currency)}</div>
+      </button>
+    </li>`).join('');
+  ul.querySelectorAll('.acct').forEach((b) => b.addEventListener('click', () => select(b.dataset.id)));
+}
+
+async function select(id) {
+  current = accounts.find((a) => a.id === id) || current;
+  cursor = null;
+  drawAccounts();
+  $('balance').textContent = money.format(current.availableMinor ?? current.balanceMinor, current.currency);
+  $('ledgerBal').textContent = money.format(current.balanceMinor, current.currency);
+  $('heldBal').textContent = money.format((current.balanceMinor || 0) - (current.availableMinor ?? current.balanceMinor), current.currency);
+  loadTransactions(true);
+}
+
+async function loadTransactions(reset) {
+  const list = $('txList');
+  if (reset) list.innerHTML = '<div class="tx"><span class="skeleton grow"></span></div>';
+  try {
+    const out = await adb.transactions(current.id, { limit: 20, cursor });
+    const rows = out.transactions || [];
+    cursor = out.nextCursor || null;
+    show($('moreBtn'), Boolean(cursor));
+    const html = rows.map(txRow).join('');
+    if (reset) list.innerHTML = html || '<div class="tx small muted">Nothing here yet. Your first payment will show up in this list.</div>';
+    else list.insertAdjacentHTML('beforeend', html);
+  } catch (err) {
+    list.innerHTML = `<div class="tx small" style="color:var(--danger)">${err.message}</div>`;
+  }
+}
+
+function txRow(t) {
+  const credit = t.direction === 'credit';
+  const state = String(t.status || '').toLowerCase();
+  const stateTag = state === 'posted' ? '' : `<span class="tag ${state}">${state}</span>`;
+  return `
+    <div class="tx">
+      <span class="tx-mark ${credit ? '' : 'out'}">${credit ? '↙' : '↗'}</span>
+      <div class="tx-body">
+        <div class="tx-title">${t.narration || t.counterpartyName || (credit ? 'Money in' : 'Money out')}</div>
+        <div class="tx-meta mono">${t.reference} · ${new Date(t.createdAt).toLocaleString('en-GH', { dateStyle: 'medium', timeStyle: 'short' })}</div>
+      </div>
+      <div class="row" style="gap:0.5rem">
+        ${stateTag}
+        <span class="tx-amt ${credit ? 'in' : ''}">${credit ? '+' : '−'}${money.format(t.amountMinor, t.currency)}</span>
+      </div>
+    </div>`;
+}
+
+$('moreBtn').addEventListener('click', () => loadTransactions(false));
+
+$('syncBtn').addEventListener('click', async (e) => {
+  e.target.disabled = true;
+  try {
+    const out = await adb.syncAccount(current.id);
+    Object.assign(current, out.account || {});
+    accounts = accounts.map((a) => (a.id === current.id ? current : a));
+    select(current.id);
+  } catch (err) {
+    notify($('sendError'), err.message);
+  } finally {
+    e.target.disabled = false;
+  }
+});
+
+$('statementBtn').addEventListener('click', async () => {
+  try {
+    const out = await adb.statement(current.id);
+    const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `statement-${current.accountNumber}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch (err) { notify($('sendError'), err.message); }
+});
+
+async function loadKyc() {
+  try {
+    const { status, level, nextStep } = await adb.kycStatus();
+    const done = status === 'verified' || status === 'approved';
+    $('kycBody').innerHTML = done
+      ? `<span class="tag">Verified</span><div class="small muted" style="margin-top:0.5rem">Tier ${level || 2}. Full limits.</div>`
+      : `<span class="tag held">${status || 'pending'}</span><div class="small muted" style="margin-top:0.5rem">${nextStep || 'Add your Ghana Card in the app to lift your limits.'}</div>`;
+  } catch {
+    $('kycBody').textContent = 'Verification status is unavailable right now.';
+  }
+}
+
+// ---------- send money ----------
+document.querySelectorAll('.seg button').forEach((b) => b.addEventListener('click', () => {
+  method = b.dataset.method;
+  enquiry = null;
+  $('nameCheck').textContent = '';
+  document.querySelectorAll('.seg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  document.querySelectorAll('[data-for]').forEach((f) => show(f, f.dataset.for === method));
+}));
+
+async function loadBanks() {
+  try {
+    const { banks } = await adb.banks();
+    $('bank').innerHTML = '<option value="">Choose a bank</option>' +
+      (banks || []).map((b) => `<option value="${b.code}">${b.name}</option>`).join('');
+  } catch {
+    $('bank').innerHTML = '<option value="">Bank list unavailable</option>';
+  }
+}
+
+// Name enquiry before the send — GIP requires it, and it saves misdirected money.
+async function checkName() {
+  const note = $('nameCheck');
+  try {
+    if (method === 'bank') {
+      const accountNumber = $('toAccount').value.trim();
+      const bankCode = $('bank').value;
+      if (!accountNumber || !bankCode) return;
+      note.textContent = 'Checking the account…';
+      note.className = 'field-note';
+      const out = await adb.nameEnquiry({ method: 'bank', accountNumber, bankCode });
+      enquiry = out.enquiry || null;
+      note.textContent = `Sending to ${out.name}`;
+    } else if (method === 'mobile_money') {
+      const msisdn = $('toMsisdn').value.trim();
+      if (!validate.msisdn(msisdn)) return;
+      note.textContent = 'Checking the wallet…';
+      const out = await adb.nameEnquiry({ method: 'mobile_money', msisdn });
+      note.textContent = `Sending to ${out.name}`;
+    } else {
+      const accountNumber = $('toInternal').value.trim();
+      if (!validate.accountNumber(accountNumber)) return;
+      const out = await adb.resolveInternal(accountNumber);
+      note.textContent = `Sending to ${out.name || out.accountName}`;
+    }
+  } catch (err) {
+    enquiry = null;
+    note.textContent = err.message;
+    note.className = 'field-note bad';
+  }
+}
+['toAccount', 'toMsisdn', 'toInternal'].forEach((id) => $(id).addEventListener('blur', checkName));
+$('bank').addEventListener('change', checkName);
+
+$('sendForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  notify($('sendError'), '');
+  notify($('sendOk'), '');
+
+  const amountMinor = money.toMinor($('amount').value);
+  if (!amountMinor || amountMinor < 100) return notify($('sendError'), 'Enter an amount of GH₵1.00 or more.');
+
+  const narration = $('narration').value.trim();
+  $('sendBtn').disabled = true;
+  $('sendBtn').textContent = 'Sending…';
+
+  try {
+    let out;
+    if (method === 'internal') {
+      out = await adb.transfer({
+        fromAccountId: current.id,
+        toAccountNumber: $('toInternal').value.trim(),
+        amountMinor, narration
+      });
+    } else {
+      const destination = method === 'mobile_money'
+        ? { msisdn: $('toMsisdn').value.trim() }
+        : { accountNumber: $('toAccount').value.trim(), bankCode: $('bank').value, enquiry };
+      out = await adb.payout({ accountId: current.id, amountMinor, method, destination, narration });
+    }
+
+    const tx = out.transaction || out;
+    if (tx.status === 'held' || tx.status === 'in_review') {
+      notify($('sendOk'), 'Held for a quick check. We will let you know within 30 minutes — the money is still yours.', 'warn');
+    } else if (tx.reference && tx.status !== 'posted') {
+      notify($('sendOk'), 'On its way. Tracking…', 'ok');
+      const settled = await adb.awaitSettlement(tx.reference);
+      notify($('sendOk'), settled.status === 'posted' ? 'Sent.' : `Payment ${settled.status}.`,
+        settled.status === 'posted' ? 'ok' : 'warn');
+    } else {
+      notify($('sendOk'), 'Sent.', 'ok');
+    }
+    $('sendForm').reset();
+    enquiry = null;
+    boot();
+  } catch (err) {
+    notify($('sendError'), err.message);
+  } finally {
+    $('sendBtn').disabled = false;
+    $('sendBtn').textContent = 'Review and send';
+  }
+});
+
+// ---------- top up ----------
+document.querySelectorAll('[data-topup]').forEach((b) => b.addEventListener('click', async () => {
+  const amountMinor = money.toMinor($('topupAmount').value);
+  if (!amountMinor) return notify($('sendError'), 'Enter how much you want to add.');
+  try {
+    const out = await adb.deposit({ accountId: current.id, amountMinor, method: b.dataset.topup });
+    if (out.authorizationUrl) window.location.href = out.authorizationUrl;
+    else notify($('sendOk'), 'Approve the prompt on your phone to finish the top up.', 'ok');
+  } catch (err) {
+    notify($('sendError'), err.message);
+  }
+}));
+
+render();
+</script>
+</body>
+</html>

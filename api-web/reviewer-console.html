@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Reviewer console — AI Digital Bank</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;450;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/assets/css/adb.css" />
+<style>
+  body { background: #E6E9E4; }
+  .bar { background: var(--ink); color: #fff; padding: 0.7rem 1.2rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .bar .name { font-family: var(--display); font-weight: 600; }
+  .metrics { display: flex; gap: 1.6rem; font-size: 0.82rem; color: rgba(255,255,255,0.7); }
+  .metrics b { display: block; font-size: 1.15rem; color: #fff; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .metrics .bad b { color: #F0A5A0; }
+
+  .console { display: grid; grid-template-columns: 380px 1fr; height: calc(100vh - 53px); }
+  .queue { border-right: 1px solid var(--line-strong); overflow-y: auto; background: var(--paper); }
+  .filters { position: sticky; top: 0; background: var(--paper); border-bottom: 1px solid var(--line); padding: 0.6rem 0.8rem; display: flex; gap: 0.4rem; z-index: 2; }
+  .filters button { font: inherit; font-size: 0.8rem; padding: 0.3rem 0.65rem; border-radius: var(--r-pill); border: 1px solid var(--line-strong); background: transparent; cursor: pointer; }
+  .filters button[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  .case-row { width: 100%; text-align: left; font: inherit; cursor: pointer; background: transparent; border: 0; border-bottom: 1px solid var(--line); border-left: 3px solid transparent; padding: 0.8rem 0.9rem; display: block; }
+  .case-row:hover { background: rgba(19,35,43,0.035); }
+  .case-row[aria-current="true"] { background: var(--cedi-wash); border-left-color: var(--cedi); }
+  .case-row.breached { border-left-color: var(--danger); }
+  .case-row .line1 { display: flex; justify-content: space-between; gap: 0.5rem; align-items: baseline; }
+  .case-row .who { font-weight: 550; }
+  .case-row .amt { font-variant-numeric: tabular-nums; }
+  .case-row .line2 { font-size: 0.8rem; color: var(--ink-3); display: flex; justify-content: space-between; margin-top: 0.15rem; }
+
+  .detail { overflow-y: auto; padding: 1.5rem; }
+  .detail-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 1.2rem; align-items: start; }
+  .kv { display: grid; grid-template-columns: 150px 1fr; gap: 0.45rem 1rem; font-size: 0.92rem; }
+  .kv dt { color: var(--ink-3); margin: 0; }
+  .kv dd { margin: 0; }
+
+  .score { display: flex; align-items: baseline; gap: 0.6rem; }
+  .score b { font-family: var(--display); font-size: 2.6rem; font-variant-numeric: tabular-nums; }
+  .gauge { height: 6px; border-radius: 3px; background: rgba(19,35,43,0.1); overflow: hidden; margin-top: 0.5rem; }
+  .gauge i { display: block; height: 100%; background: var(--cedi); }
+  .gauge i.mid { background: var(--brass); }
+  .gauge i.high { background: var(--danger); }
+
+  .reasons { list-style: none; margin: 0.9rem 0 0; padding: 0; font-size: 0.9rem; }
+  .reasons li { padding: 0.4rem 0; border-bottom: 1px dashed var(--line); display: flex; justify-content: space-between; gap: 1rem; }
+
+  .decide { position: sticky; bottom: 0; background: var(--paper); border-top: 1px solid var(--line-strong); padding: 0.9rem 1.5rem; margin: 1.5rem -1.5rem -1.5rem; display: flex; gap: 0.6rem; align-items: center; }
+  kbd { font-family: var(--mono); font-size: 0.72rem; background: rgba(19,35,43,0.08); border-radius: 4px; padding: 0.05rem 0.3rem; }
+
+  .empty { display: grid; place-items: center; height: 100%; text-align: center; color: var(--ink-3); }
+  @media (max-width: 900px) { .console { grid-template-columns: 1fr; height: auto; } .detail-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="name">Reviewer console</div>
+  <div class="metrics" id="metrics"></div>
+  <div class="row">
+    <span class="small" id="staffName" style="color:rgba(255,255,255,.7)"></span>
+    <button class="btn ghost sm hidden" id="signOut" style="color:#fff;border-color:rgba(255,255,255,.3)">Sign out</button>
+  </div>
+</div>
+
+<section class="shell" id="authView" style="padding:4rem 0;max-width:420px">
+  <div class="card stack">
+    <h2>Staff sign in</h2>
+    <div id="authError" class="banner hidden"></div>
+    <form id="loginForm">
+      <div class="field"><label for="email">Work email</label><input id="email" type="email" autocomplete="username" required /></div>
+      <div class="field"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required /></div>
+      <button class="btn block" type="submit" style="margin-top:1rem">Sign in</button>
+    </form>
+  </div>
+</section>
+
+<main class="console hidden" id="consoleView">
+  <aside class="queue">
+    <div class="filters">
+      <button data-filter="open" aria-pressed="true">Open</button>
+      <button data-filter="mine" aria-pressed="false">Mine</button>
+      <button data-filter="kyc" aria-pressed="false">KYC</button>
+      <button data-filter="transaction" aria-pressed="false">Payments</button>
+    </div>
+    <div id="queue"></div>
+  </aside>
+
+  <section class="detail" id="detail">
+    <div class="empty"><div>
+      <p>Pick a case from the queue.</p>
+      <p class="small">Keys: <kbd>J</kbd> <kbd>K</kbd> to move, <kbd>A</kbd> approve, <kbd>R</kbd> reject, <kbd>E</kbd> escalate.</p>
+    </div></div>
+  </section>
+</main>
+
+<script src="/assets/js/adb-sdk.js"></script>
+<script>
+const adb = ADB.client();
+const { money } = ADB;
+const $ = (id) => document.getElementById(id);
+const show = (el, on) => el.classList.toggle('hidden', !on);
+const esc = (s) => String(s ?? '').replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
+
+let cases = [], activeId = null, filter = 'open', stopPoll = null;
+
+adb.onEvent((e) => { if (e === 'signed-out') render(); });
+
+$('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    await adb.staffLogin($('email').value.trim(), $('password').value);
+    show($('authError'), false);
+    render();
+  } catch (err) {
+    $('authError').textContent = err.message;
+    show($('authError'), true);
+  }
+});
+$('signOut').addEventListener('click', () => { adb.signOut(); render(); });
+
+function render() {
+  const inSession = adb.isSignedIn();
+  show($('authView'), !inSession);
+  show($('consoleView'), inSession);
+  show($('signOut'), inSession);
+  $('staffName').textContent = adb.session()?.subject?.fullName || '';
+  if (stopPoll) { stopPoll(); stopPoll = null; }
+  if (inSession) {
+    loadQueue();
+    loadMetrics();
+    stopPoll = adb.poll(() => { loadQueue({ quiet: true }); loadMetrics(); }, 20000);
+  }
+}
+
+document.querySelectorAll('.filters button').forEach((b) => b.addEventListener('click', () => {
+  filter = b.dataset.filter;
+  document.querySelectorAll('.filters button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  loadQueue();
+}));
+
+function filterParams() {
+  if (filter === 'mine') return { mine: true };
+  if (filter === 'kyc') return { caseType: 'kyc', status: 'open' };
+  if (filter === 'transaction') return { caseType: 'transaction', status: 'open' };
+  return { status: 'open' };
+}
+
+async function loadQueue({ quiet } = {}) {
+  if (!quiet) $('queue').innerHTML = '<div style="padding:0.9rem"><span class="skeleton" style="display:block;height:44px"></span></div>';
+  try {
+    const out = await adb.reviewer.cases(filterParams());
+    cases = out.cases || [];
+    drawQueue();
+  } catch (err) {
+    $('queue').innerHTML = `<div style="padding:1rem" class="small">${esc(err.message)}</div>`;
+  }
+}
+
+function drawQueue() {
+  if (!cases.length) {
+    $('queue').innerHTML = '<div style="padding:1.5rem" class="small muted">Queue is clear. Nothing is waiting on a decision.</div>';
+    return;
+  }
+  $('queue').innerHTML = cases.map((c) => `
+    <button class="case-row ${c.breached ? 'breached' : ''}" data-id="${c.id}" aria-current="${c.id === activeId}">
+      <div class="line1">
+        <span class="who">${esc(c.customer_name || 'Unknown customer')}</span>
+        <span class="amt">${c.amount_minor ? money.format(c.amount_minor, c.currency) : ''}</span>
+      </div>
+      <div class="line2">
+        <span>${esc(c.case_type)} · risk ${c.risk_score ?? '—'}</span>
+        <span>${c.breached ? 'SLA breached' : dueIn(c.sla_due_at)}</span>
+      </div>
+    </button>`).join('');
+  $('queue').querySelectorAll('.case-row').forEach((b) => b.addEventListener('click', () => openCase(b.dataset.id)));
+}
+
+function dueIn(due) {
+  if (!due) return '';
+  const mins = Math.round((new Date(due) - Date.now()) / 60000);
+  return mins <= 0 ? 'due now' : `${mins}m left`;
+}
+
+async function loadMetrics() {
+  try {
+    const { metrics: m } = await adb.reviewer.metrics();
+    $('metrics').innerHTML = `
+      <div><b>${m.queue_depth}</b>in queue</div>
+      <div class="${Number(m.sla_breached) ? 'bad' : ''}"><b>${m.sla_breached}</b>past SLA</div>
+      <div><b>${m.decided_today}</b>decided today</div>
+      <div><b>${Math.round(Number(m.avg_handle_seconds) / 60)}m</b>average handling</div>`;
+  } catch { /* the bar is not worth an error state */ }
+}
+
+async function openCase(id) {
+  activeId = id;
+  drawQueue();
+  $('detail').innerHTML = '<span class="skeleton" style="display:block;height:200px"></span>';
+  try {
+    const { case: c, events, recentActivity } = await adb.reviewer.case(id);
+    drawCase(c, events || [], recentActivity || []);
+  } catch (err) {
+    $('detail').innerHTML = `<div class="banner">${esc(err.message)}</div>`;
+  }
+}
+
+function drawCase(c, events, activity) {
+  const rationale = c.model_rationale || {};
+  const reasons = rationale.reasons || [];
+  const score = Number(c.risk_score || 0);
+  const band = score >= 85 ? 'high' : score >= 55 ? 'mid' : '';
+
+  $('detail').innerHTML = `
+    <div class="spread" style="margin-bottom:1.2rem">
+      <div>
+        <h2>${esc(c.customer_name || 'Unknown customer')}</h2>
+        <div class="small muted mono">${esc(c.case_number)} · ${esc(c.case_type)}</div>
+      </div>
+      <div class="row">
+        <span class="tag ${c.breached ? 'failed' : 'neutral'}">${c.breached ? 'SLA breached' : dueIn(c.sla_due_at)}</span>
+        <span class="tag neutral">${esc(c.status)}</span>
+      </div>
+    </div>
+
+    <div class="detail-grid">
+      <div class="stack">
+        <div class="card">
+          <h3>Why this stopped</h3>
+          <p class="small muted" style="margin:0.3rem 0 0">${esc(c.summary || 'No summary recorded.')}</p>
+          <ul class="reasons">
+            ${reasons.length ? reasons.map((r) => `<li><span>${esc(r.label || r)}</span><span class="mono small">${esc(r.weight ?? '')}</span></li>`).join('')
+              : '<li class="muted">The model returned no reason codes. Rules held this case.</li>'}
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>Customer</h3>
+          <dl class="kv" style="margin-top:0.7rem">
+            <dt>Phone</dt><dd class="mono">${esc(c.msisdn || '—')}</dd>
+            <dt>Verification</dt><dd>${esc(c.kyc_status || '—')}</dd>
+            <dt>Reference</dt><dd class="mono">${esc(c.reference || '—')}</dd>
+            <dt>Amount</dt><dd>${c.amount_minor ? money.format(c.amount_minor, c.currency) : '—'}</dd>
+            <dt>Counterparty</dt><dd>${esc(typeof c.counterparty === 'object' ? JSON.stringify(c.counterparty) : c.counterparty || '—')}</dd>
+            <dt>Opened</dt><dd>${new Date(c.created_at).toLocaleString('en-GH')}</dd>
+          </dl>
+        </div>
+
+        <div class="card">
+          <h3>Recent activity on this account</h3>
+          ${activity.length ? `<div style="margin:0.6rem -1.25rem -1.25rem">${activity.map((t) => `
+            <div class="tx">
+              <div class="tx-body">
+                <div class="tx-title">${esc(t.narration || t.kind || 'Transaction')}</div>
+                <div class="tx-meta mono">${esc(t.reference)} · ${new Date(t.created_at).toLocaleString('en-GH')}</div>
+              </div>
+              <span class="tag neutral">${esc(t.status)}</span>
+              <span class="tx-amt">${money.format(t.amount_minor, t.currency)}</span>
+            </div>`).join('')}</div>` : '<p class="small muted" style="margin:0.5rem 0 0">No other activity in the window.</p>'}
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="card">
+          <h3>Risk score</h3>
+          <div class="score" style="margin-top:0.4rem">
+            <b>${score}</b><span class="small muted">of 100 · ${esc(rationale.model || 'rules')}</span>
+          </div>
+          <div class="gauge"><i class="${band}" style="width:${Math.min(score, 100)}%"></i></div>
+          <p class="small muted" style="margin:0.8rem 0 0">Above 85 declines automatically. 55 and over holds the money and opens a case like this one.</p>
+        </div>
+
+        <div class="card">
+          <h3>Case history</h3>
+          <ul class="reasons">
+            ${events.length ? events.map((e) => `<li><span>${esc(e.action)}</span><span class="small muted">${new Date(e.created_at).toLocaleTimeString('en-GH')}</span></li>`).join('')
+              : '<li class="muted">Nothing logged yet.</li>'}
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="decide">
+      <input id="note" placeholder="Note for the audit trail" style="flex:1" />
+      <button class="btn" data-decide="approve">Approve <kbd>A</kbd></button>
+      <button class="btn danger" data-decide="reject">Reject <kbd>R</kbd></button>
+      <button class="btn ghost" data-decide="escalate">Escalate <kbd>E</kbd></button>
+    </div>`;
+
+  $('detail').querySelectorAll('[data-decide]').forEach((b) => b.addEventListener('click', () => decide(b.dataset.decide)));
+  adb.reviewer.claim(c.id).catch(() => { /* already mine, or someone beat me to it */ });
+}
+
+async function decide(decision) {
+  if (!activeId) return;
+  const note = $('note')?.value.trim();
+  if (decision === 'reject' && !note) {
+    $('note').focus();
+    $('note').placeholder = 'A rejection needs a reason on the record';
+    return;
+  }
+  document.querySelectorAll('[data-decide]').forEach((b) => (b.disabled = true));
+  try {
+    await adb.reviewer.decide(activeId, decision, note);
+    const next = cases[cases.findIndex((c) => c.id === activeId) + 1];
+    activeId = null;
+    await loadQueue();
+    loadMetrics();
+    if (next) openCase(next.id);
+    else $('detail').innerHTML = '<div class="empty"><p>Queue is clear.</p></div>';
+  } catch (err) {
+    document.querySelectorAll('[data-decide]').forEach((b) => (b.disabled = false));
+    $('detail').insertAdjacentHTML('afterbegin', `<div class="banner" style="margin-bottom:1rem">${esc(err.message)}</div>`);
+  }
+}
+
+// Keyboard first: reviewers work this queue all day.
+document.addEventListener('keydown', (e) => {
+  if (!adb.isSignedIn() || /input|textarea/i.test(e.target.tagName)) return;
+  const i = cases.findIndex((c) => c.id === activeId);
+  if (e.key === 'j' && cases[i + 1]) openCase(cases[i + 1].id);
+  if (e.key === 'k' && i > 0) openCase(cases[i - 1].id);
+  if (!activeId) return;
+  if (e.key === 'a') decide('approve');
+  if (e.key === 'r') decide('reject');
+  if (e.key === 'e') decide('escalate');
+});
+
+render();
+</script>
+</body>
+</html>

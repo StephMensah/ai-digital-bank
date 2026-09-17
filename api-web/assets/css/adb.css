@@ -1,0 +1,190 @@
+/* AI Digital Bank — shared design system
+   Surface: cement. Action: cedi teal. Brass is reserved for held money. */
+
+:root {
+  --ink: #13232B;
+  --ink-2: #3A5060;
+  --ink-3: #6B8190;
+  --cedi: #0E6E63;
+  --cedi-lift: #12897B;
+  --cedi-wash: #E2EEEB;
+  --brass: #A87715;
+  --brass-wash: #F6EDD9;
+  --danger: #A32F2B;
+  --danger-wash: #F7E4E2;
+  --cement: #EDEFEA;
+  --paper: #FFFFFF;
+  --line: rgba(19, 35, 43, 0.13);
+  --line-strong: rgba(19, 35, 43, 0.28);
+
+  --shell: 1180px;
+  --r-card: 14px;
+  --r-control: 8px;
+  --r-pill: 999px;
+
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --display: "Bricolage Grotesque", var(--sans);
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--cement);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.55;
+  font-feature-settings: "tnum" 0;
+}
+
+h1, h2, h3 {
+  font-family: var(--display);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+h1 { font-size: clamp(2.3rem, 5.5vw, 3.9rem); }
+h2 { font-size: clamp(1.5rem, 3vw, 2.1rem); }
+h3 { font-size: 1.12rem; letter-spacing: -0.01em; }
+p { margin: 0 0 1rem; max-width: 66ch; }
+a { color: var(--cedi); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+
+:focus-visible {
+  outline: 2px solid var(--cedi);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.shell { width: min(var(--shell), calc(100% - 3rem)); margin-inline: auto; }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--ink-3); }
+.small { font-size: 0.86rem; }
+.stack > * + * { margin-top: var(--gap, 1rem); }
+.row { display: flex; align-items: center; gap: 0.75rem; }
+.spread { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.grow { flex: 1; }
+.hidden { display: none !important; }
+
+/* ---------- controls ---------- */
+.btn {
+  font: inherit;
+  font-weight: 550;
+  border: 1px solid transparent;
+  border-radius: var(--r-control);
+  padding: 0.62rem 1.1rem;
+  background: var(--cedi);
+  color: #fff;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.btn:hover { background: var(--cedi-lift); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line-strong); }
+.btn.ghost:hover { background: rgba(19, 35, 43, 0.05); }
+.btn.quiet { background: transparent; color: var(--cedi); padding-inline: 0.4rem; }
+.btn.danger { background: var(--danger); }
+.btn.danger:hover { background: #8d2521; }
+.btn.block { width: 100%; }
+.btn.sm { padding: 0.4rem 0.7rem; font-size: 0.88rem; }
+
+label { display: block; font-size: 0.88rem; color: var(--ink-2); margin-bottom: 0.3rem; }
+input, select, textarea {
+  font: inherit;
+  width: 100%;
+  padding: 0.62rem 0.75rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-control);
+  background: var(--paper);
+  color: var(--ink);
+}
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--cedi); outline-offset: -1px; border-color: transparent; }
+.field + .field { margin-top: 0.85rem; }
+.field-note { font-size: 0.82rem; color: var(--ink-3); margin-top: 0.3rem; }
+.field-note.bad { color: var(--danger); }
+
+/* ---------- surfaces ---------- */
+.card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  padding: 1.25rem;
+}
+.card.flush { padding: 0; overflow: hidden; }
+.card-head {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+}
+
+.tag {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  font-size: 0.78rem; font-weight: 550;
+  padding: 0.18rem 0.55rem;
+  border-radius: var(--r-pill);
+  background: var(--cedi-wash); color: var(--cedi);
+}
+.tag.held, .tag.processing, .tag.pending { background: var(--brass-wash); color: var(--brass); }
+.tag.failed, .tag.declined, .tag.reversed { background: var(--danger-wash); color: var(--danger); }
+.tag.neutral { background: rgba(19, 35, 43, 0.07); color: var(--ink-2); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+/* ---------- transactions ---------- */
+.tx { display: flex; align-items: center; gap: 0.9rem; padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--line); }
+.tx:last-child { border-bottom: 0; }
+.tx-mark {
+  width: 34px; height: 34px; flex: none;
+  border-radius: 10px;
+  display: grid; place-items: center;
+  background: var(--cedi-wash); color: var(--cedi);
+  font-size: 0.95rem;
+}
+.tx-mark.out { background: rgba(19, 35, 43, 0.06); color: var(--ink-2); }
+.tx-body { flex: 1; min-width: 0; }
+.tx-title { font-weight: 520; }
+.tx-meta { font-size: 0.82rem; color: var(--ink-3); }
+.tx-amt { font-variant-numeric: tabular-nums; font-weight: 550; white-space: nowrap; }
+.tx-amt.in { color: var(--cedi); }
+
+/* ---------- staff surfaces (dark) ---------- */
+.dark {
+  --line: rgba(255, 255, 255, 0.12);
+  --line-strong: rgba(255, 255, 255, 0.24);
+  --paper: #1B2F38;
+  --ink: #E8EEF0;
+  --ink-2: #A9BDC6;
+  --ink-3: #7E96A1;
+  --cedi-wash: rgba(18, 137, 123, 0.18);
+  --brass-wash: rgba(201, 150, 44, 0.16);
+  --brass: #D9A63F;
+  --danger-wash: rgba(200, 70, 62, 0.18);
+  --danger: #E0736B;
+  --cedi: #35B3A1;
+  --cedi-lift: #47C7B4;
+  background: #13232B;
+  color: var(--ink);
+}
+.dark input, .dark select, .dark textarea { background: #16272F; color: var(--ink); }
+.dark .btn.ghost:hover { background: rgba(255, 255, 255, 0.07); }
+
+/* ---------- banner ---------- */
+.banner {
+  padding: 0.7rem 1rem; border-radius: var(--r-control);
+  background: var(--danger-wash); color: var(--danger);
+  font-size: 0.9rem; border: 1px solid currentColor;
+}
+.banner.ok { background: var(--cedi-wash); color: var(--cedi); }
+.banner.warn { background: var(--brass-wash); color: var(--brass); }
+
+/* ---------- skeleton ---------- */
+.skeleton { background: rgba(19, 35, 43, 0.08); border-radius: 6px; height: 1em; animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
