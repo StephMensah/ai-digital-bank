@@ -137,7 +137,7 @@ def _verify_pin(pin: str, pin_hash: str, salt_hex: str) -> bool:
 
 # Where the customer-facing pages actually live. Set BANKING_URL to the custom
 # domain once it is pointed at the Node service.
-BANKING_URL = os.environ.get("BANKING_URL", "https://pokzbank.com")
+BANKING_URL = os.environ.get("BANKING_URL", "https://pokzbank.org")
 
 class Store:
     """Everything the three products share, behind one lock. self.cases/audit/resolved are
