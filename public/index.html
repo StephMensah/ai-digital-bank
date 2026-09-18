@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="adb-app-url" content="https://pokztechnologies.org">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#0E2A47">
 <title>AI-Digital Bank</title>
@@ -448,60 +449,83 @@ a{color:inherit}
 .hero .btn.quiet:hover{background:rgba(255,255,255,.16)}
 .hero .reassure{margin-top:18px;font-size:12.5px;color:rgba(255,255,255,.55);position:relative}
 
-/* --------------------------------------- the walkthrough: login, then the account */
-.demo{display:flex;flex-direction:column;align-items:center;gap:14px}
-.phone{position:relative;width:min(272px,78%);aspect-ratio:9/17.4;background:#fff;border-radius:30px;
+/* ------------------------------------------------------------- the walkthrough
+   Two journeys, end to end: opening an account through verification to the
+   landing page, then logging back in to the same place. */
+.demo{display:flex;flex-direction:column;align-items:center;gap:13px}
+.phone{position:relative;width:min(276px,80%);aspect-ratio:9/17.6;background:#fff;border-radius:32px;
   border:9px solid #0A1E33;box-shadow:0 26px 60px rgba(4,18,32,.45);overflow:hidden;
   animation:float 16s ease-in-out infinite}
 .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:84px;height:18px;
-  background:#0A1E33;border-radius:0 0 12px 12px;z-index:4}
-.pane{position:absolute;inset:0;padding:34px 18px 16px;background:#fff;opacity:0;
-  display:flex;flex-direction:column}
-#dLogin{animation:paneA 16s ease-in-out infinite}
-#dHome{animation:paneB 16s ease-in-out infinite}
-@keyframes paneA{0%{opacity:0;transform:translateX(-8%)}4%,44%{opacity:1;transform:none}
-  50%,96%{opacity:0;transform:translateX(-8%)}100%{opacity:0}}
-@keyframes paneB{0%,46%{opacity:0;transform:translateX(8%)}52%,92%{opacity:1;transform:none}
-  98%,100%{opacity:0;transform:translateX(8%)}}
+  background:#0A1E33;border-radius:0 0 12px 12px;z-index:6}
+.pane{position:absolute;inset:0;background:#fff;opacity:0;transform:translateX(7%);
+  transition:opacity .5s var(--ease),transform .5s var(--ease);display:flex;flex-direction:column;
+  padding:32px 16px 14px;overflow:hidden}
+.pane.on{opacity:1;transform:none}
+.pane.out{opacity:0;transform:translateX(-7%)}
 
-.pbrand{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--grey);
-  margin-bottom:16px}
-.ph2{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;color:var(--ink)}
-.psub{font-size:11px;color:var(--slate);margin:3px 0 16px}
-.pfield{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:9px;min-height:40px}
-.pfield i{display:block;font-style:normal;font-size:9px;letter-spacing:.05em;text-transform:uppercase;
+/* forms */
+.pbrand{font-size:9.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--grey)}
+.ph2{font-family:var(--display);font-weight:700;font-size:18px;letter-spacing:-.02em;color:var(--ink);
+  margin-top:12px}
+.psub{font-size:10.5px;color:var(--slate);margin:3px 0 13px;line-height:1.45}
+.pfield{border:1px solid var(--line);border-radius:10px;padding:7px 10px;margin-bottom:8px;min-height:38px}
+.pfield i{display:block;font-style:normal;font-size:8.5px;letter-spacing:.05em;text-transform:uppercase;
   color:var(--grey)}
-.pfield b{font-size:12.5px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
-.caret{display:inline-block;width:1px;height:12px;background:var(--orange-d);vertical-align:-2px;
+.pfield b{font-size:12px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.caret{display:inline-block;width:1px;height:11px;background:var(--orange-d);vertical-align:-2px;
   animation:blink 1s steps(2) infinite}
 @keyframes blink{50%{opacity:0}}
-.pbtn{margin-top:6px;background:var(--orange);color:#04312C;border-radius:10px;padding:10px;
-  text-align:center;font-size:12.5px;font-weight:700}
-.pbtn.press{animation:press 16s ease-in-out infinite}
-@keyframes press{0%,40%{transform:none;filter:none}43%{transform:scale(.96);filter:brightness(.9)}
-  46%,100%{transform:none;filter:none}}
+.pbtn{margin-top:6px;background:var(--orange);color:#04312C;border-radius:10px;padding:9px;
+  text-align:center;font-size:12px;font-weight:700;transition:transform .16s,filter .16s}
+.pbtn.tap{transform:scale(.96);filter:brightness(.9)}
 
-.phead{background:var(--jet);margin:-34px -18px 12px;padding:38px 18px 16px;color:#fff}
-.pgreet{font-size:10.5px;color:rgba(255,255,255,.62)}
-.pbal{font-family:var(--display);font-weight:700;font-size:22px;letter-spacing:-.03em;
+/* the account number screen */
+.pdone{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.ptick{width:46px;height:46px;border-radius:15px;display:grid;place-items:center;font-size:20px;
+  background:rgba(20,184,172,.14);color:var(--orange-d);margin-bottom:12px}
+.pnum{font-family:var(--display);font-weight:700;font-size:21px;letter-spacing:.05em;color:var(--ink);
+  margin:10px 0 3px;font-variant-numeric:tabular-nums}
+
+/* the landing page, as the app actually lays it out */
+.pane.landing{padding:0}
+.lhero{background:var(--jet);color:#fff;padding:40px 16px 14px}
+.llabel{font-size:9px;color:rgba(255,255,255,.55);letter-spacing:.04em}
+.lbal{font-family:var(--display);font-weight:700;font-size:25px;letter-spacing:-.03em;margin-top:2px;
   font-variant-numeric:tabular-nums}
-.pacct{font-size:9.5px;color:rgba(255,255,255,.48);letter-spacing:.04em}
-.prow{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line-2);
-  font-size:11px;opacity:0;animation:rowin 16s ease-in-out infinite}
-.prow:nth-of-type(1){animation-delay:.25s}
-.prow:nth-of-type(2){animation-delay:.6s}
-.prow:nth-of-type(3){animation-delay:.95s}
-@keyframes rowin{0%,50%{opacity:0;transform:translateY(5px)}56%,90%{opacity:1;transform:none}
-  96%,100%{opacity:0}}
-.pd{flex:none;width:22px;height:22px;border-radius:7px;display:grid;place-items:center;font-size:10px;
+.lbal small{font-size:11px;opacity:.6;margin-right:4px}
+.ldelta{font-size:9px;color:var(--orange-l);margin-top:2px}
+.lchips{display:flex;gap:5px;margin-top:10px;overflow:hidden}
+.lchips span{font-size:8.5px;padding:4px 7px;border-radius:999px;background:rgba(255,255,255,.12);
+  color:rgba(255,255,255,.85);white-space:nowrap}
+.lqa{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;padding:12px 14px 6px}
+.lqa div{text-align:center;font-size:8px;color:var(--slate);line-height:1.3}
+.lqa div i{display:grid;place-items:center;height:32px;border-radius:11px;background:var(--line-2);
+  color:var(--orange-d);font-style:normal;font-size:13px;margin-bottom:3px}
+.lsect{padding:4px 14px 0;font-size:9.5px;font-weight:700;color:var(--ink)}
+.lrow{display:flex;align-items:center;gap:7px;margin:0 14px;padding:7px 0;
+  border-top:1px solid var(--line-2);font-size:10px;opacity:0;transform:translateY(5px);
+  transition:opacity .45s var(--ease),transform .45s var(--ease)}
+.landing.on .lrow{opacity:1;transform:none}
+.landing.on .lrow:nth-of-type(2){transition-delay:.12s}
+.landing.on .lrow:nth-of-type(3){transition-delay:.24s}
+.lrow i{flex:none;width:21px;height:21px;border-radius:7px;display:grid;place-items:center;font-size:9px;
   background:var(--line-2);color:var(--slate);font-style:normal}
-.pd.in{background:rgba(20,184,172,.14);color:var(--orange-d)}
-.prow span{flex:1;color:var(--ink);line-height:1.25}
-.prow span em{display:block;font-style:normal;font-size:9.5px;color:var(--grey)}
-.prow b{font-variant-numeric:tabular-nums;color:var(--ink)}
-.prow b.in{color:var(--orange-d)}
+.lrow i.in{background:rgba(20,184,172,.14);color:var(--orange-d)}
+.lrow span{flex:1;color:var(--ink);line-height:1.25}
+.lrow span em{display:block;font-style:normal;font-size:8.5px;color:var(--grey)}
+.lrow b{font-variant-numeric:tabular-nums;color:var(--ink)}
+.lrow b.in{color:var(--orange-d)}
+.ltabs{margin-top:auto;display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--line);
+  padding:6px 0 8px;background:#fff}
+.ltabs div{text-align:center;font-size:7.5px;color:var(--mist)}
+.ltabs div i{display:block;font-style:normal;font-size:12px;margin-bottom:1px}
+.ltabs div.act{color:var(--orange-d)}
 
-.demolabel{font-size:11.5px;color:rgba(255,255,255,.62);letter-spacing:.04em}
+.demolabel{font-size:11.5px;color:rgba(255,255,255,.62);letter-spacing:.04em;min-height:1.2em}
+.demodots{display:flex;gap:5px}
+.demodots i{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.22)}
+.demodots i.on{background:var(--orange-l)}
 
 /* ------------------------------------------------- the live scene, moving slowly */
 .scene{position:relative;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.14);
@@ -1210,6 +1234,18 @@ const FID = (() => {
      the id below only selects which of the signed-in customer's accounts to act on. Opened
      as a bare file, or before anyone signs in, everything falls back to the bundled demo
      data exactly as it did before. */
+  /* This markup is served from two hosts: the Node API serves it with the
+     banking API behind it, and the Python decision service serves the same
+     files with no /api/v1 at all. Probe once, so a page on the wrong host can
+     say so plainly instead of failing every form with a vague error. */
+  const APP_URL = (typeof document !== 'undefined' &&
+    document.querySelector('meta[name="adb-app-url"]')?.content) || '';
+  let apiMissing = false;
+  const apiReady = API === null ? Promise.resolve(false) : fetch(API + '/api/health')
+    .then(r => r.ok ? r.json() : null)
+    .then(b => { apiMissing = !b || b.status !== 'ok'; return !apiMissing; })
+    .catch(() => { apiMissing = true; return false; });
+
   const STORE = 'adb.session';
   let session = (() => {
     try { return JSON.parse(localStorage.getItem(STORE) || 'null'); } catch { return null; }
@@ -1229,8 +1265,12 @@ const FID = (() => {
       body: JSON.stringify({msisdn, password})
     });
     const json = await res.json().catch(() => ({}));
-    if (!res.ok) throw Object.assign(new Error(json.message || 'Could not sign you in'),
-      {code: json.code || 'sign_in_failed'});
+    if (!res.ok) throw Object.assign(new Error(
+      json.error?.message || json.message ||
+      (res.status === 404 ? 'Logging in is not available at this address.'
+                          : `Could not log you in (${res.status}).`)),
+      {code: json.error?.code || json.code || (res.status === 404 ? 'no_api' : 'sign_in_failed'),
+       status: res.status});
     const tokens = json.tokens || json;
     keepSession({accessToken: tokens.accessToken, refreshToken: tokens.refreshToken, subject: json.customer});
     return json.customer;
@@ -1244,8 +1284,12 @@ const FID = (() => {
       body: JSON.stringify({fullName, msisdn, email, password})
     });
     const json = await res.json().catch(() => ({}));
-    if (!res.ok) throw Object.assign(new Error(json.error?.message || json.message || 'Could not open the account'),
-      {code: json.error?.code || 'register_failed', fields: json.error?.details?.fieldErrors});
+    if (!res.ok) throw Object.assign(new Error(
+      json.error?.message || json.message ||
+      (res.status === 404 ? 'Account opening is not available at this address.'
+                          : `Could not open the account (${res.status}).`)),
+      {code: json.error?.code || (res.status === 404 ? 'no_api' : 'register_failed'),
+       status: res.status, fields: json.error?.details?.fieldErrors});
     const tokens = json.tokens || json;
     keepSession({accessToken: tokens.accessToken, refreshToken: tokens.refreshToken, subject: json.customer});
     return json.customer;
@@ -1369,6 +1413,7 @@ const FID = (() => {
 
   return { CCY, money, money0, pct, seed, ENTITIES, LANG, FLOOR, get live(){ return apiUp; },
            signIn, signOut, register, topUp, primaryAccountId, submitGhanaCard, kycStatus,
+           apiReady, get apiMissing(){ return apiMissing; }, APP_URL,
            get signedIn(){ return signedIn(); },
            get customer(){ return session && session.subject; },
            assessPayment, screenBeneficiary, preapprove, parse,
@@ -1750,35 +1795,71 @@ function page(){
     <p class="reassure">No monthly fee · No minimum balance · Cedis, held to the pesewa</p>
   </div>
 
-  <div class="demo" aria-label="A walkthrough: logging in, then the account">
+  <div class="demo" aria-label="A walkthrough: opening an account, and logging in">
     <div class="phone">
       <div class="notch"></div>
 
-      <!-- step 1: the login screen -->
-      <div class="pane" id="dLogin">
+      <div class="pane" id="pOpen">
         <div class="pbrand">AI-Digital Bank</div>
-        <div class="ph2">Log in</div>
-        <div class="psub">Your number and password.</div>
-        <div class="pfield"><i>Phone number</i><b id="dMsisdn"></b><span class="caret"></span></div>
-        <div class="pfield"><i>Password</i><b id="dPass"></b></div>
-        <div class="pbtn" id="dBtn">Log in</div>
+        <div class="ph2">Open an account</div>
+        <div class="psub">Your name, your number and a password.</div>
+        <div class="pfield"><i>Full name</i><b id="oName"></b></div>
+        <div class="pfield"><i>Phone number</i><b id="oMsisdn"></b></div>
+        <div class="pfield"><i>Password</i><b id="oPass"></b></div>
+        <div class="pbtn" id="oBtn">Open my account</div>
       </div>
 
-      <!-- step 2: the account -->
-      <div class="pane" id="dHome">
-        <div class="phead">
-          <div class="pgreet">Good morning, Ama</div>
-          <div class="pbal" id="dBal">GH₵ 3,280.00</div>
-          <div class="pacct">Current · •••• 8707</div>
+      <div class="pane" id="pVerify">
+        <div class="pbrand">AI-Digital Bank</div>
+        <div class="ph2">Verify your identity</div>
+        <div class="psub">Your Ghana Card. Your account number is issued as soon as it clears.</div>
+        <div class="pfield"><i>Ghana Card number</i><b id="vCard"></b></div>
+        <div class="pfield"><i>Date of birth</i><b id="vDob"></b></div>
+        <div class="pbtn" id="vBtn">Submit for verification</div>
+      </div>
+
+      <div class="pane" id="pOpened">
+        <div class="pdone">
+          <div class="ptick">✓</div>
+          <div class="ph2" style="margin:0">Your account is open</div>
+          <div class="psub" style="margin:4px 0 0">Verified · full limits</div>
+          <div class="pnum">5014908707</div>
+          <div class="psub" style="margin:0">GHS · current account</div>
         </div>
-        <div class="prow"><i class="pd in">↙</i><span>Salary<em>Confirmed</em></span><b class="in">+2,400.00</b></div>
-        <div class="prow"><i class="pd">↗</i><span>Kwame — MTN wallet<em>Sent in 3 seconds</em></span><b>−450.00</b></div>
-        <div class="prow"><i class="pd">↗</i><span>ECG prepaid<em>Token delivered</em></span><b>−120.00</b></div>
+      </div>
+
+      <div class="pane landing" id="pHome">
+        <div class="lhero">
+          <div class="llabel">Current account · 1 account</div>
+          <div class="lbal"><small>GHS</small><span id="lBal">3,280.00</span></div>
+          <div class="ldelta">↗ GH₵6,400 in this month</div>
+          <div class="lchips"><span>Current · 3,280</span><span>+ Open account</span></div>
+        </div>
+        <div class="lqa">
+          <div><i>↗</i>Send</div><div><i>≡</i>Pay bills</div>
+          <div><i>▮</i>Airtime</div><div><i>▭</i>Cards</div>
+        </div>
+        <div class="lsect">Recent</div>
+        <div class="lrow"><i class="in">↙</i><span>Salary<em>Confirmed</em></span><b class="in">+2,400.00</b></div>
+        <div class="lrow"><i>↗</i><span>Kwame — MTN wallet<em>Sent in 3 seconds</em></span><b>−450.00</b></div>
+        <div class="lrow"><i>↗</i><span>ECG prepaid<em>Token delivered</em></span><b>−120.00</b></div>
+        <div class="ltabs"><div class="act"><i>◎</i>Home</div><div><i>↗</i>Pay</div>
+          <div><i>◈</i>Save</div><div><i>▭</i>Cards</div><div><i>☺</i>You</div></div>
+      </div>
+
+      <div class="pane" id="pLogin">
+        <div class="pbrand">AI-Digital Bank</div>
+        <div class="ph2">Log in</div>
+        <div class="psub">Your number and the password you chose.</div>
+        <div class="pfield"><i>Phone number</i><b id="lMsisdn"></b></div>
+        <div class="pfield"><i>Password</i><b id="lPass"></b></div>
+        <div class="pbtn" id="lBtn">Log in</div>
       </div>
     </div>
-    <div class="demolabel" id="dLabel">Logging in</div>
-  </div>
-</div></div>
+
+    <div class="demolabel" id="dLabel">Opening an account</div>
+    <div class="demodots" id="dDots"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div>
+  </div></div>
     <div class="feedline"><i class="dot out">↗</i>
       <div class="who">Kwame — MTN wallet<span>Sent in 3 seconds</span></div><div class="amt">−450.00</div></div>
     <div class="feedline"><i class="dot out">↗</i>
@@ -1870,39 +1951,81 @@ function page(){
 
 document.getElementById('page').innerHTML = page();
 
-/* Drives the walkthrough: the number and password type themselves, the button
-   presses, then the account appears. One 16-second loop, matching the CSS. */
+/* Drives the walkthrough. Two journeys, in the order a customer meets them:
+   open an account, verify, get the number, land on the app — then log back in
+   and land in the same place. One loop, roughly half a minute. */
 (function walkthrough(){
-  const msisdn = document.getElementById('dMsisdn');
-  const pass = document.getElementById('dPass');
-  const label = document.getElementById('dLabel');
-  const btn = document.getElementById('dBtn');
-  if (!msisdn) return;
+  const $ = id => document.getElementById(id);
+  if (!$('pOpen')) return;
 
-  const NUMBER = '+233 20 123 4567';
+  const PANES = ['pOpen','pVerify','pOpened','pHome','pLogin','pHome'];
+  const CAPTION = ['Opening an account','Verifying identity','Account open',
+                   'Your account','Logging back in','Your account'];
+  const show = i => {
+    PANES.forEach((id, n) => {
+      const el = $(id);
+      if (!el) return;
+      const active = n === i;
+      // pHome appears twice; only clear it when neither turn is showing
+      if (id === 'pHome' && (i === 3 || i === 5)) return el.classList.add('on');
+      el.classList.toggle('on', active);
+    });
+    $('dLabel').textContent = CAPTION[i];
+    [...$('dDots').children].forEach((d, n) => d.classList.toggle('on', n === i));
+  };
+
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (still){
-    msisdn.textContent = NUMBER; pass.textContent = '••••••••••';
-    label.textContent = 'Log in, then your account';
+    $('oName').textContent = 'Ama Boateng'; $('oMsisdn').textContent = '+233 20 123 4567';
+    $('oPass').textContent = '••••••••••'; $('vCard').textContent = 'GHA-123456789-1';
+    $('vDob').textContent = '12 / 04 / 1994';
+    $('lMsisdn').textContent = '+233 20 123 4567'; $('lPass').textContent = '••••••••••';
+    show(3);
+    $('dLabel').textContent = 'Open an account, then log in';
     return;
   }
-  btn.classList.add('press');
 
-  function type(el, text, startAt, perChar){
-    text.split('').forEach((ch, i) => setTimeout(() => { el.textContent = text.slice(0, i + 1); },
-      startAt + i * perChar));
-  }
+  const timers = [];
+  const at = (ms, fn) => timers.push(setTimeout(fn, ms));
+  const type = (el, text, start, per) => text.split('').forEach((_, i) =>
+    at(start + i * per, () => { el.textContent = text.slice(0, i + 1); }));
+  const tap = (el, ms) => { at(ms, () => el.classList.add('tap')); at(ms + 190, () => el.classList.remove('tap')); };
 
-  function cycle(){
-    msisdn.textContent = ''; pass.textContent = '';
-    label.textContent = 'Logging in';
-    type(msisdn, NUMBER, 700, 85);
-    type(pass, '••••••••••', 2400, 90);
-    setTimeout(() => { label.textContent = 'Checking your details'; }, 6400);
-    setTimeout(() => { label.textContent = 'Your account'; }, 8400);
+  function run(){
+    timers.splice(0).forEach(clearTimeout);
+    ['oName','oMsisdn','oPass','vCard','vDob','lMsisdn','lPass'].forEach(id => { $(id).textContent = ''; });
+    PANES.forEach(id => $(id).classList.remove('on'));
+
+    // 1 — opening an account
+    show(0);
+    type($('oName'), 'Ama Boateng', 600, 80);
+    type($('oMsisdn'), '+233 20 123 4567', 1700, 70);
+    type($('oPass'), '••••••••••', 3100, 70);
+    tap($('oBtn'), 4100);
+
+    // 2 — verification
+    at(4600, () => show(1));
+    type($('vCard'), 'GHA-123456789-1', 5300, 80);
+    type($('vDob'), '12 / 04 / 1994', 6700, 70);
+    tap($('vBtn'), 7800);
+
+    // 3 — the number
+    at(8400, () => show(2));
+
+    // 4 — the landing page
+    at(11400, () => show(3));
+
+    // 5 — logging back in
+    at(16400, () => { show(4); });
+    type($('lMsisdn'), '+233 20 123 4567', 17100, 70);
+    type($('lPass'), '••••••••••', 18500, 70);
+    tap($('lBtn'), 19600);
+
+    // 6 — the same landing page
+    at(20200, () => show(5));
+    at(25500, run);
   }
-  cycle();
-  setInterval(cycle, 16000);
+  run();
 })();
 </script>
 </body>

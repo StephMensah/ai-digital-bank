@@ -237,3 +237,25 @@ warm slate used only for body text. Everything that used to be black now carries
 
 Shadows are warm grey (`rgba(93,74,54,…)`), never neutral black, so nothing reads as a hole
 in the page.
+
+
+## Two services, one site
+
+The Node service (`server/`) is the product: it serves the front ends from
+`public/` and holds the ledger, the rails and the staff consoles.
+
+The Python service (`decision_api.py`) is the decision engine only. It no
+longer serves HTML — every non-`/api` request is redirected to `BANKING_URL`,
+so a customer can never land on a copy of the pages with no banking API behind
+them. The Node service reaches it over `PYTHON_SERVICE_URL`.
+
+Point pokztechnologies.org at the Node service, then set:
+
+    Node    PUBLIC_WEB_ORIGIN    https://pokztechnologies.org
+    Node    HUBTEL_CALLBACK_URL  https://pokztechnologies.org/api/v1/webhooks/hubtel
+    Node    HUBTEL_RETURN_URL    https://pokztechnologies.org/app.html
+    Node    MOMO_CALLBACK_URL    https://pokztechnologies.org/api/v1/webhooks/momo
+    Python  BANKING_URL          https://pokztechnologies.org
+
+and update the `adb-app-url` meta tag in `src/index.html`, `src/app.html` and
+`src/web.html` before rebuilding.

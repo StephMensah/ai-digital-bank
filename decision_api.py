@@ -135,6 +135,10 @@ def _verify_pin(pin: str, pin_hash: str, salt_hex: str) -> bool:
     return hmac.compare_digest(dk, pin_hash)
 
 
+# Where the customer-facing pages actually live. Set BANKING_URL to the custom
+# domain once it is pointed at the Node service.
+BANKING_URL = os.environ.get("BANKING_URL", "https://pokztechnologies.org")
+
 class Store:
     """Everything the three products share, behind one lock. self.cases/audit/resolved are
     the working copy every read is served from; when a database is configured, writes also
@@ -569,8 +573,17 @@ class Handler(SimpleHTTPRequestHandler):
             if state is None:
                 return self._send({"error": f"no such customer {customer_id}"}, 404)
             return self._send(state)
-        if p.path == "/":
-            self.path = "/index.html"
+        # This service is the decision engine, not a web front end. The pages
+        # live on the banking host, where the API behind them actually exists;
+        # serving a second copy here is what sent customers to a login that
+        # could never work. Anything that is not /api is sent across.
+        if not p.path.startswith("/api"):
+            target = BANKING_URL.rstrip("/") + self.path
+            self.send_response(302)
+            self.send_header("Location", target)
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            return
         return super().do_GET()
 
     def do_POST(self):
