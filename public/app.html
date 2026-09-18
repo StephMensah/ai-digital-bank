@@ -2220,7 +2220,9 @@ async function doOpenAccount(){
     // A new customer has no PIN and no account yet. PIN first, because nothing
     // moves without one; the account number comes when the Ghana Card clears.
     S.afterPin = 'verify';
-    S.auth = {stage:'setpin1', purpose:'pin_change'};
+    // Same shape startPinChange() builds — the PIN sheet reads value, newPin
+    // and currentPin, and crashes on a partial object.
+    S.auth = {stage:'setpin1', value:'', newPin:'', currentPin:null, purpose:'pin_change', resume:null};
     pinChangeSheet();
   } catch (err) {
     openAccountSheet(err.code === 'conflict' ? 'That number or email already has an account' : err.message);
@@ -2381,8 +2383,9 @@ async function gateLogin(){
     render();
     syncAccountsFromServer();
   } catch (err) {
-    showGate('login', err.code === 'invalid_credentials'
-      ? 'That phone number and password did not match.' : 'Could not log you in just now.');
+    showGate('login', (err.status === 401 || err.code === 'unauthorized' || err.code === 'invalid_credentials')
+      ? (err.message || 'That phone number and password did not match.')
+      : 'Could not log you in just now. Try again in a moment.');
   }
 }
 
@@ -2398,7 +2401,9 @@ async function gateOpen(){
     hideGate();
     render();
     S.afterPin = 'verify';
-    S.auth = {stage:'setpin1', purpose:'pin_change'};
+    // Same shape startPinChange() builds — the PIN sheet reads value, newPin
+    // and currentPin, and crashes on a partial object.
+    S.auth = {stage:'setpin1', value:'', newPin:'', currentPin:null, purpose:'pin_change', resume:null};
     pinChangeSheet();
   } catch (err) {
     showGate('open', err.code === 'conflict'
@@ -2428,7 +2433,8 @@ async function doSignIn(){
     render();
     syncAccountsFromServer();
   } catch (err) {
-    signInSheet(err.code === 'invalid_credentials' ? 'That phone number and password did not match'
+    signInSheet((err.status === 401 || err.code === 'unauthorized')
+      ? (err.message || 'That phone number and password did not match')
       : 'Could not sign you in just now');
   }
 }
