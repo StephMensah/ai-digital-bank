@@ -1,0 +1,3648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Control Tower — AI-Digital Bank Ghana</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#ECEDEF; --ink:#17181B; --card:#FFFFFF; --hair:#D5D8DC; --muted:#6B7076;
+  --orange:#E87722; --burnt:#B4531F; --alert:#C0392B; --clear:#2E7D5B; --wash:#F6F7F8;
+  --sans:"Calibri","Carlito","Segoe UI",system-ui,sans-serif;
+  --cond:"Calibri","Carlito","Segoe UI",system-ui,sans-serif;
+  --mono:"Consolas","Calibri","Carlito",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper); color:var(--ink); font-family:var(--sans);
+  font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px 96px}
+.eyebrow{
+  font-family:var(--cond); font-weight:600; font-size:11px; text-transform:uppercase;
+  letter-spacing:.18em; color:var(--muted);
+}
+h1,h2,h3{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:-.005em;margin:0}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+
+/* ---------- masthead ---------- */
+header{border-bottom:2px solid var(--ink);background:var(--paper);position:relative}
+.mast{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;justify-content:space-between;padding:34px 0 18px}
+.mark{display:flex;align-items:center;gap:12px}
+.mark svg{flex:none}
+h1{font-size:clamp(26px,3.6vw,40px);line-height:.95}
+h1 span{display:block;font-size:.42em;letter-spacing:.16em;color:var(--burnt);font-weight:600;margin-top:6px}
+.runmeta{font-family:var(--mono);font-size:11.5px;color:var(--muted);text-align:right;line-height:1.7}
+.runmeta b{color:var(--ink);font-weight:500}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--hair)}
+.stat{padding:18px 20px 20px;border-right:1px solid var(--hair)}
+.stat:last-child{border-right:0}
+.stat .v{font-family:var(--mono);font-size:clamp(20px,2.5vw,29px);font-weight:500;letter-spacing:-.02em;display:block;margin-top:6px}
+.stat small{display:block;margin-top:5px;font-size:11.5px;color:var(--muted);line-height:1.35}
+
+/* ---------- sections ---------- */
+section{margin-top:52px}
+.shead{display:flex;align-items:baseline;justify-content:space-between;gap:16px;border-bottom:1px solid var(--ink);padding-bottom:8px;margin-bottom:18px;flex-wrap:wrap}
+.shead h2{font-size:19px}
+.shead p{margin:0;font-size:12.5px;color:var(--muted);max-width:46ch}
+
+/* ---------- signature: the human line ---------- */
+.human{background:var(--card);border:1px solid var(--hair);padding:22px 22px 14px}
+.human .lede{font-size:14.5px;max-width:70ch;margin:0 0 18px;color:#33363B}
+.human .lede b{font-weight:600;color:var(--ink)}
+#humanChart{width:100%;height:290px;display:block}
+.legend{display:flex;gap:22px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);border-top:1px solid var(--hair);margin-top:12px;padding-top:11px}
+.legend i{width:11px;height:11px;display:inline-block;margin-right:6px;vertical-align:-1px}
+
+/* ---------- portfolio ---------- */
+.filters{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.filters .lbl{font-family:var(--mono);font-size:11px;color:var(--muted);margin-right:4px}
+button.ph{
+  font-family:var(--cond);font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+  background:transparent;border:1px solid var(--hair);color:var(--muted);
+  padding:6px 11px;cursor:pointer;transition:.12s
+}
+button.ph:hover{border-color:var(--ink);color:var(--ink)}
+button.ph[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+button.ph:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--hair)}
+thead th{
+  font-family:var(--cond);font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);
+  text-align:left;padding:10px 12px;border-bottom:1px solid var(--ink);font-weight:600;white-space:nowrap
+}
+thead th.r,td.r{text-align:right}
+tbody tr{border-bottom:1px solid var(--hair);cursor:pointer}
+tbody tr:last-child{border-bottom:0}
+tbody tr:hover{background:var(--wash)}
+tbody tr.dim{opacity:.45}
+tbody tr.dim:hover{opacity:.8}
+td{padding:9px 12px;font-size:13.5px;vertical-align:middle}
+td.nm{font-weight:500}
+td .dom{display:block;font-size:11px;color:var(--muted);font-family:var(--mono)}
+.pill{
+  font-family:var(--cond);font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  padding:3px 7px;border:1px solid; display:inline-block;white-space:nowrap
+}
+.p-SCALE{color:var(--clear);border-color:var(--clear)}
+.p-PIVOT{color:var(--burnt);border-color:var(--burnt);background:#FBF0E7}
+.p-SUNSET{color:var(--alert);border-color:var(--alert)}
+.p-HOLD{color:var(--muted);border-color:var(--hair)}
+.p-QUEUED{color:var(--muted);border-color:var(--hair);border-style:dashed}
+.bar{height:6px;background:var(--hair);position:relative;min-width:52px}
+.bar i{position:absolute;inset:0 auto 0 0;background:var(--orange)}
+
+/* ---------- two-up ---------- */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.panel{background:var(--card);border:1px solid var(--hair);padding:18px 20px}
+.panel h3{font-size:14px;margin-bottom:2px}
+.panel .sub{font-size:12px;color:var(--muted);margin:0 0 14px}
+.blockrow{display:flex;gap:12px;padding:9px 0;border-top:1px solid var(--hair);font-size:13px}
+.blockrow:first-of-type{border-top:0}
+.blockrow .why{color:var(--muted);font-size:12px;font-family:var(--mono)}
+.driftcard{border-left:3px solid var(--alert);padding:12px 14px;background:#FCF3F2;margin-bottom:10px}
+.driftcard .t{font-weight:600;font-size:13.5px}
+.driftcard .d{font-family:var(--mono);font-size:12px;color:#7A2F27;margin-top:4px}
+.gauge{display:flex;align-items:baseline;gap:10px;margin:4px 0 14px}
+.gauge .g{font-family:var(--mono);font-size:26px;font-weight:500}
+.gauge .l{font-size:12px;color:var(--muted)}
+
+/* ---------- audit ---------- */
+.audit{background:var(--ink);color:#D7DADE;font-family:var(--mono);font-size:11.5px;padding:14px 16px;max-height:300px;overflow:auto}
+.audit div{padding:3px 0;border-bottom:1px solid #26282C;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.audit .k{color:#8C9199}
+.audit .rev{color:#F0A05A}
+.audit .ok{color:#7FBF9C}
+
+/* ---------- drawer ---------- */
+.scrim{position:fixed;inset:0;background:rgba(23,24,27,.45);opacity:0;pointer-events:none;transition:.18s;z-index:40}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{
+  position:fixed;top:0;right:0;height:100%;width:min(440px,100%);background:var(--card);
+  border-left:2px solid var(--ink);transform:translateX(101%);transition:transform .22s ease;
+  z-index:50;overflow:auto;padding:26px 26px 60px
+}
+.drawer.on{transform:none}
+.drawer h3{font-size:19px;line-height:1.1;margin-bottom:6px}
+.drawer .scen{font-size:13.5px;color:#3A3D42;margin:0 0 18px}
+.kv{display:grid;grid-template-columns:118px 1fr;gap:7px 12px;font-size:12.5px;margin-bottom:20px}
+.kv dt{font-family:var(--cond);text-transform:uppercase;letter-spacing:.09em;font-size:10.5px;color:var(--muted);padding-top:2px}
+.kv dd{margin:0;font-family:var(--mono);font-size:12px;word-break:break-word}
+.gate{display:flex;gap:9px;padding:7px 0;border-top:1px solid var(--hair);font-size:12.5px}
+.gate .st{font-family:var(--cond);font-weight:700;font-size:10.5px;letter-spacing:.08em;padding-top:2px}
+.gate .st.p{color:var(--clear)} .gate .st.f{color:var(--alert)}
+.gate .nt{color:var(--muted);font-size:11.5px;display:block}
+.close{position:absolute;top:18px;right:22px;background:none;border:0;font-family:var(--mono);font-size:20px;cursor:pointer;color:var(--muted);line-height:1}
+.close:hover{color:var(--ink)}
+
+footer{margin-top:60px;border-top:1px solid var(--hair);padding-top:16px;font-size:12px;color:var(--muted);font-family:var(--mono);line-height:1.7}
+
+@media (max-width:860px){
+  .stats{grid-template-columns:1fr 1fr}
+  .stat:nth-child(2){border-right:0}
+  .stat:nth-child(1),.stat:nth-child(2){border-bottom:1px solid var(--hair)}
+  .two{grid-template-columns:1fr}
+  .runmeta{text-align:left}
+  .hide-s{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="mast">
+      <div class="mark">
+        <svg width="38" height="38" viewBox="0 0 38 38" aria-hidden="true">
+          <circle cx="19" cy="19" r="19" fill="#E87722"/>
+          <rect x="11" y="12" width="16" height="3.4" fill="#fff"/>
+          <rect x="11" y="17.3" width="12" height="3.4" fill="#fff"/>
+          <rect x="11" y="22.6" width="16" height="3.4" fill="#fff"/>
+        </svg>
+        <h1>AI Control Tower<span>AI-Digital Bank Ghana</span></h1>
+      </div>
+      <div class="runmeta" id="runmeta"></div>
+    </div>
+    <div class="stats" id="stats"></div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section>
+    <div class="shead">
+      <h2>The human line</h2>
+      <p>Escalations per day against the reviewers available to clear them.</p>
+    </div>
+    <div class="human">
+      <p class="lede" id="humanLede"></p>
+      <svg id="humanChart" role="img" aria-label="Daily escalations against review capacity"></svg>
+      <div class="legend">
+        <span><i style="background:#2E7D5B"></i>Cleared same day</span>
+        <span><i style="background:#C0392B"></i>Pushed to backlog</span>
+        <span><i style="background:#17181B;height:2px;margin-bottom:3px"></i>Review capacity</span>
+        <span><i style="background:#E87722"></i>Cumulative backlog</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="shead">
+      <h2>Portfolio</h2>
+      <div class="filters" id="filters">
+        <span class="lbl">ADMISSION CUT-OFF</span>
+      </div>
+    </div>
+    <table>
+      <thead><tr>
+        <th>Use case</th>
+        <th class="hide-s">Quadrant</th>
+        <th class="r">Decisions</th>
+        <th class="r hide-s">Straight-through</th>
+        <th class="r">Value captured</th>
+        <th>Verdict</th>
+      </tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <p style="font-size:12px;color:var(--muted);margin-top:10px" id="tablenote"></p>
+  </section>
+
+  <section>
+    <div class="two">
+      <div class="panel">
+        <h3>Not admitted</h3>
+        <p class="sub">What the control tower is holding back, and why.</p>
+        <div id="blocked"></div>
+      </div>
+      <div class="panel">
+        <h3>Model risk</h3>
+        <p class="sub">Confidence drift against the tolerance set by the board.</p>
+        <div id="drift"></div>
+        <div class="gauge">
+          <span class="g" id="dpiaCov"></span>
+          <span class="l">of live use cases process personal data under a completed DPIA</span>
+        </div>
+        <div class="gauge">
+          <span class="g" id="explCov"></span>
+          <span class="l">of automated customer decisions carry an explainer and human adjudication on adverse outcomes</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="shead">
+      <h2>Audit trail</h2>
+      <p>One immutable record per automated decision. Last 40 shown.</p>
+    </div>
+    <div class="audit" id="audit"></div>
+  </section>
+
+  <footer id="foot"></footer>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <button class="close" id="closeBtn" aria-label="Close">×</button>
+  <div id="drawerBody"></div>
+</aside>
+
+<script type="application/json" id="snapshot">{
+ "meta": {
+  "bank": "AI-Digital Bank Ghana",
+  "currency": "GHS",
+  "days": 20,
+  "phaseCutoff": 4,
+  "seed": 7,
+  "capacityPerDay": 120,
+  "generated": "2026-08-30T20:57:40",
+  "driftTolerance": 0.06
+ },
+ "totals": {
+  "events": 21360,
+  "decisions": 54494,
+  "escalated": 7440,
+  "value": 10925546.0,
+  "auditRecords": 54494,
+  "backlog": 51488
+ },
+ "daily": [
+  {
+   "day": "01 Sep",
+   "decisions": 2747,
+   "escalated": 345,
+   "value": 566923.0,
+   "backlog": 225
+  },
+  {
+   "day": "02 Sep",
+   "decisions": 2730,
+   "escalated": 324,
+   "value": 559942.0,
+   "backlog": 429
+  },
+  {
+   "day": "03 Sep",
+   "decisions": 2694,
+   "escalated": 336,
+   "value": 551206.0,
+   "backlog": 645
+  },
+  {
+   "day": "04 Sep",
+   "decisions": 2697,
+   "escalated": 378,
+   "value": 536347.0,
+   "backlog": 903
+  },
+  {
+   "day": "05 Sep",
+   "decisions": 2721,
+   "escalated": 398,
+   "value": 545178.0,
+   "backlog": 1181
+  },
+  {
+   "day": "06 Sep",
+   "decisions": 2730,
+   "escalated": 367,
+   "value": 543983.0,
+   "backlog": 1428
+  },
+  {
+   "day": "07 Sep",
+   "decisions": 2719,
+   "escalated": 349,
+   "value": 549342.0,
+   "backlog": 1657
+  },
+  {
+   "day": "08 Sep",
+   "decisions": 2720,
+   "escalated": 400,
+   "value": 536543.0,
+   "backlog": 1937
+  },
+  {
+   "day": "09 Sep",
+   "decisions": 2716,
+   "escalated": 365,
+   "value": 550440.0,
+   "backlog": 2182
+  },
+  {
+   "day": "10 Sep",
+   "decisions": 2728,
+   "escalated": 363,
+   "value": 550392.0,
+   "backlog": 2425
+  },
+  {
+   "day": "11 Sep",
+   "decisions": 2733,
+   "escalated": 377,
+   "value": 547197.0,
+   "backlog": 2682
+  },
+  {
+   "day": "12 Sep",
+   "decisions": 2739,
+   "escalated": 371,
+   "value": 544669.0,
+   "backlog": 2933
+  },
+  {
+   "day": "13 Sep",
+   "decisions": 2714,
+   "escalated": 391,
+   "value": 533247.0,
+   "backlog": 3204
+  },
+  {
+   "day": "14 Sep",
+   "decisions": 2728,
+   "escalated": 375,
+   "value": 551087.0,
+   "backlog": 3459
+  },
+  {
+   "day": "15 Sep",
+   "decisions": 2729,
+   "escalated": 348,
+   "value": 553811.0,
+   "backlog": 3687
+  },
+  {
+   "day": "16 Sep",
+   "decisions": 2719,
+   "escalated": 385,
+   "value": 546535.0,
+   "backlog": 3952
+  },
+  {
+   "day": "17 Sep",
+   "decisions": 2725,
+   "escalated": 402,
+   "value": 539869.0,
+   "backlog": 4234
+  },
+  {
+   "day": "18 Sep",
+   "decisions": 2749,
+   "escalated": 382,
+   "value": 545989.0,
+   "backlog": 4496
+  },
+  {
+   "day": "19 Sep",
+   "decisions": 2722,
+   "escalated": 413,
+   "value": 527848.0,
+   "backlog": 4789
+  },
+  {
+   "day": "20 Sep",
+   "decisions": 2734,
+   "escalated": 371,
+   "value": 544998.0,
+   "backlog": 5040
+  }
+ ],
+ "useCases": [
+  {
+   "key": "retail.fraud_detection",
+   "name": "Fraud Detection for Retail Transactions",
+   "domain": "Retail Banking",
+   "group": "Customer Facing Systems",
+   "approach": "In-House",
+   "hosting": "Azure Cloud",
+   "scenario": "Real-time anomaly detection for debit/credit card transactions",
+   "phase": 1,
+   "quadrant": "DO NOW",
+   "impact": 5,
+   "feasibility": 4,
+   "personalData": true,
+   "automatedDecision": true,
+   "dpia": "DPIA-RETAIL-FRAUD_DETECTION-2026",
+   "explainer": "SHAP (IBM OpenScale)",
+   "hasAgent": true,
+   "admitted": true,
+   "blocked": null,
+   "endpoint": "azureml://aidigitalbank/retail-fraud-lgbm/v3:score",
+   "decisions": 8400,
+   "escalated": 826,
+   "stp": 0.9017,
+   "confidence": 0.9,
+   "value": 1363320.0,
+   "verdict": "SCALE",
+   "verdictWhy": "GHS 1,363,320 captured, 90% straight-through",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "DPIA DPIA-RETAIL-FRAUD_DETECTION-2026"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "SHAP (IBM OpenScale)"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure Cloud"
+    }
+   ]
+  },
+  {
+   "key": "retail.personalized_offers",
+   "name": "Personalized Product Recommendations",
+   "domain": "Retail Banking",
+   "group": "Customer Facing Systems",
+   "approach": "In-House",
+   "hosting": "Azure Cloud",
+   "scenario": "Suggest loan top-ups for customers with growing balances",
+   "phase": 1,
+   "quadrant": "DO NOW",
+   "impact": 4,
+   "feasibility": 4,
+   "personalData": true,
+   "automatedDecision": false,
+   "dpia": "DPIA-RETAIL-PERSONALIZED_OFFERS-2026",
+   "explainer": null,
+   "hasAgent": true,
+   "admitted": true,
+   "blocked": null,
+   "endpoint": "azureml://aidigitalbank/personalizer/v2:rank",
+   "decisions": 2400,
+   "escalated": 0,
+   "stp": 1.0,
+   "confidence": 0.84,
+   "value": 100800.0,
+   "verdict": "SCALE",
+   "verdictWhy": "GHS 100,800 captured, 100% straight-through",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "DPIA DPIA-RETAIL-PERSONALIZED_OFFERS-2026"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure Cloud"
+    }
+   ]
+  },
+  {
+   "key": "retail.loan_preapproval",
+   "name": "Loan Pre-Approval & Instant Credit Scoring",
+   "domain": "Retail Banking",
+   "group": "Customer Facing Systems",
+   "approach": "In-House",
+   "hosting": "Azure Cloud",
+   "scenario": "Instant credit scoring report via mobile app",
+   "phase": 1,
+   "quadrant": "INVEST / RE-PLATFORM",
+   "impact": 5,
+   "feasibility": 3,
+   "personalData": true,
+   "automatedDecision": true,
+   "dpia": "DPIA-RETAIL-LOAN_PREAPPROVAL-2026",
+   "explainer": "SHAP (IBM OpenScale)",
+   "hasAgent": true,
+   "admitted": true,
+   "blocked": null,
+   "endpoint": "datarobot://aidigitalbank/thin-file-scorecard/v5:predict",
+   "decisions": 1100,
+   "escalated": 478,
+   "stp": 0.5655,
+   "confidence": 0.838,
+   "value": 59090.0,
+   "verdict": "HOLD",
+   "verdictWhy": "GHS 59,090 captured, monitoring",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "DPIA DPIA-RETAIL-LOAN_PREAPPROVAL-2026"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "SHAP (IBM OpenScale)"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure Cloud"
+    }
+   ]
+  },
+  {
+   "key": "retail.spending_insights",
+   "name": "Customer Spending Insights",
+   "domain": "Retail Banking",
+   "group": "Customer Facing Systems",
+   "approach": "In-House",
+   "hosting": "Azure Cloud",
+   "scenario": "Monthly savings tips generated and sent to customers",
+   "phase": 1,
+   "quadrant": "QUICK WIN",
+   "impact": 3,
+   "feasibility": 5,
+   "personalData": true,
+   "automatedDecision": false,
+   "dpia": "DPIA-RETAIL-SPENDING_INSIGHTS-2026",
+   "explainer": null,
+   "hasAgent": true,
+   "admitted": true,
+   "blocked": null,
+   "endpoint": "azureml://aidigitalbank/spend-insights/v1:batch",
+   "decisions": 1200,
+   "escalated": 0,
+   "stp": 1.0,
+   "confidence": 0.805,
+   "value": 9600.0,
+   "verdict": "HOLD",
+   "verdictWhy": "GHS 9,600 captured, monitoring",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "DPIA DPIA-RETAIL-SPENDING_INSIGHTS-2026"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure Cloud"
+    }
+   ]
+  },
+  {
+   "key": "retail.chatbot",
+   "name": "Multilingual Chatbot & Virtual Assistant",
+   "domain": "Retail Banking",
+   "group": "Customer Facing Systems",
+   "approach": "In-House",
+   "hosting": "Azure Cloud",
+   "scenario": "Multilingual AI chatbot on WhatsApp / USSD / app",
+   "phase": 1,
+   "quadrant": "DO NOW",
+   "impact": 4,
+   "feasibility": 4,
+   "personalData": true,
+   "automatedDecision": false,
+   "dpia": "DPIA-RETAIL-CHATBOT-2026",
+   "explainer": null,
+   "hasAgent": true,
+   "admitted": true,
+   "blocked": null,
+   "endpoint": "rasa://aidigitalbank/multilingual-nlu/v4:parse",
+   "decisions": 6000,
+   "escalated": 588,
+   "stp": 0.902,
+   "confidence": 0.838,
+   "value": 119064.0,
+   "verdict": "SCALE",
+   "verdictWhy": "GHS 119,064 captured, 90% straight-through",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "DPIA DPIA-RETAIL-CHATBOT-2026"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure Cloud"
+    }
+   ]
+  },
+  {
+   "key": "retail.segmentation",
+   "name": "Customer Segmentation",
+   "domain": "Retail Banking",
+   "group": "Customer Facing Systems",
+   "approach": "In-House",
+   "hosting": "Azure Cloud",
+   "scenario": "Behavioural segmentation for campaign targeting",
+   "phase": 1,
+   "quadrant": "QUICK WIN",
+   "impact": 3,
+   "feasibility": 4,
+   "personalData": true,
+   "automatedDecision": false,
+   "dpia": "DPIA-RETAIL-SEGMENTATION-2026",
+   "explainer": null,
+   "hasAgent": false,
+   "admitted": false,
+   "blocked": "no agent implemented yet (registered in portfolio)",
+   "endpoint": null,
+   "decisions": 0,
+   "escalated": 0,
+   "stp": null,
+   "confidence": null,
+   "value": 0.0,
+   "verdict": "HOLD",
+   "verdictWhy": "no production traffic",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "DPIA DPIA-RETAIL-SEGMENTATION-2026"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure Cloud"
+    }
+   ]
+  },
+  {
+   "key": "cx.complaint_resolution",
+   "name": "Complaint Resolution Automation",
+   "domain": "Customer Experience",
+   "group": "Customer Facing Systems",
+   "approach": "Hybrid",
+   "hosting": "Azure, AWS",
+   "scenario": "Auto-triage and resolve tier-1 complaints",
+   "phase": 1,
+   "quadrant": "DO NOW",
+   "impact": 4,
+   "feasibility": 4,
+   "personalData": true,
+   "automatedDecision": false,
+   "dpia": "DPIA-CX-COMPLAINT_RESOLUTION-2026",
+   "explainer": null,
+   "hasAgent": true,
+   "admitted": true,
+   "blocked": null,
+   "endpoint": "azure-cognitive://aidigitalbank/complaint-triage/v2",
+   "decisions": 6000,
+   "escalated": 2345,
+   "stp": 0.6092,
+   "confidence": 0.731,
+   "value": 127925.0,
+   "verdict": "HOLD",
+   "verdictWhy": "GHS 127,925 captured, monitoring",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "DPIA DPIA-CX-COMPLAINT_RESOLUTION-2026"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure, AWS"
+    }
+   ]
+  },
+  {
+   "key": "cx.voc",
+   "name": "Voice of the Customer Analysis",
+   "domain": "Customer Experience",
+   "group": "Customer Facing Systems",
+   "approach": "Hybrid",
+   "hosting": "Azure, AWS",
+   "scenario": "Sentiment and NPS prediction across channels",
+   "phase": 1,
+   "quadrant": "QUICK WIN",
+   "impact": 3,
+   "feasibility": 4,
+   "personalData": true,
+   "automatedDecision": false,
+   "dpia": "DPIA-CX-VOC-2026",
+   "explainer": null,
+   "hasAgent": false,
+   "admitted": false,
+   "blocked": "no agent implemented yet (registered in portfolio)",
+   "endpoint": null,
+   "decisions": 0,
+   "escalated": 0,
+   "stp": null,
+   "confidence": null,
+   "value": 0.0,
+   "verdict": "HOLD",
+   "verdictWhy": "no production traffic",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "DPIA DPIA-CX-VOC-2026"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure, AWS"
+    }
+   ]
+  },
+  {
+   "key": "cx.retention",
+   "name": "Customer Retention Modeling",
+   "domain": "Customer Experience",
+   "group": "Customer Facing Systems",
+   "approach": "Hybrid",
+   "hosting": "Azure, AWS",
+   "scenario": "Churn propensity scoring with next-best-action",
+   "phase": 1,
+   "quadrant": "INVEST / RE-PLATFORM",
+   "impact": 4,
+   "feasibility": 3,
+   "personalData": true,
+   "automatedDecision": false,
+   "dpia": "DPIA-CX-RETENTION-2026",
+   "explainer": null,
+   "hasAgent": true,
+   "admitted": true,
+   "blocked": null,
+   "endpoint": "azureml://aidigitalbank/churn-propensity/v3:predict",
+   "decisions": 2400,
+   "escalated": 0,
+   "stp": 1.0,
+   "confidence": 0.875,
+   "value": 336000.0,
+   "verdict": "SCALE",
+   "verdictWhy": "GHS 336,000 captured, 100% straight-through",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "DPIA DPIA-CX-RETENTION-2026"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure, AWS"
+    }
+   ]
+  },
+  {
+   "key": "cx.service_quality",
+   "name": "Service Quality Prediction",
+   "domain": "Customer Experience",
+   "group": "Customer Facing Systems",
+   "approach": "Hybrid",
+   "hosting": "Azure, AWS",
+   "scenario": "Predict SLA breaches before they happen",
+   "phase": 1,
+   "quadrant": "DEFER",
+   "impact": 3,
+   "feasibility": 3,
+   "personalData": false,
+   "automatedDecision": false,
+   "dpia": null,
+   "explainer": null,
+   "hasAgent": false,
+   "admitted": false,
+   "blocked": "no agent implemented yet (registered in portfolio)",
+   "endpoint": null,
+   "decisions": 0,
+   "escalated": 0,
+   "stp": null,
+   "confidence": null,
+   "value": 0.0,
+   "verdict": "HOLD",
+   "verdictWhy": "no production traffic",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "no personal data processed"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure, AWS"
+    }
+   ]
+  },
+  {
+   "key": "credit.scoring",
+   "name": "AI Credit Scoring Models",
+   "domain": "Credit Risk",
+   "group": "Customer Facing Systems",
+   "approach": "Hybrid",
+   "hosting": "Azure Cloud",
+   "scenario": "Thin-file credit scoring using alternative data",
+   "phase": 1,
+   "quadrant": "INVEST / RE-PLATFORM",
+   "impact": 5,
+   "feasibility": 3,
+   "personalData": true,
+   "automatedDecision": true,
+   "dpia": "DPIA-CREDIT-SCORING-2026",
+   "explainer": "SHAP (IBM OpenScale)",
+   "hasAgent": true,
+   "admitted": true,
+   "blocked": null,
+   "endpoint": "datarobot://aidigitalbank/credit-scorecard/v7:predict",
+   "decisions": 622,
+   "escalated": 247,
+   "stp": 0.6029,
+   "confidence": 0.832,
+   "value": 97500.0,
+   "verdict": "HOLD",
+   "verdictWhy": "GHS 97,500 captured, monitoring",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "DPIA DPIA-CREDIT-SCORING-2026"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "SHAP (IBM OpenScale)"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure Cloud"
+    }
+   ]
+  },
+  {
+   "key": "credit.early_warning",
+   "name": "Early Warning Systems",
+   "domain": "Credit Risk",
+   "group": "Customer Facing Systems",
+   "approach": "Hybrid",
+   "hosting": "Azure Cloud",
+   "scenario": "Predict deterioration 90 days ahead of default",
+   "phase": 1,
+   "quadrant": "INVEST / RE-PLATFORM",
+   "impact": 5,
+   "feasibility": 3,
+   "personalData": true,
+   "automatedDecision": false,
+   "dpia": "DPIA-CREDIT-EARLY_WARNING-2026",
+   "explainer": null,
+   "hasAgent": true,
+   "admitted": true,
+   "blocked": null,
+   "endpoint": "azureml://aidigitalbank/ews-gradient-boost/v4:predict",
+   "decisions": 2400,
+   "escalated": 846,
+   "stp": 0.6475,
+   "confidence": 0.708,
+   "value": 652680.0,
+   "verdict": "PIVOT",
+   "verdictWhy": "confidence drift beyond 6% tolerance - retrain",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "DPIA DPIA-CREDIT-EARLY_WARNING-2026"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure Cloud"
+    }
+   ]
+  },
+  {
+   "key": "credit.risk_pricing",
+   "name": "Risk-Based Pricing",
+   "domain": "Credit Risk",
+   "group": "Customer Facing Systems",
+   "approach": "Hybrid",
+   "hosting": "Azure Cloud",
+   "scenario": "Price loans to the borrower's modelled risk",
+   "phase": 1,
+   "quadrant": "INVEST / RE-PLATFORM",
+   "impact": 4,
+   "feasibility": 3,
+   "personalData": true,
+   "automatedDecision": true,
+   "dpia": "DPIA-CREDIT-RISK_PRICING-2026",
+   "explainer": "SHAP (IBM OpenScale)",
+   "hasAgent": true,
+   "admitted": true,
+   "blocked": null,
+   "endpoint": "azureml://aidigitalbank/risk-based-pricing/v2:score",
+   "decisions": 622,
+   "escalated": 160,
+   "stp": 0.7428,
+   "confidence": 0.805,
+   "value": 97020.0,
+   "verdict": "HOLD",
+   "verdictWhy": "GHS 97,020 captured, monitoring",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "DPIA DPIA-CREDIT-RISK_PRICING-2026"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "SHAP (IBM OpenScale)"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure Cloud"
+    }
+   ]
+  },
+  {
+   "key": "credit.collections",
+   "name": "Collections Optimization",
+   "domain": "Credit Risk",
+   "group": "Customer Facing Systems",
+   "approach": "Hybrid",
+   "hosting": "Azure Cloud",
+   "scenario": "Optimise contact channel, timing and treatment",
+   "phase": 1,
+   "quadrant": "DO NOW",
+   "impact": 4,
+   "feasibility": 4,
+   "personalData": true,
+   "automatedDecision": false,
+   "dpia": "DPIA-CREDIT-COLLECTIONS-2026",
+   "explainer": null,
+   "hasAgent": true,
+   "admitted": true,
+   "blocked": null,
+   "endpoint": "azureml://aidigitalbank/collections-nba/v2:rank",
+   "decisions": 2400,
+   "escalated": 0,
+   "stp": 1.0,
+   "confidence": 0.808,
+   "value": 180000.0,
+   "verdict": "SCALE",
+   "verdictWhy": "GHS 180,000 captured, 100% straight-through",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "DPIA DPIA-CREDIT-COLLECTIONS-2026"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure Cloud"
+    }
+   ]
+  },
+  {
+   "key": "credit.stress_testing",
+   "name": "Stress Testing",
+   "domain": "Credit Risk",
+   "group": "Customer Facing Systems",
+   "approach": "Hybrid",
+   "hosting": "Azure Cloud",
+   "scenario": "Portfolio stress scenarios for BoG submissions",
+   "phase": 1,
+   "quadrant": "INVEST / RE-PLATFORM",
+   "impact": 4,
+   "feasibility": 2,
+   "personalData": false,
+   "automatedDecision": false,
+   "dpia": null,
+   "explainer": null,
+   "hasAgent": false,
+   "admitted": false,
+   "blocked": "no agent implemented yet (registered in portfolio)",
+   "endpoint": null,
+   "decisions": 0,
+   "escalated": 0,
+   "stp": null,
+   "confidence": null,
+   "value": 0.0,
+   "verdict": "HOLD",
+   "verdictWhy": "no production traffic",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "no personal data processed"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure Cloud"
+    }
+   ]
+  },
+  {
+   "key": "sme.loan_risk",
+   "name": "Loan Risk Profiling",
+   "domain": "SME Banking",
+   "group": "Customer Facing Systems",
+   "approach": "Hybrid",
+   "hosting": "AWS, Azure",
+   "scenario": "SME credit scoring enriched with trade data",
+   "phase": 2,
+   "quadrant": "INVEST / RE-PLATFORM",
+   "impact": 5,
+   "feasibility": 3,
+   "personalData": true,
+   "automatedDecision": true,
+   "dpia": "DPIA-SME-LOAN_RISK-2026",
+   "explainer": "SHAP (IBM OpenScale)",
+   "hasAgent": true,
+   "admitted": true,
+   "blocked": null,
+   "endpoint": "azureml://aidigitalbank/sme-scorecard-lgbm/v3:predict",
+   "decisions": 229,
+   "escalated": 131,
+   "stp": 0.4279,
+   "confidence": 0.745,
+   "value": 30380.0,
+   "verdict": "PIVOT",
+   "verdictWhy": "57% of decisions escalated - automation thesis not met",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "DPIA DPIA-SME-LOAN_RISK-2026"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "SHAP (IBM OpenScale)"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: AWS, Azure"
+    }
+   ]
+  },
+  {
+   "key": "sme.doc_verification",
+   "name": "Automated Document Verification",
+   "domain": "SME Banking",
+   "group": "Customer Facing Systems",
+   "approach": "Hybrid",
+   "hosting": "AWS, Azure",
+   "scenario": "OCR for LPO and invoice validation",
+   "phase": 2,
+   "quadrant": "DO NOW",
+   "impact": 4,
+   "feasibility": 4,
+   "personalData": true,
+   "automatedDecision": false,
+   "dpia": "DPIA-SME-DOC_VERIFICATION-2026",
+   "explainer": null,
+   "hasAgent": true,
+   "admitted": true,
+   "blocked": null,
+   "endpoint": "tesseract+layoutlm://aidigitalbank/lpo-verify/v2",
+   "decisions": 360,
+   "escalated": 96,
+   "stp": 0.7333,
+   "confidence": 0.863,
+   "value": 12672.0,
+   "verdict": "HOLD",
+   "verdictWhy": "GHS 12,672 captured, monitoring",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "DPIA DPIA-SME-DOC_VERIFICATION-2026"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: AWS, Azure"
+    }
+   ]
+  },
+  {
+   "key": "sme.cashflow",
+   "name": "Cash Flow Forecasting",
+   "domain": "SME Banking",
+   "group": "Customer Facing Systems",
+   "approach": "Hybrid",
+   "hosting": "AWS, Azure",
+   "scenario": "Predict seasonal working capital needs",
+   "phase": 2,
+   "quadrant": "DO NOW",
+   "impact": 4,
+   "feasibility": 4,
+   "personalData": false,
+   "automatedDecision": false,
+   "dpia": null,
+   "explainer": null,
+   "hasAgent": true,
+   "admitted": true,
+   "blocked": null,
+   "endpoint": "prophet://aidigitalbank/sme-cashflow/v1:forecast",
+   "decisions": 167,
+   "escalated": 0,
+   "stp": 1.0,
+   "confidence": 0.816,
+   "value": 21710.0,
+   "verdict": "HOLD",
+   "verdictWhy": "GHS 21,710 captured, monitoring",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "no personal data processed"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: AWS, Azure"
+    }
+   ]
+  },
+  {
+   "key": "sme.trade_finance",
+   "name": "Trade Finance Risk Analytics",
+   "domain": "SME Banking",
+   "group": "Customer Facing Systems",
+   "approach": "Hybrid",
+   "hosting": "AWS, Azure",
+   "scenario": "Detect fraudulent shipping patterns",
+   "phase": 2,
+   "quadrant": "INVEST / RE-PLATFORM",
+   "impact": 4,
+   "feasibility": 2,
+   "personalData": false,
+   "automatedDecision": false,
+   "dpia": null,
+   "explainer": null,
+   "hasAgent": false,
+   "admitted": false,
+   "blocked": "no agent implemented yet (registered in portfolio)",
+   "endpoint": null,
+   "decisions": 0,
+   "escalated": 0,
+   "stp": null,
+   "confidence": null,
+   "value": 0.0,
+   "verdict": "HOLD",
+   "verdictWhy": "no production traffic",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "no personal data processed"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: AWS, Azure"
+    }
+   ]
+  },
+  {
+   "key": "sme.segmentation",
+   "name": "SME Customer Segmentation",
+   "domain": "SME Banking",
+   "group": "Customer Facing Systems",
+   "approach": "Hybrid",
+   "hosting": "AWS, Azure",
+   "scenario": "Identify high-growth SMEs for priority servicing",
+   "phase": 2,
+   "quadrant": "QUICK WIN",
+   "impact": 3,
+   "feasibility": 4,
+   "personalData": false,
+   "automatedDecision": false,
+   "dpia": null,
+   "explainer": null,
+   "hasAgent": false,
+   "admitted": false,
+   "blocked": "no agent implemented yet (registered in portfolio)",
+   "endpoint": null,
+   "decisions": 0,
+   "escalated": 0,
+   "stp": null,
+   "confidence": null,
+   "value": 0.0,
+   "verdict": "HOLD",
+   "verdictWhy": "no production traffic",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "no personal data processed"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: AWS, Azure"
+    }
+   ]
+  },
+  {
+   "key": "fcc.aml",
+   "name": "AML Transaction Monitoring",
+   "domain": "Financial Crime & Compliance",
+   "group": "Supporting Systems",
+   "approach": "Outsourced",
+   "hosting": "Azure, Google Cloud",
+   "scenario": "AI triages suspicious transactions ahead of analyst review",
+   "phase": 2,
+   "quadrant": "DO NOW",
+   "impact": 5,
+   "feasibility": 4,
+   "personalData": true,
+   "automatedDecision": false,
+   "dpia": "DPIA-FCC-AML-2026",
+   "explainer": null,
+   "hasAgent": true,
+   "admitted": true,
+   "blocked": null,
+   "endpoint": "h2o://aidigitalbank/aml-triage/v6:score",
+   "decisions": 8287,
+   "escalated": 370,
+   "stp": 0.9554,
+   "confidence": 0.879,
+   "value": 2295930.0,
+   "verdict": "SCALE",
+   "verdictWhy": "GHS 2,295,930 captured, 96% straight-through",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "DPIA DPIA-FCC-AML-2026"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure, Google Cloud"
+    }
+   ]
+  },
+  {
+   "key": "fcc.sanctions",
+   "name": "Sanctions & PEP Screening",
+   "domain": "Financial Crime & Compliance",
+   "group": "Supporting Systems",
+   "approach": "Outsourced",
+   "hosting": "Azure, Google Cloud",
+   "scenario": "Fuzzy matching against PEP and sanctions watchlists",
+   "phase": 2,
+   "quadrant": "DO NOW",
+   "impact": 5,
+   "feasibility": 4,
+   "personalData": true,
+   "automatedDecision": false,
+   "dpia": "DPIA-FCC-SANCTIONS-2026",
+   "explainer": null,
+   "hasAgent": true,
+   "admitted": true,
+   "blocked": null,
+   "endpoint": "lexisnexis://bridger/screen/v1",
+   "decisions": 1720,
+   "escalated": 77,
+   "stp": 0.9552,
+   "confidence": 0.956,
+   "value": 188945.0,
+   "verdict": "SCALE",
+   "verdictWhy": "GHS 188,945 captured, 96% straight-through",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "DPIA DPIA-FCC-SANCTIONS-2026"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure, Google Cloud"
+    }
+   ]
+  },
+  {
+   "key": "fcc.fraud_ring",
+   "name": "Fraud Ring Detection",
+   "domain": "Financial Crime & Compliance",
+   "group": "Supporting Systems",
+   "approach": "Outsourced",
+   "hosting": "Azure, Google Cloud",
+   "scenario": "Network graph analysis over accounts and devices",
+   "phase": 2,
+   "quadrant": "INVEST / RE-PLATFORM",
+   "impact": 5,
+   "feasibility": 3,
+   "personalData": true,
+   "automatedDecision": true,
+   "dpia": "DPIA-FCC-FRAUD_RING-2026",
+   "explainer": "SHAP (IBM OpenScale)",
+   "hasAgent": true,
+   "admitted": true,
+   "blocked": null,
+   "endpoint": "neo4j://aidigitalbank/gds/fraud-community/v2",
+   "decisions": 8287,
+   "escalated": 859,
+   "stp": 0.8963,
+   "confidence": 0.929,
+   "value": 4753920.0,
+   "verdict": "SCALE",
+   "verdictWhy": "GHS 4,753,920 captured, 90% straight-through",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "DPIA DPIA-FCC-FRAUD_RING-2026"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "SHAP (IBM OpenScale)"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure, Google Cloud"
+    }
+   ]
+  },
+  {
+   "key": "fcc.sar",
+   "name": "Suspicious Activity Reporting Automation",
+   "domain": "Financial Crime & Compliance",
+   "group": "Supporting Systems",
+   "approach": "Outsourced",
+   "hosting": "Azure, Google Cloud",
+   "scenario": "Auto-draft SARs for FIC submission",
+   "phase": 2,
+   "quadrant": "INVEST / RE-PLATFORM",
+   "impact": 4,
+   "feasibility": 3,
+   "personalData": true,
+   "automatedDecision": false,
+   "dpia": "DPIA-FCC-SAR-2026",
+   "explainer": null,
+   "hasAgent": true,
+   "admitted": true,
+   "blocked": null,
+   "endpoint": "azure-openai://aidigitalbank/sar-drafter/v1",
+   "decisions": 200,
+   "escalated": 30,
+   "stp": 0.85,
+   "confidence": 0.786,
+   "value": 30600.0,
+   "verdict": "HOLD",
+   "verdictWhy": "GHS 30,600 captured, monitoring",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "DPIA DPIA-FCC-SAR-2026"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure, Google Cloud"
+    }
+   ]
+  },
+  {
+   "key": "fcc.cyber_threat",
+   "name": "Cybersecurity Threat Detection",
+   "domain": "Financial Crime & Compliance",
+   "group": "Supporting Systems",
+   "approach": "Outsourced",
+   "hosting": "Azure, Google Cloud",
+   "scenario": "Detect phishing campaigns targeting customers",
+   "phase": 2,
+   "quadrant": "DO NOW",
+   "impact": 4,
+   "feasibility": 4,
+   "personalData": false,
+   "automatedDecision": false,
+   "dpia": null,
+   "explainer": null,
+   "hasAgent": false,
+   "admitted": false,
+   "blocked": "no agent implemented yet (registered in portfolio)",
+   "endpoint": null,
+   "decisions": 0,
+   "escalated": 0,
+   "stp": null,
+   "confidence": null,
+   "value": 0.0,
+   "verdict": "HOLD",
+   "verdictWhy": "no production traffic",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "no personal data processed"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure, Google Cloud"
+    }
+   ]
+  },
+  {
+   "key": "corp.liquidity",
+   "name": "Liquidity Management Predictions",
+   "domain": "Corporate Banking",
+   "group": "Customer Facing Systems",
+   "approach": "Hybrid",
+   "hosting": "IBM Cloud",
+   "scenario": "Corporate treasury cash forecasting",
+   "phase": 3,
+   "quadrant": "INVEST / RE-PLATFORM",
+   "impact": 4,
+   "feasibility": 3,
+   "personalData": false,
+   "automatedDecision": false,
+   "dpia": null,
+   "explainer": null,
+   "hasAgent": true,
+   "admitted": true,
+   "blocked": null,
+   "endpoint": "timegpt://aidigitalbank/corp-liquidity/v2:forecast",
+   "decisions": 240,
+   "escalated": 0,
+   "stp": 1.0,
+   "confidence": 0.797,
+   "value": 124800.0,
+   "verdict": "SCALE",
+   "verdictWhy": "GHS 124,800 captured, 100% straight-through",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "no personal data processed"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: IBM Cloud"
+    }
+   ]
+  },
+  {
+   "key": "corp.trade_fraud",
+   "name": "Trade Fraud Detection",
+   "domain": "Corporate Banking",
+   "group": "Customer Facing Systems",
+   "approach": "Hybrid",
+   "hosting": "IBM Cloud",
+   "scenario": "Detect forged bills of lading",
+   "phase": 3,
+   "quadrant": "INVEST / RE-PLATFORM",
+   "impact": 5,
+   "feasibility": 2,
+   "personalData": false,
+   "automatedDecision": false,
+   "dpia": null,
+   "explainer": null,
+   "hasAgent": true,
+   "admitted": true,
+   "blocked": null,
+   "endpoint": "neo4j+ocr://aidigitalbank/bol-verify/v1",
+   "decisions": 160,
+   "escalated": 0,
+   "stp": 1.0,
+   "confidence": 0.903,
+   "value": 200000.0,
+   "verdict": "SCALE",
+   "verdictWhy": "GHS 200,000 captured, 100% straight-through",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "no personal data processed"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: IBM Cloud"
+    }
+   ]
+  },
+  {
+   "key": "corp.portfolio_risk",
+   "name": "Credit Portfolio Risk Monitoring",
+   "domain": "Corporate Banking",
+   "group": "Customer Facing Systems",
+   "approach": "Hybrid",
+   "hosting": "IBM Cloud",
+   "scenario": "Early warning for corporate exposures",
+   "phase": 3,
+   "quadrant": "INVEST / RE-PLATFORM",
+   "impact": 5,
+   "feasibility": 3,
+   "personalData": false,
+   "automatedDecision": false,
+   "dpia": null,
+   "explainer": null,
+   "hasAgent": false,
+   "admitted": false,
+   "blocked": "no agent implemented yet (registered in portfolio)",
+   "endpoint": null,
+   "decisions": 0,
+   "escalated": 0,
+   "stp": null,
+   "confidence": null,
+   "value": 0.0,
+   "verdict": "HOLD",
+   "verdictWhy": "no production traffic",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "no personal data processed"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: IBM Cloud"
+    }
+   ]
+  },
+  {
+   "key": "corp.relationship",
+   "name": "Relationship Health Scoring",
+   "domain": "Corporate Banking",
+   "group": "Customer Facing Systems",
+   "approach": "Hybrid",
+   "hosting": "IBM Cloud",
+   "scenario": "Client engagement and wallet-share tracking",
+   "phase": 3,
+   "quadrant": "QUICK WIN",
+   "impact": 3,
+   "feasibility": 4,
+   "personalData": false,
+   "automatedDecision": false,
+   "dpia": null,
+   "explainer": null,
+   "hasAgent": false,
+   "admitted": false,
+   "blocked": "no agent implemented yet (registered in portfolio)",
+   "endpoint": null,
+   "decisions": 0,
+   "escalated": 0,
+   "stp": null,
+   "confidence": null,
+   "value": 0.0,
+   "verdict": "HOLD",
+   "verdictWhy": "no production traffic",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "no personal data processed"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: IBM Cloud"
+    }
+   ]
+  },
+  {
+   "key": "corp.cross_sell",
+   "name": "Corporate Product Cross-Selling",
+   "domain": "Corporate Banking",
+   "group": "Customer Facing Systems",
+   "approach": "Hybrid",
+   "hosting": "IBM Cloud",
+   "scenario": "Treasury / FX recommendation engine",
+   "phase": 3,
+   "quadrant": "INVEST / RE-PLATFORM",
+   "impact": 4,
+   "feasibility": 3,
+   "personalData": false,
+   "automatedDecision": false,
+   "dpia": null,
+   "explainer": null,
+   "hasAgent": false,
+   "admitted": false,
+   "blocked": "no agent implemented yet (registered in portfolio)",
+   "endpoint": null,
+   "decisions": 0,
+   "escalated": 0,
+   "stp": null,
+   "confidence": null,
+   "value": 0.0,
+   "verdict": "HOLD",
+   "verdictWhy": "no production traffic",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "no personal data processed"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: IBM Cloud"
+    }
+   ]
+  },
+  {
+   "key": "ops.document_processing",
+   "name": "Document Processing Automation",
+   "domain": "Operations",
+   "group": "Supporting Systems",
+   "approach": "In-House",
+   "hosting": "Azure, AWS",
+   "scenario": "Straight-through processing of account and KYC packs",
+   "phase": 2,
+   "quadrant": "DO NOW",
+   "impact": 4,
+   "feasibility": 5,
+   "personalData": true,
+   "automatedDecision": false,
+   "dpia": "DPIA-OPS-DOCUMENT_PROCESSING-2026",
+   "explainer": null,
+   "hasAgent": true,
+   "admitted": true,
+   "blocked": null,
+   "endpoint": "uipath://aidigitalbank/kyc-stp/v3",
+   "decisions": 800,
+   "escalated": 205,
+   "stp": 0.7438,
+   "confidence": 0.842,
+   "value": 15470.0,
+   "verdict": "HOLD",
+   "verdictWhy": "GHS 15,470 captured, monitoring",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "DPIA DPIA-OPS-DOCUMENT_PROCESSING-2026"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure, AWS"
+    }
+   ]
+  },
+  {
+   "key": "ops.back_office",
+   "name": "Back-Office Automation",
+   "domain": "Operations",
+   "group": "Supporting Systems",
+   "approach": "In-House",
+   "hosting": "Azure, AWS",
+   "scenario": "Reconciliation and exception handling",
+   "phase": 2,
+   "quadrant": "DO NOW",
+   "impact": 4,
+   "feasibility": 4,
+   "personalData": false,
+   "automatedDecision": false,
+   "dpia": null,
+   "explainer": null,
+   "hasAgent": false,
+   "admitted": false,
+   "blocked": "no agent implemented yet (registered in portfolio)",
+   "endpoint": null,
+   "decisions": 0,
+   "escalated": 0,
+   "stp": null,
+   "confidence": null,
+   "value": 0.0,
+   "verdict": "HOLD",
+   "verdictWhy": "no production traffic",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "no personal data processed"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure, AWS"
+    }
+   ]
+  },
+  {
+   "key": "ops.cash_management",
+   "name": "Cash Management Optimization",
+   "domain": "Operations",
+   "group": "Supporting Systems",
+   "approach": "In-House",
+   "hosting": "Azure, AWS",
+   "scenario": "ATM and branch cash forecasting",
+   "phase": 2,
+   "quadrant": "QUICK WIN",
+   "impact": 3,
+   "feasibility": 4,
+   "personalData": false,
+   "automatedDecision": false,
+   "dpia": null,
+   "explainer": null,
+   "hasAgent": false,
+   "admitted": false,
+   "blocked": "no agent implemented yet (registered in portfolio)",
+   "endpoint": null,
+   "decisions": 0,
+   "escalated": 0,
+   "stp": null,
+   "confidence": null,
+   "value": 0.0,
+   "verdict": "HOLD",
+   "verdictWhy": "no production traffic",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "no personal data processed"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure, AWS"
+    }
+   ]
+  },
+  {
+   "key": "ops.branch_allocation",
+   "name": "Branch Resource Allocation",
+   "domain": "Operations",
+   "group": "Supporting Systems",
+   "approach": "In-House",
+   "hosting": "Azure, AWS",
+   "scenario": "Staff scheduling against predicted footfall",
+   "phase": 2,
+   "quadrant": "QUICK WIN",
+   "impact": 3,
+   "feasibility": 4,
+   "personalData": false,
+   "automatedDecision": false,
+   "dpia": null,
+   "explainer": null,
+   "hasAgent": false,
+   "admitted": false,
+   "blocked": "no agent implemented yet (registered in portfolio)",
+   "endpoint": null,
+   "decisions": 0,
+   "escalated": 0,
+   "stp": null,
+   "confidence": null,
+   "value": 0.0,
+   "verdict": "HOLD",
+   "verdictWhy": "no production traffic",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "no personal data processed"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure, AWS"
+    }
+   ]
+  },
+  {
+   "key": "tech.aiops",
+   "name": "IT Operations Automation (AIOps)",
+   "domain": "Technology",
+   "group": "Supporting Systems",
+   "approach": "Hybrid",
+   "hosting": "Azure, AWS",
+   "scenario": "Predict and auto-remediate infrastructure incidents",
+   "phase": 2,
+   "quadrant": "DO NOW",
+   "impact": 4,
+   "feasibility": 4,
+   "personalData": false,
+   "automatedDecision": false,
+   "dpia": null,
+   "explainer": null,
+   "hasAgent": true,
+   "admitted": true,
+   "blocked": null,
+   "endpoint": "prometheus+moogsoft://aidigitalbank/aiops/v2",
+   "decisions": 500,
+   "escalated": 182,
+   "stp": 0.636,
+   "confidence": 0.774,
+   "value": 108120.0,
+   "verdict": "HOLD",
+   "verdictWhy": "GHS 108,120 captured, monitoring",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "no personal data processed"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure, AWS"
+    }
+   ]
+  },
+  {
+   "key": "tech.api_health",
+   "name": "API & System Health Monitoring",
+   "domain": "Technology",
+   "group": "Supporting Systems",
+   "approach": "Hybrid",
+   "hosting": "Azure, AWS",
+   "scenario": "Anomaly detection across the API estate",
+   "phase": 2,
+   "quadrant": "QUICK WIN",
+   "impact": 3,
+   "feasibility": 5,
+   "personalData": false,
+   "automatedDecision": false,
+   "dpia": null,
+   "explainer": null,
+   "hasAgent": false,
+   "admitted": false,
+   "blocked": "no agent implemented yet (registered in portfolio)",
+   "endpoint": null,
+   "decisions": 0,
+   "escalated": 0,
+   "stp": null,
+   "confidence": null,
+   "value": 0.0,
+   "verdict": "HOLD",
+   "verdictWhy": "no production traffic",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "no personal data processed"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure, AWS"
+    }
+   ]
+  },
+  {
+   "key": "tech.cyber_ai",
+   "name": "Cybersecurity AI",
+   "domain": "Technology",
+   "group": "Supporting Systems",
+   "approach": "Hybrid",
+   "hosting": "Azure, AWS",
+   "scenario": "SIEM-integrated threat detection and response",
+   "phase": 2,
+   "quadrant": "INVEST / RE-PLATFORM",
+   "impact": 5,
+   "feasibility": 3,
+   "personalData": false,
+   "automatedDecision": false,
+   "dpia": null,
+   "explainer": null,
+   "hasAgent": false,
+   "admitted": false,
+   "blocked": "no agent implemented yet (registered in portfolio)",
+   "endpoint": null,
+   "decisions": 0,
+   "escalated": 0,
+   "stp": null,
+   "confidence": null,
+   "value": 0.0,
+   "verdict": "HOLD",
+   "verdictWhy": "no production traffic",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "no personal data processed"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure, AWS"
+    }
+   ]
+  },
+  {
+   "key": "tech.cloud_cost",
+   "name": "Cloud Resource Optimization",
+   "domain": "Technology",
+   "group": "Supporting Systems",
+   "approach": "Hybrid",
+   "hosting": "Azure, AWS",
+   "scenario": "FinOps rightsizing across Azure / AWS / IBM",
+   "phase": 2,
+   "quadrant": "QUICK WIN",
+   "impact": 3,
+   "feasibility": 4,
+   "personalData": false,
+   "automatedDecision": false,
+   "dpia": null,
+   "explainer": null,
+   "hasAgent": false,
+   "admitted": false,
+   "blocked": "no agent implemented yet (registered in portfolio)",
+   "endpoint": null,
+   "decisions": 0,
+   "escalated": 0,
+   "stp": null,
+   "confidence": null,
+   "value": 0.0,
+   "verdict": "HOLD",
+   "verdictWhy": "no production traffic",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "no personal data processed"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: Azure, AWS"
+    }
+   ]
+  },
+  {
+   "key": "finance.forecasting",
+   "name": "Budgeting & Forecasting",
+   "domain": "Finance",
+   "group": "Supporting Systems",
+   "approach": "Hybrid",
+   "hosting": "IBM Cloud",
+   "scenario": "Rolling revenue and cost forecasts",
+   "phase": 3,
+   "quadrant": "INVEST / RE-PLATFORM",
+   "impact": 4,
+   "feasibility": 3,
+   "personalData": false,
+   "automatedDecision": false,
+   "dpia": null,
+   "explainer": null,
+   "hasAgent": false,
+   "admitted": false,
+   "blocked": "no agent implemented yet (registered in portfolio)",
+   "endpoint": null,
+   "decisions": 0,
+   "escalated": 0,
+   "stp": null,
+   "confidence": null,
+   "value": 0.0,
+   "verdict": "HOLD",
+   "verdictWhy": "no production traffic",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "no personal data processed"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: IBM Cloud"
+    }
+   ]
+  },
+  {
+   "key": "finance.cost_opt",
+   "name": "Cost Optimization",
+   "domain": "Finance",
+   "group": "Supporting Systems",
+   "approach": "Hybrid",
+   "hosting": "IBM Cloud",
+   "scenario": "Spend analytics and leakage detection",
+   "phase": 3,
+   "quadrant": "QUICK WIN",
+   "impact": 3,
+   "feasibility": 4,
+   "personalData": false,
+   "automatedDecision": false,
+   "dpia": null,
+   "explainer": null,
+   "hasAgent": false,
+   "admitted": false,
+   "blocked": "no agent implemented yet (registered in portfolio)",
+   "endpoint": null,
+   "decisions": 0,
+   "escalated": 0,
+   "stp": null,
+   "confidence": null,
+   "value": 0.0,
+   "verdict": "HOLD",
+   "verdictWhy": "no production traffic",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "no personal data processed"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: IBM Cloud"
+    }
+   ]
+  },
+  {
+   "key": "legal.contract_intel",
+   "name": "Contract Intelligence",
+   "domain": "Legal",
+   "group": "Supporting Systems",
+   "approach": "Outsourced",
+   "hosting": "AWS, Google Cloud",
+   "scenario": "Clause extraction and obligation tracking",
+   "phase": 3,
+   "quadrant": "DEFER",
+   "impact": 3,
+   "feasibility": 3,
+   "personalData": false,
+   "automatedDecision": false,
+   "dpia": null,
+   "explainer": null,
+   "hasAgent": false,
+   "admitted": false,
+   "blocked": "no agent implemented yet (registered in portfolio)",
+   "endpoint": null,
+   "decisions": 0,
+   "escalated": 0,
+   "stp": null,
+   "confidence": null,
+   "value": 0.0,
+   "verdict": "HOLD",
+   "verdictWhy": "no production traffic",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "no personal data processed"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: AWS, Google Cloud"
+    }
+   ]
+  },
+  {
+   "key": "legal.privacy",
+   "name": "Data Privacy & Governance",
+   "domain": "Legal",
+   "group": "Supporting Systems",
+   "approach": "Outsourced",
+   "hosting": "AWS, Google Cloud",
+   "scenario": "Automated DPIA tracking and retention enforcement",
+   "phase": 1,
+   "quadrant": "INVEST / RE-PLATFORM",
+   "impact": 4,
+   "feasibility": 3,
+   "personalData": false,
+   "automatedDecision": false,
+   "dpia": null,
+   "explainer": null,
+   "hasAgent": false,
+   "admitted": false,
+   "blocked": "no agent implemented yet (registered in portfolio)",
+   "endpoint": null,
+   "decisions": 0,
+   "escalated": 0,
+   "stp": null,
+   "confidence": null,
+   "value": 0.0,
+   "verdict": "HOLD",
+   "verdictWhy": "no production traffic",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "no personal data processed"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: AWS, Google Cloud"
+    }
+   ]
+  },
+  {
+   "key": "marketing.campaign",
+   "name": "Campaign Optimization",
+   "domain": "Marketing & Sales",
+   "group": "Customer Facing Systems",
+   "approach": "Hybrid",
+   "hosting": "IBM Cloud",
+   "scenario": "Budget allocation across channels",
+   "phase": 3,
+   "quadrant": "QUICK WIN",
+   "impact": 3,
+   "feasibility": 4,
+   "personalData": false,
+   "automatedDecision": false,
+   "dpia": null,
+   "explainer": null,
+   "hasAgent": false,
+   "admitted": false,
+   "blocked": "no agent implemented yet (registered in portfolio)",
+   "endpoint": null,
+   "decisions": 0,
+   "escalated": 0,
+   "stp": null,
+   "confidence": null,
+   "value": 0.0,
+   "verdict": "HOLD",
+   "verdictWhy": "no production traffic",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "no personal data processed"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: IBM Cloud"
+    }
+   ]
+  },
+  {
+   "key": "marketing.lead_scoring",
+   "name": "Lead Scoring",
+   "domain": "Marketing & Sales",
+   "group": "Customer Facing Systems",
+   "approach": "Hybrid",
+   "hosting": "IBM Cloud",
+   "scenario": "Rank inbound leads by conversion propensity",
+   "phase": 3,
+   "quadrant": "QUICK WIN",
+   "impact": 3,
+   "feasibility": 4,
+   "personalData": false,
+   "automatedDecision": false,
+   "dpia": null,
+   "explainer": null,
+   "hasAgent": false,
+   "admitted": false,
+   "blocked": "no agent implemented yet (registered in portfolio)",
+   "endpoint": null,
+   "decisions": 0,
+   "escalated": 0,
+   "stp": null,
+   "confidence": null,
+   "value": 0.0,
+   "verdict": "HOLD",
+   "verdictWhy": "no production traffic",
+   "gates": [
+    {
+     "gate": "Strategic Alignment",
+     "pass": true,
+     "note": "aligned to bank-wide AI strategy"
+    },
+    {
+     "gate": "Data Protection (DPIA)",
+     "pass": true,
+     "note": "no personal data processed"
+    },
+    {
+     "gate": "Model Risk Management",
+     "pass": true,
+     "note": "validated, bias-tested, stress-tested"
+    },
+    {
+     "gate": "Explainability & Fairness",
+     "pass": true,
+     "note": "not an automated customer decision"
+    },
+    {
+     "gate": "Security & Hosting",
+     "pass": true,
+     "note": "approved hosting: IBM Cloud"
+    }
+   ]
+  }
+ ],
+ "drift": [
+  {
+   "key": "credit.early_warning",
+   "name": "Early Warning Systems",
+   "baseline": 0.838,
+   "recent": 0.707
+  }
+ ],
+ "phases": [
+  {
+   "n": 1,
+   "label": "Foundation",
+   "window": "0-6 months"
+  },
+  {
+   "n": 2,
+   "label": "Build",
+   "window": "6-18 months"
+  },
+  {
+   "n": 3,
+   "label": "Optimize",
+   "window": "18-30 months"
+  },
+  {
+   "n": 4,
+   "label": "Scale",
+   "window": "30+ months"
+  }
+ ],
+ "audit": [
+  {
+   "ts": "2026-09-20T07:32:00",
+   "event_id": "EV20260920-00242",
+   "use_case": "retail.fraud_detection",
+   "model_version": "0.1.0-stub",
+   "action": "APPROVE",
+   "confidence": 0.907,
+   "explanation": "within customer's behavioural envelope",
+   "data_categories": [
+    "account",
+    "transaction",
+    "device",
+    "geolocation"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T07:32:00",
+   "event_id": "EV20260920-00242",
+   "use_case": "fcc.aml",
+   "model_version": "0.1.0-stub",
+   "action": "CLOSE_NO_ACTION",
+   "confidence": 0.864,
+   "explanation": "no typology match",
+   "data_categories": [
+    "identity",
+    "transaction",
+    "counterparty"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T07:32:00",
+   "event_id": "EV20260920-00242",
+   "use_case": "fcc.fraud_ring",
+   "model_version": "0.1.0-stub",
+   "action": "NO_RING_DETECTED",
+   "confidence": 0.91,
+   "explanation": "community density 0.07",
+   "data_categories": [
+    "account",
+    "device",
+    "network graph"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T20:56:00",
+   "event_id": "EV20260920-00048",
+   "use_case": "retail.fraud_detection",
+   "model_version": "0.1.0-stub",
+   "action": "APPROVE",
+   "confidence": 0.927,
+   "explanation": "within customer's behavioural envelope",
+   "data_categories": [
+    "account",
+    "transaction",
+    "device",
+    "geolocation"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T20:56:00",
+   "event_id": "EV20260920-00048",
+   "use_case": "fcc.aml",
+   "model_version": "0.1.0-stub",
+   "action": "CLOSE_NO_ACTION",
+   "confidence": 0.881,
+   "explanation": "no typology match",
+   "data_categories": [
+    "identity",
+    "transaction",
+    "counterparty"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T20:56:00",
+   "event_id": "EV20260920-00048",
+   "use_case": "fcc.fraud_ring",
+   "model_version": "0.1.0-stub",
+   "action": "NO_RING_DETECTED",
+   "confidence": 0.91,
+   "explanation": "community density 0.13",
+   "data_categories": [
+    "account",
+    "device",
+    "network graph"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T14:08:00",
+   "event_id": "EV20260920-00512",
+   "use_case": "retail.chatbot",
+   "model_version": "0.1.0-stub",
+   "action": "SERVE_BALANCE_ENQUIRY",
+   "confidence": 0.67,
+   "explanation": "intent=balance_enquiry, language=Ga",
+   "data_categories": [
+    "identity",
+    "contact",
+    "conversation"
+   ],
+   "human_review": true
+  },
+  {
+   "ts": "2026-09-20T14:08:00",
+   "event_id": "EV20260920-00512",
+   "use_case": "cx.complaint_resolution",
+   "model_version": "0.1.0-stub",
+   "action": "AUTO_RESOLVE",
+   "confidence": 0.77,
+   "explanation": "severity 3/5, playbook match",
+   "data_categories": [
+    "identity",
+    "contact",
+    "complaint text"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T06:58:00",
+   "event_id": "EV20260920-00278",
+   "use_case": "retail.fraud_detection",
+   "model_version": "0.1.0-stub",
+   "action": "APPROVE",
+   "confidence": 0.911,
+   "explanation": "within customer's behavioural envelope",
+   "data_categories": [
+    "account",
+    "transaction",
+    "device",
+    "geolocation"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T06:58:00",
+   "event_id": "EV20260920-00278",
+   "use_case": "fcc.aml",
+   "model_version": "0.1.0-stub",
+   "action": "CLOSE_NO_ACTION",
+   "confidence": 0.917,
+   "explanation": "no typology match",
+   "data_categories": [
+    "identity",
+    "transaction",
+    "counterparty"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T06:58:00",
+   "event_id": "EV20260920-00278",
+   "use_case": "fcc.fraud_ring",
+   "model_version": "0.1.0-stub",
+   "action": "NO_RING_DETECTED",
+   "confidence": 0.91,
+   "explanation": "community density 0.21",
+   "data_categories": [
+    "account",
+    "device",
+    "network graph"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T14:48:00",
+   "event_id": "EV20260920-00906",
+   "use_case": "credit.early_warning",
+   "model_version": "0.1.0-stub",
+   "action": "NO_ACTION",
+   "confidence": 0.663,
+   "explanation": "stress 0.48 within tolerance",
+   "data_categories": [
+    "account",
+    "transaction",
+    "exposure"
+   ],
+   "human_review": true
+  },
+  {
+   "ts": "2026-09-20T14:48:00",
+   "event_id": "EV20260920-00906",
+   "use_case": "credit.collections",
+   "model_version": "0.1.0-stub",
+   "action": "CONTACT_VIA_FIELD_VISIT",
+   "confidence": 0.716,
+   "explanation": "114 days past due, best-response channel",
+   "data_categories": [
+    "account",
+    "arrears",
+    "contact history"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T14:48:00",
+   "event_id": "EV20260920-00906",
+   "use_case": "cx.retention",
+   "model_version": "0.1.0-stub",
+   "action": "MONITOR",
+   "confidence": 0.88,
+   "explanation": "churn propensity 14%",
+   "data_categories": [
+    "account",
+    "transaction",
+    "service history"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T14:48:00",
+   "event_id": "EV20260920-00906",
+   "use_case": "retail.personalized_offers",
+   "model_version": "0.1.0-stub",
+   "action": "OFFER_LOAN_TOPUP",
+   "confidence": 0.916,
+   "explanation": "balance +32% over 90d",
+   "data_categories": [
+    "account",
+    "balance history",
+    "product holding"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T05:55:00",
+   "event_id": "EV20260920-00500",
+   "use_case": "retail.chatbot",
+   "model_version": "0.1.0-stub",
+   "action": "SERVE_AIRTIME_TOPUP",
+   "confidence": 0.645,
+   "explanation": "intent=airtime_topup, language=Ga",
+   "data_categories": [
+    "identity",
+    "contact",
+    "conversation"
+   ],
+   "human_review": true
+  },
+  {
+   "ts": "2026-09-20T05:55:00",
+   "event_id": "EV20260920-00500",
+   "use_case": "cx.complaint_resolution",
+   "model_version": "0.1.0-stub",
+   "action": "ESCALATE_TIER2",
+   "confidence": 0.62,
+   "explanation": "severity 5/5, regulatory exposure",
+   "data_categories": [
+    "identity",
+    "contact",
+    "complaint text"
+   ],
+   "human_review": true
+  },
+  {
+   "ts": "2026-09-20T17:37:00",
+   "event_id": "EV20260920-00343",
+   "use_case": "retail.fraud_detection",
+   "model_version": "0.1.0-stub",
+   "action": "APPROVE",
+   "confidence": 0.943,
+   "explanation": "within customer's behavioural envelope",
+   "data_categories": [
+    "account",
+    "transaction",
+    "device",
+    "geolocation"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T17:37:00",
+   "event_id": "EV20260920-00343",
+   "use_case": "fcc.aml",
+   "model_version": "0.1.0-stub",
+   "action": "CLOSE_NO_ACTION",
+   "confidence": 0.891,
+   "explanation": "no typology match",
+   "data_categories": [
+    "identity",
+    "transaction",
+    "counterparty"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T17:37:00",
+   "event_id": "EV20260920-00343",
+   "use_case": "fcc.fraud_ring",
+   "model_version": "0.1.0-stub",
+   "action": "FREEZE_CLUSTER",
+   "confidence": 1.05,
+   "explanation": "community density 0.43, shared device fingerprints",
+   "data_categories": [
+    "account",
+    "device",
+    "network graph"
+   ],
+   "human_review": true
+  },
+  {
+   "ts": "2026-09-20T02:51:00",
+   "event_id": "EV20260920-00436",
+   "use_case": "retail.loan_preapproval",
+   "model_version": "0.1.0-stub",
+   "action": "PRE_APPROVE_GHS_47,700",
+   "confidence": 0.885,
+   "explanation": "PD 11.1%, affordability-capped at 4x monthly income",
+   "data_categories": [
+    "identity",
+    "income",
+    "credit bureau",
+    "transaction"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T02:51:00",
+   "event_id": "EV20260920-00436",
+   "use_case": "credit.scoring",
+   "model_version": "0.1.0-stub",
+   "action": "GRADE_B",
+   "confidence": 0.917,
+   "explanation": "bureau 693, thin_file=False, top driver: repayment history",
+   "data_categories": [
+    "identity",
+    "income",
+    "credit bureau",
+    "alternative data"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T02:51:00",
+   "event_id": "EV20260920-00436",
+   "use_case": "credit.risk_pricing",
+   "model_version": "0.1.0-stub",
+   "action": "PRICE_BASE_PLUS_7.5pct",
+   "confidence": 0.8,
+   "explanation": "grade C risk spread",
+   "data_categories": [
+    "credit grade",
+    "product",
+    "tenor"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T02:51:00",
+   "event_id": "EV20260920-00436",
+   "use_case": "fcc.sanctions",
+   "model_version": "0.1.0-stub",
+   "action": "CLEAR",
+   "confidence": 0.96,
+   "explanation": "no match above 0.30 (best 0.09)",
+   "data_categories": [
+    "identity",
+    "nationality",
+    "counterparty"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T04:03:00",
+   "event_id": "EV20260920-00477",
+   "use_case": "sme.doc_verification",
+   "model_version": "0.1.0-stub",
+   "action": "VERIFIED",
+   "confidence": 0.886,
+   "explanation": "LPO fields matched to buyer registry",
+   "data_categories": [
+    "business identity",
+    "document image"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T04:03:00",
+   "event_id": "EV20260920-00477",
+   "use_case": "sme.loan_risk",
+   "model_version": "0.1.0-stub",
+   "action": "APPROVE_WITH_COVENANT",
+   "confidence": 0.838,
+   "explanation": "turnover GHS 1,514,811, cashflow volatility 0.21",
+   "data_categories": [
+    "business identity",
+    "trade data",
+    "transaction"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T04:03:00",
+   "event_id": "EV20260920-00477",
+   "use_case": "sme.cashflow",
+   "model_version": "0.1.0-stub",
+   "action": "OFFER_WORKING_CAPITAL",
+   "confidence": 0.704,
+   "explanation": "projected 60d shortfall GHS 342,693",
+   "data_categories": [
+    "business transaction"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T04:03:00",
+   "event_id": "EV20260920-00477",
+   "use_case": "fcc.sanctions",
+   "model_version": "0.1.0-stub",
+   "action": "CLEAR",
+   "confidence": 0.96,
+   "explanation": "no match above 0.30 (best 0.19)",
+   "data_categories": [
+    "identity",
+    "nationality",
+    "counterparty"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T13:10:00",
+   "event_id": "EV20260920-00095",
+   "use_case": "retail.fraud_detection",
+   "model_version": "0.1.0-stub",
+   "action": "APPROVE",
+   "confidence": 0.929,
+   "explanation": "within customer's behavioural envelope",
+   "data_categories": [
+    "account",
+    "transaction",
+    "device",
+    "geolocation"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T13:10:00",
+   "event_id": "EV20260920-00095",
+   "use_case": "fcc.aml",
+   "model_version": "0.1.0-stub",
+   "action": "CLOSE_NO_ACTION",
+   "confidence": 0.732,
+   "explanation": "no typology match",
+   "data_categories": [
+    "identity",
+    "transaction",
+    "counterparty"
+   ],
+   "human_review": true
+  },
+  {
+   "ts": "2026-09-20T13:10:00",
+   "event_id": "EV20260920-00095",
+   "use_case": "fcc.fraud_ring",
+   "model_version": "0.1.0-stub",
+   "action": "NO_RING_DETECTED",
+   "confidence": 0.91,
+   "explanation": "community density 0.28",
+   "data_categories": [
+    "account",
+    "device",
+    "network graph"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T13:26:00",
+   "event_id": "EV20260920-00027",
+   "use_case": "retail.fraud_detection",
+   "model_version": "0.1.0-stub",
+   "action": "APPROVE",
+   "confidence": 0.911,
+   "explanation": "within customer's behavioural envelope",
+   "data_categories": [
+    "account",
+    "transaction",
+    "device",
+    "geolocation"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T13:26:00",
+   "event_id": "EV20260920-00027",
+   "use_case": "fcc.aml",
+   "model_version": "0.1.0-stub",
+   "action": "CLOSE_NO_ACTION",
+   "confidence": 0.905,
+   "explanation": "no typology match",
+   "data_categories": [
+    "identity",
+    "transaction",
+    "counterparty"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T13:26:00",
+   "event_id": "EV20260920-00027",
+   "use_case": "fcc.fraud_ring",
+   "model_version": "0.1.0-stub",
+   "action": "NO_RING_DETECTED",
+   "confidence": 0.91,
+   "explanation": "community density 0.24",
+   "data_categories": [
+    "account",
+    "device",
+    "network graph"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T07:47:00",
+   "event_id": "EV20260920-00332",
+   "use_case": "retail.fraud_detection",
+   "model_version": "0.1.0-stub",
+   "action": "APPROVE",
+   "confidence": 0.928,
+   "explanation": "within customer's behavioural envelope",
+   "data_categories": [
+    "account",
+    "transaction",
+    "device",
+    "geolocation"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T07:47:00",
+   "event_id": "EV20260920-00332",
+   "use_case": "fcc.aml",
+   "model_version": "0.1.0-stub",
+   "action": "CLOSE_NO_ACTION",
+   "confidence": 0.773,
+   "explanation": "no typology match",
+   "data_categories": [
+    "identity",
+    "transaction",
+    "counterparty"
+   ],
+   "human_review": true
+  },
+  {
+   "ts": "2026-09-20T07:47:00",
+   "event_id": "EV20260920-00332",
+   "use_case": "fcc.fraud_ring",
+   "model_version": "0.1.0-stub",
+   "action": "NO_RING_DETECTED",
+   "confidence": 0.91,
+   "explanation": "community density 0.04",
+   "data_categories": [
+    "account",
+    "device",
+    "network graph"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T14:19:00",
+   "event_id": "EV20260920-00317",
+   "use_case": "retail.fraud_detection",
+   "model_version": "0.1.0-stub",
+   "action": "APPROVE",
+   "confidence": 0.796,
+   "explanation": "within customer's behavioural envelope",
+   "data_categories": [
+    "account",
+    "transaction",
+    "device",
+    "geolocation"
+   ],
+   "human_review": true
+  },
+  {
+   "ts": "2026-09-20T14:19:00",
+   "event_id": "EV20260920-00317",
+   "use_case": "fcc.aml",
+   "model_version": "0.1.0-stub",
+   "action": "CLOSE_NO_ACTION",
+   "confidence": 0.859,
+   "explanation": "no typology match",
+   "data_categories": [
+    "identity",
+    "transaction",
+    "counterparty"
+   ],
+   "human_review": false
+  },
+  {
+   "ts": "2026-09-20T14:19:00",
+   "event_id": "EV20260920-00317",
+   "use_case": "fcc.fraud_ring",
+   "model_version": "0.1.0-stub",
+   "action": "NO_RING_DETECTED",
+   "confidence": 0.91,
+   "explanation": "community density 0.20",
+   "data_categories": [
+    "account",
+    "device",
+    "network graph"
+   ],
+   "human_review": false
+  }
+ ]
+}</script>
+<script>
+const D = JSON.parse(document.getElementById('snapshot').textContent);
+const CCY = D.meta.currency;
+const fmt = n => n.toLocaleString('en-GB');
+const money = n => CCY + ' ' + Math.round(n).toLocaleString('en-GB');
+const compact = n => n >= 1e6 ? (n/1e6).toFixed(2)+'m' : n >= 1e3 ? (n/1e3).toFixed(0)+'k' : String(n);
+let cutoff = 4;
+
+/* ---- masthead ---- */
+document.getElementById('runmeta').innerHTML =
+  `<b>${D.meta.days}</b> business days simulated &nbsp;·&nbsp; seed <b>${D.meta.seed}</b><br>
+   ${fmt(D.totals.events)} events ingested &nbsp;·&nbsp; stub models, no live data<br>
+   snapshot ${D.meta.generated.replace('T',' ')}`;
+
+const stp = 1 - D.totals.escalated / D.totals.decisions;
+document.getElementById('stats').innerHTML = [
+  ['Automated decisions', fmt(D.totals.decisions), 'across ' + D.useCases.filter(u=>u.decisions).length + ' live agents'],
+  ['Straight-through', (stp*100).toFixed(1) + '%', fmt(D.totals.escalated) + ' decisions sent to a person'],
+  ['Value captured', money(D.totals.value), 'attributed only to decisions that stayed automated'],
+  ['Review backlog', fmt(D.totals.backlog), 'case-days beyond reviewer capacity'],
+].map(([l,v,s],i) => `<div class="stat"><span class="eyebrow">${l}</span>
+   <span class="v" ${i===3?'style="color:var(--alert)"':''}>${v}</span><small>${s}</small></div>`).join('');
+
+/* ---- signature chart ---- */
+function drawHuman(){
+  const svg = document.getElementById('humanChart');
+  const W = svg.clientWidth || 900, H = 290;
+  const pad = {t:16,r:56,b:34,l:52};
+  const days = D.daily, cap = D.meta.capacityPerDay;
+  const maxEsc = Math.max(...days.map(d=>d.escalated)) * 1.12;
+  const maxBack = Math.max(...days.map(d=>d.backlog), 1);
+  const iw = W - pad.l - pad.r, ih = H - pad.t - pad.b;
+  const bw = iw / days.length;
+  const y = v => pad.t + ih - (v / maxEsc) * ih;
+  const yb = v => pad.t + ih - (v / maxBack) * ih;
+  let s = `<defs><pattern id="hatch" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+    <rect width="6" height="6" fill="#C0392B"/><line x1="0" y1="0" x2="0" y2="6" stroke="#8E2A20" stroke-width="2.5"/></pattern></defs>`;
+  // gridlines
+  for (let i=0;i<=4;i++){
+    const v = maxEsc*i/4, yy = y(v);
+    s += `<line x1="${pad.l}" y1="${yy}" x2="${W-pad.r}" y2="${yy}" stroke="#D5D8DC" stroke-width="1"/>
+          <text x="${pad.l-9}" y="${yy+4}" text-anchor="end" font-family="IBM Plex Mono" font-size="10" fill="#6B7076">${Math.round(v)}</text>`;
+  }
+  days.forEach((d,i)=>{
+    const x = pad.l + i*bw + bw*0.18, w = bw*0.64;
+    const cleared = Math.min(d.escalated, cap), over = Math.max(0, d.escalated - cap);
+    s += `<rect x="${x}" y="${y(cleared)}" width="${w}" height="${pad.t+ih-y(cleared)}" fill="#2E7D5B"/>`;
+    if (over>0) s += `<rect x="${x}" y="${y(d.escalated)}" width="${w}" height="${y(cleared)-y(d.escalated)}" fill="url(#hatch)"/>`;
+    if (i%2===0) s += `<text x="${x+w/2}" y="${H-13}" text-anchor="middle" font-family="IBM Plex Mono" font-size="9.5" fill="#6B7076">${d.day.split(' ')[0]}</text>`;
+  });
+  // backlog line
+  const pts = days.map((d,i)=>`${pad.l+i*bw+bw/2},${yb(d.backlog)}`).join(' ');
+  s += `<polyline points="${pts}" fill="none" stroke="#E87722" stroke-width="2"/>`;
+  s += `<text x="${W-pad.r+8}" y="${yb(days[days.length-1].backlog)+4}" font-family="IBM Plex Mono" font-size="10" fill="#B4531F">${compact(days[days.length-1].backlog)}</text>`;
+  // capacity line
+  s += `<line x1="${pad.l}" y1="${y(cap)}" x2="${W-pad.r}" y2="${y(cap)}" stroke="#17181B" stroke-width="2" stroke-dasharray="7 4"/>
+        <text x="${pad.l+6}" y="${y(cap)-7}" font-family="IBM Plex Sans Condensed" font-weight="700" font-size="10.5" letter-spacing="1.4" fill="#17181B">REVIEW CAPACITY ${cap}/DAY</text>`;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.innerHTML = s;
+}
+const avgEsc = Math.round(D.totals.escalated / D.meta.days);
+document.getElementById('humanLede').innerHTML =
+  `The models escalate <b>${fmt(avgEsc)} cases a day</b>. There are <b>${D.meta.capacityPerDay} reviewers</b> to clear them.
+   Everything above the dashed line rolls into tomorrow, and by day ${D.meta.days} the queue has grown to
+   <b>${fmt(D.daily[D.daily.length-1].backlog)} cases</b>. Straight-through rate is a hiring decision before it is a model decision:
+   raising a confidence floor buys accuracy and spends reviewer hours the bank has not yet budgeted.`;
+drawHuman();
+addEventListener('resize', drawHuman);
+
+/* ---- portfolio ---- */
+const fbox = document.getElementById('filters');
+D.phases.forEach(p=>{
+  const b = document.createElement('button');
+  b.className='ph'; b.textContent = `P${p.n} · ${p.label}`;
+  b.title = p.window;
+  b.setAttribute('aria-pressed', p.n===cutoff);
+  b.onclick = ()=>{ cutoff = p.n; [...fbox.querySelectorAll('.ph')].forEach((x,i)=>x.setAttribute('aria-pressed', D.phases[i].n===cutoff)); render(); };
+  fbox.appendChild(b);
+});
+
+function render(){
+  const rows = document.getElementById('rows');
+  const live = D.useCases.filter(u=>u.hasAgent).sort((a,b)=>b.value-a.value);
+  const inScope = live.filter(u=>u.phase<=cutoff);
+  const maxV = Math.max(...live.map(u=>u.value),1);
+  rows.innerHTML = live.map(u=>{
+    const on = u.phase<=cutoff;
+    const verdict = on ? u.verdict : 'QUEUED';
+    return `<tr data-key="${u.key}" class="${on?'':'dim'}" tabindex="0">
+      <td class="nm">${u.name}<span class="dom">${u.domain} · phase ${u.phase}</span></td>
+      <td class="hide-s"><span class="num" style="font-size:12px;color:var(--muted)">${u.quadrant}</span></td>
+      <td class="r num">${fmt(u.decisions)}</td>
+      <td class="r hide-s num" style="color:${u.stp<0.6?'var(--alert)':'inherit'}">${u.stp!=null?(u.stp*100).toFixed(0)+'%':'—'}</td>
+      <td class="r"><div style="display:flex;align-items:center;gap:8px;justify-content:flex-end">
+        <span class="num">${compact(u.value)}</span><span class="bar"><i style="width:${(u.value/maxV*100).toFixed(1)}%"></i></span></div></td>
+      <td><span class="pill p-${verdict}">${verdict}</span></td>
+    </tr>`;
+  }).join('');
+  rows.querySelectorAll('tr').forEach(tr=>{
+    tr.onclick = ()=>openDrawer(tr.dataset.key);
+    tr.onkeydown = e=>{ if(e.key==='Enter') openDrawer(tr.dataset.key); };
+  });
+  const v = inScope.reduce((s,u)=>s+u.value,0), n = inScope.reduce((s,u)=>s+u.decisions,0);
+  const ph = D.phases.find(p=>p.n===cutoff);
+  document.getElementById('tablenote').textContent =
+    `Portfolio admitted at Phase ${cutoff} (${ph.window}): ${inScope.length} of ${live.length} built agents, `
+    + `${fmt(n)} decisions, ${money(v)} captured. Dimmed rows are scheduled for a later phase — their traffic is being handled manually today.`;
+}
+render();
+
+/* ---- blocked ---- */
+document.getElementById('blocked').innerHTML = D.useCases.filter(u=>!u.hasAgent)
+  .sort((a,b)=>a.phase-b.phase).slice(0,9).map(u=>
+   `<div class="blockrow"><span style="flex:1">${u.name}<span class="why" style="display:block">${u.domain} · phase ${u.phase} · ${u.quadrant.toLowerCase()}</span></span>
+    <span class="pill p-QUEUED">no agent</span></div>`).join('')
+  + `<div class="blockrow" style="color:var(--muted);font-size:12px">${D.useCases.filter(u=>!u.hasAgent).length} of ${D.useCases.length} registered use cases have no agent built. Governance passes; engineering has not started.</div>`;
+
+/* ---- drift + coverage ---- */
+document.getElementById('drift').innerHTML = D.drift.length ? D.drift.map(d=>
+  `<div class="driftcard"><div class="t">${d.name}</div>
+   <div class="d">confidence ${d.baseline.toFixed(2)} → ${d.recent.toFixed(2)} · tolerance ${(D.meta.driftTolerance*100).toFixed(0)}% · retrain and revalidate</div></div>`).join('')
+  : `<div style="font-size:13px;color:var(--muted);margin-bottom:14px">No model outside tolerance.</div>`;
+
+const liveAgents = D.useCases.filter(u=>u.hasAgent);
+const pd = liveAgents.filter(u=>u.personalData);
+const ad = liveAgents.filter(u=>u.automatedDecision);
+document.getElementById('dpiaCov').textContent = pd.filter(u=>u.dpia).length + '/' + pd.length;
+document.getElementById('explCov').textContent = ad.filter(u=>u.explainer).length + '/' + ad.length;
+
+/* ---- audit ---- */
+document.getElementById('audit').innerHTML = D.audit.slice().reverse().map(a=>
+  `<div><span class="k">${a.ts.replace('T',' ')}</span> ${a.event_id}
+   <span class="${a.human_review?'rev':'ok'}">${a.human_review?'REVIEW':'AUTO  '}</span>
+   ${a.use_case} → ${a.action} <span class="k">conf</span> ${a.confidence.toFixed(2)}
+   <span class="k">· ${a.explanation}</span></div>`).join('');
+
+/* ---- drawer ---- */
+const drawer = document.getElementById('drawer'), scrim = document.getElementById('scrim');
+function openDrawer(key){
+  const u = D.useCases.find(x=>x.key===key);
+  document.getElementById('drawerBody').innerHTML = `
+    <span class="eyebrow">${u.domain} · ${u.group}</span>
+    <h3>${u.name}</h3>
+    <p class="scen">${u.scenario}</p>
+    <dl class="kv">
+      <dt>Verdict</dt><dd><span class="pill p-${u.verdict}">${u.verdict}</span> ${u.verdictWhy}</dd>
+      <dt>Phase</dt><dd>${u.phase} · impact ${u.impact}/5 · feasibility ${u.feasibility}/5 · ${u.quadrant}</dd>
+      <dt>Build</dt><dd>${u.approach} · ${u.hosting}</dd>
+      <dt>Endpoint</dt><dd>${u.endpoint || 'not wired'}</dd>
+      <dt>DPIA</dt><dd>${u.dpia || 'no personal data'}</dd>
+      <dt>Explainer</dt><dd>${u.explainer || 'not an automated customer decision'}</dd>
+      <dt>Traffic</dt><dd>${fmt(u.decisions)} decisions · ${u.stp!=null?(u.stp*100).toFixed(0)+'% straight-through':'—'} · ${money(u.value)}</dd>
+    </dl>
+    <span class="eyebrow">Governance gates</span>
+    <div style="margin-top:8px">${u.gates.map(g=>
+      `<div class="gate"><span class="st ${g.pass?'p':'f'}">${g.pass?'PASS':'FAIL'}</span>
+       <span>${g.gate}<span class="nt">${g.note}</span></span></div>`).join('')}</div>`;
+  drawer.classList.add('on'); scrim.classList.add('on'); drawer.setAttribute('aria-hidden','false');
+  document.getElementById('closeBtn').focus();
+}
+function closeDrawer(){ drawer.classList.remove('on'); scrim.classList.remove('on'); drawer.setAttribute('aria-hidden','true'); }
+scrim.onclick = closeDrawer;
+document.getElementById('closeBtn').onclick = closeDrawer;
+addEventListener('keydown', e=>{ if(e.key==='Escape') closeDrawer(); });
+
+document.getElementById('foot').innerHTML =
+  `Generated by aibank_engine.py — export --days ${D.meta.days} --phase ${D.meta.phaseCutoff} --seed ${D.meta.seed}<br>
+   Every figure comes from stub models. Wire Agent.infer() to the declared endpoints to run this against production traffic.`;
+</script>
+</body>
+</html>

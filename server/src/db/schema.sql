@@ -261,3 +261,9 @@ CREATE TABLE IF NOT EXISTS decision_log (
   created_at  timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS decision_log_created_idx ON decision_log(created_at DESC);
+
+-- service_health predates the sandbox rails and only allowed up/degraded/down,
+-- so every probe under mock rails failed its check constraint once a minute.
+ALTER TABLE service_health DROP CONSTRAINT IF EXISTS service_health_status_check;
+ALTER TABLE service_health ADD CONSTRAINT service_health_status_check
+  CHECK (status IN ('up','degraded','down','mock'));
