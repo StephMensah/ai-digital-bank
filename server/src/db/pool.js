@@ -7,8 +7,15 @@ import { logger } from '../lib/logger.js';
 pg.types.setTypeParser(20, (v) => (v === null ? null : Number(v)));
 pg.types.setTypeParser(1700, (v) => (v === null ? null : Number(v)));
 
+/* The Python decision service owns public.accounts and public.transactions in
+   this same database, with an entirely different shape. The Node service keeps
+   its tables in their own schema so the two can share one Postgres instance
+   without either one standing on the other. */
+export const SCHEMA = process.env.PG_SCHEMA || 'adb';
+
 export const pool = new pg.Pool({
   connectionString: config.db.url,
+  options: `-c search_path=${SCHEMA},public`,
   ssl: config.db.ssl,
   max: Number(process.env.PG_POOL_MAX || 10),
   idleTimeoutMillis: 30000,

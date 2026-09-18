@@ -1,3 +1,6 @@
+CREATE SCHEMA IF NOT EXISTS adb;
+SET search_path TO adb, public;
+
 -- AI Digital Bank :: Postgres schema (idempotent)
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
