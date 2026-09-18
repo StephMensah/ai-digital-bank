@@ -661,7 +661,7 @@ async function syncAccountsFromServer(){
   } catch (err) {
     /* offline or signed out: the bundled sample content stays on screen, and the
        You tab says which of the two it is */
-    if (err.code === 'signed_out') render();
+    if (err.code === 'signed_out'){ FID.blankProfile(); render(); applyGate(); }
   }
 }
 
@@ -2119,7 +2119,7 @@ document.addEventListener('click', ev => {
     case 'topup': topUpSheet(); break;
     case 'topupsubmit': doTopUp(); break;
     case 'signinsubmit': doSignIn(); break;
-    case 'signout': FID.signOut(); closeSheet(); render(); applyGate(); break;
+    case 'signout': FID.signOut(); FID.blankProfile(); closeSheet(); render(); applyGate(); break;
     case 'authcancel': S.auth = null; closeSheet(); render(); break;
     case 'authcontinue': { const r = S.pendingResume; S.pendingResume = null; if (r) r(); break; }
     case 'stepupcontinue': flowSendAuthorize(); break;
@@ -2395,12 +2395,16 @@ document.addEventListener('keydown', ev => {
   document.addEventListener('keydown', e => { if (e.key === 'Escape') el.classList.remove('open'); });
 })();
 
+/* Order matters here. Blank the sample content and raise the gate BEFORE the
+   first render, or a reload paints somebody else's account for the moment it
+   takes the gate to appear — which is exactly what it looked like. */
+if (FID.live) FID.blankProfile();
+applyGate();
+
 render();
 tickClock();
 syncAccountsFromServer();
-// arriving from the website's "Open an account" button drops straight into the flow
-// signed out, the gate is the whole page; ?open=1 lands on the right half of it
-applyGate();
+// ?open=1 from the website lands on the account-opening half of the gate
 if (FID.live && !FID.signedIn && new URLSearchParams(location.search).has('open')) showGate('open');
 // the health probe answers a moment later; redraw so the gate can say if this
 // host has no banking service behind it

@@ -403,3 +403,8 @@ input[type=range]{width:100%;accent-color:var(--orange)}
 .pad button, .btn, .chips button, .qa button, .tabs button{touch-action:manipulation}
 .pad button{transition:background .06s linear, transform .06s linear}
 .pad button:active{background:var(--line);transform:scale(.96)}
+
+/* While the gate is up nothing behind it should be visible or scrollable —
+   a reload used to show the sample account for the instant before it appeared. */
+html:has(.gate) body > *:not(.gate){visibility:hidden}
+html:has(.gate), html:has(.gate) body{overflow:hidden}
