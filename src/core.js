@@ -78,7 +78,8 @@ const FID = (() => {
      inherited: no borrowed cards, no borrowed payees. */
   let availableEntities = ['personal'];
 
-  function applyLiveProfile(customer, accounts, transactions){
+  function applyLiveProfile(customer, accounts, transactions, extras){
+    const bits = extras || {};
     const own = accounts || [];
     const business = own.filter(a => a.type === 'business');
     const personal = own.filter(a => a.type !== 'business');
@@ -86,24 +87,36 @@ const FID = (() => {
     const blankCard = {num:'•••• •••• •••• ••••', fullNum:'', cvv:'', exp:'', frozen:false};
     const since = customer?.created_at ? String(new Date(customer.created_at).getFullYear()) : '';
 
+    /* Cards, goals, payees and payroll now come from the customer's own rows,
+       seeded when their account opened. Blank only where they have none yet. */
+    const firstOf = (list) => list[0] || {};
     Object.assign(ENTITIES.personal, {
       holder: customer?.full_name || customer?.fullName || 'Your account',
       since, accounts: personal, transactions: transactions || [],
-      beneficiaries: [], virtualCards: [], card: blankCard
+      beneficiaries: bits.beneficiaries || [],
+      virtualCards: firstOf(personal).virtualCards || [],
+      card: firstOf(personal).card || blankCard
     });
 
     if (business.length){
       Object.assign(ENTITIES.business, {
         label: business[0].name || 'Business', holder: business[0].name || 'Business',
         since, accounts: business, transactions: [],
-        beneficiaries: [], virtualCards: [], card: blankCard
+        beneficiaries: bits.beneficiaries || [],
+        virtualCards: business[0].virtualCards || [],
+        card: business[0].card || blankCard,
+        payroll: business[0].payroll || []
       });
       availableEntities = ['personal', 'business'];
     } else {
       availableEntities = ['personal'];
     }
+    // goals hang off the customer, not an account
+    liveGoals = bits.goals || [];
     return availableEntities;
   }
+
+  let liveGoals = null;
 
   /* -------------------------------------------------------------- language */
   const LANG = {
@@ -443,6 +456,7 @@ const FID = (() => {
            signIn, signOut, register, topUp, primaryAccountId, submitGhanaCard, kycStatus,
            apiReady, get apiMissing(){ return apiMissing; }, APP_URL,
            applyLiveProfile, get entitiesAvailable(){ return availableEntities; },
+           get liveGoals(){ return liveGoals; },
            get signedIn(){ return signedIn(); },
            get customer(){ return session && session.subject; },
            assessPayment, screenBeneficiary, preapprove, parse,

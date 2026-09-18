@@ -3,6 +3,7 @@ import { mambu } from '../core/mambu.js';
 import { config, isConfigured } from '../config.js';
 import { logger } from '../lib/logger.js';
 import { enqueue } from '../core/outbox.js';
+import { seedAccountProducts } from './products.js';
 
 /**
  * Open a local account immediately so the customer is never blocked, then
@@ -18,6 +19,7 @@ export async function openCustomerAccount(customer, { productName = null, segmen
     [customer.id, accountNumber, config.mambu.depositProductId, productName, segment]
   );
   const account = rows[0];
+  await seedAccountProducts(customer, account);
 
   if (isConfigured.mambu()) {
     try {

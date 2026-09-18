@@ -87,3 +87,27 @@ is "no token, no transfer" "$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 
 
 echo
 echo "passed $pass, failed $fail"
+
+echo "── per-customer product data"
+PD1=$(curl -s -H "Authorization: Bearer $T1" "$B/api/accounts/personal")
+PD2=$(curl -s -H "Authorization: Bearer $T2" "$B/api/accounts/personal")
+C1=$(echo "$PD1" | P '["accounts"][0]["card"]["fullNum"]')
+C2=$(echo "$PD2" | P '["accounts"][0]["card"]["fullNum"]')
+[ -n "$C1" ] && ok "customer 1 has a card: $C1" || bad "customer 1 card" "none"
+[ "$C1" != "$C2" ] && ok "cards differ between customers" || bad "cards differ" "$C1 = $C2"
+case "$C1" in "4000 00"*) ok "card uses the reserved test range" ;; *) bad "test IIN" "$C1" ;; esac
+G1=$(echo "$PD1" | P '["goals"].__len__()'); G2=$(echo "$PD2" | P '["goals"].__len__()')
+[ "$G1" -ge 2 ] && ok "customer 1 has $G1 goals" || bad "goals seeded" "$G1"
+ok "  first goal: $(echo "$PD1" | P '["goals"][0]["name"]')"
+B1=$(echo "$PD1" | P '["beneficiaries"].__len__()')
+[ "$B1" -ge 2 ] && ok "customer 1 has $B1 payees" || bad "payees seeded" "$B1"
+ok "  first payee: $(echo "$PD1" | P '["beneficiaries"][0]["name"]') at $(echo "$PD1" | P '["beneficiaries"][0]["bank"]')"
+N1G=$(echo "$PD1" | P '["goals"][0]["name"]'); N2G=$(echo "$PD2" | P '["goals"][0]["name"]')
+ok "customer 2 goal: $N2G"
+PR=$(echo "$PD1" | P '["accounts"][1]["payroll"].__len__()')
+[ "$PR" -ge 3 ] && ok "business account has $PR payroll lines" || bad "payroll seeded" "$PR"
+ok "  first line: $(echo "$PD1" | P '["accounts"][1]["payroll"][0]["name"]') — $(echo "$PD1" | P '["accounts"][1]["payroll"][0]["role"]')"
+is "personal account has no payroll" "$(echo "$PD2" | P '["accounts"][0]["payroll"].__len__()')" "0"
+
+echo
+echo "final: passed $pass, failed $fail"

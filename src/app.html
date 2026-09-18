@@ -644,7 +644,11 @@ async function syncAccountsFromServer(){
     /* Signed in: this customer's own name, accounts and history, and nothing
        carried over from the sample profile. Signed out we never get here. */
     const entities = FID.applyLiveProfile(FID.customer, data.accounts,
-      (data.transactions || []).map(fromServerTx));
+      (data.transactions || []).map(fromServerTx),
+      {goals: data.goals, beneficiaries: data.beneficiaries});
+    // goals are the customer's own, not the bundled set
+    if (FID.liveGoals) S.goals = FID.liveGoals;
+    if (E().payroll) FID.PAYROLL.length = 0, FID.PAYROLL.push(...E().payroll);
     E().mustChangePin = data.mustChangePin;
     if (!entities.includes(S.entity)) S.entity = 'personal';
     S.acct = 0;

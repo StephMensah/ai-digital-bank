@@ -8,6 +8,7 @@ import { authenticate } from '../middleware/auth.js';
 import { verifySecret, hashSecret, newReference, uuid } from '../lib/crypto.js';
 import { openTransaction, settleTransaction, loadAccount, GL } from '../core/ledger.js';
 import { openCustomerAccount } from '../services/onboarding.js';
+import { loadProducts } from '../services/products.js';
 import { scoreTransaction } from '../services/risk.js';
 import { logger } from '../lib/logger.js';
 import { usingMocks } from '../providers/index.js';
@@ -61,9 +62,25 @@ compatRouter.get('/accounts/:entity', authenticate('customer'), async (req, res,
       [req.customer.id]
     );
 
+    const products = await loadProducts(req.customer, accounts);
+    const asCard = (c) => c && ({
+      num: '•••• •••• •••• ' + c.pan.slice(-4),
+      fullNum: c.pan, cvv: c.cvv, exp: c.expiry,
+      frozen: c.frozen, locked: c.locked_to || undefined
+    });
+
     res.json({
       entity: req.params.entity,
       mustChangePin: Boolean(req.customer.must_change_pin),
+      goals: products.goals.map((g) => ({
+        id: g.id, name: g.name, icon: g.icon, due: g.due,
+        target: asMajor(g.target_minor), saved: asMajor(g.saved_minor),
+        monthly: asMajor(g.monthly_minor)
+      })),
+      beneficiaries: products.payees.map((p) => ({
+        name: p.name, bank: p.bank, acct: p.account_ref,
+        last: p.last_amount_minor ? `GHS ${asMajor(p.last_amount_minor)}` : 'no payments yet'
+      })),
       accounts: accounts.map((a) => ({
         name: a.product_name || 'Current account',
         // The full number, not the last four: a customer needs to be able to
@@ -75,6 +92,11 @@ compatRouter.get('/accounts/:entity', authenticate('customer'), async (req, res,
         balance: asMajor(a.available_minor ?? a.balance_minor),
         type: a.segment === 'business' ? 'business'
               : /sav/i.test(a.product_name || '') ? 'savings' : 'current',
+        card: asCard((products.cards[a.id] || []).find((c) => c.kind === 'physical')),
+        virtualCards: (products.cards[a.id] || []).filter((c) => c.kind === 'virtual').map(asCard),
+        payroll: (products.payroll[a.id] || []).map((r) => ({
+          name: r.name, role: r.role, amount: asMajor(r.amount_minor)
+        })),
         currency: a.currency
       })),
       transactions: txs.map(toServerTx)
