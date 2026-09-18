@@ -111,3 +111,41 @@ is "personal account has no payroll" "$(echo "$PD2" | P '["accounts"][0]["payrol
 
 echo
 echo "final: passed $pass, failed $fail"
+
+echo "── name enquiry before sending"
+NE=$(curl -s -X POST -H "Authorization: Bearer $T2" -H 'Content-Type: application/json' \
+  -d "{\"method\":\"internal\",\"accountNumber\":\"$N1\"}" "$B/api/v1/payments/name-enquiry")
+is "on-us lookup finds the holder" "$(echo "$NE" | P '["name"]')" "Ama Boateng"
+is "on-us says which bank"         "$(echo "$NE" | P '["bank"]')" "Digital Bank"
+is "not my own account"            "$(echo "$NE" | P '["self"]')" "False"
+SELF=$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -d "{\"method\":\"internal\",\"accountNumber\":\"$N1\"}" "$B/api/v1/payments/name-enquiry")
+is "my own account flagged as mine" "$(echo "$SELF" | P '["self"]')" "True"
+is "unknown number refused"        "$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -d '{"method":"internal","accountNumber":"9999999999"}' "$B/api/v1/payments/name-enquiry" | P '["error"]["code"]')" "not_found"
+BK=$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -d '{"method":"bank","accountNumber":"1234567890","bankCode":"300303"}' "$B/api/v1/payments/name-enquiry")
+ok "interbank lookup: $(echo "$BK" | P '["name"]') at $(echo "$BK" | P '["bank"]') · $(echo "$BK" | P '["branch"]')"
+WL=$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -d '{"method":"mobile_money","msisdn":"+233244000222"}' "$B/api/v1/payments/name-enquiry")
+ok "wallet lookup: $(echo "$WL" | P '["name"]') on $(echo "$WL" | P '["bank"]')"
+
+echo "── saving a payee is a separate decision"
+SP=$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' \
+  -d "{\"name\":\"Kwame Nkrumah\",\"method\":\"internal\",\"accountRef\":\"$N2\",\"bank\":\"Digital Bank\"}" "$B/api/v1/payees")
+is "payee saved" "$(echo "$SP" | P '["payee"]["name"]')" "Kwame Nkrumah"
+curl -s -o /dev/null -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' \
+  -d "{\"name\":\"Kwame N\",\"method\":\"internal\",\"accountRef\":\"$N2\",\"bank\":\"Digital Bank\"}" "$B/api/v1/payees"
+SAME=$(curl -s -H "Authorization: Bearer $T1" "$B/api/v1/payees" | python3 -c "
+import sys,json;d=json.load(sys.stdin)
+print(len([p for p in d['payees'] if p['acct']=='$N2']))")
+is "saving twice keeps one row" "$SAME" "1"
+is "bank payee needs a bank code" "$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -d '{"name":"X","method":"bank","accountRef":"111222333"}' "$B/api/v1/payees" | P '["error"]["code"]')" "bad_request"
+
+echo "── wallet to bank"
+W=$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -H "Idempotency-Key: $(IDK)" \
+  -d "{\"accountId\":\"$AID1\",\"amountMinor\":20000,\"msisdn\":\"$M1\",\"destination\":{\"accountNumber\":\"1234567890\",\"bankCode\":\"300303\",\"name\":\"Kojo\"}}" \
+  "$B/api/v1/payments/wallet-to-bank")
+is "collection leg opened" "$(echo "$W" | P '["transaction"]["status"]')" "processing"
+ok "  $(echo "$W" | P '["awaiting"]')"
+sleep 22
+is "onward leg left the account" "$(curl -s -H "Authorization: Bearer $T1" "$B/api/v1/accounts" | P '["accounts"][0]["balance_minor"]')" "55000"
+
+echo
+echo "final: passed $pass, failed $fail"

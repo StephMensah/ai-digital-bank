@@ -323,3 +323,11 @@ CREATE TABLE IF NOT EXISTS payroll_lines (
   created_at    timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS payroll_account_idx ON payroll_lines(account_id);
+
+-- Payees gained a method and a bank code, so a saved payee can be sent to
+-- without asking the customer to re-pick the rail. A person saved twice is a
+-- mess to send to later, so the same destination is one row.
+ALTER TABLE payees ADD COLUMN IF NOT EXISTS method text NOT NULL DEFAULT 'bank';
+ALTER TABLE payees ADD COLUMN IF NOT EXISTS bank_code text;
+CREATE UNIQUE INDEX IF NOT EXISTS payees_unique_destination
+  ON payees(customer_id, method, account_ref);

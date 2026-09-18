@@ -1272,6 +1272,46 @@ const FID = (() => {
     return json;
   }
 
+  /** Who owns this destination, before any money moves. */
+  async function nameEnquiry(body){
+    const res = await fetch(API + '/api/v1/payments/name-enquiry', {
+      method:'POST', headers:{'Content-Type':'application/json', ...authHeaders()},
+      body: JSON.stringify(body)
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(new Error(json.error?.message || 'We could not find that account'),
+      {code: json.error?.code || 'enquiry_failed', status: res.status});
+    return json;
+  }
+
+  const savePayee = (payee) =>
+    fetch(API + '/api/v1/payees', {
+      method:'POST', headers:{'Content-Type':'application/json', ...authHeaders()},
+      body: JSON.stringify(payee)
+    }).then(async r => {
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw Object.assign(new Error(j.error?.message || 'Could not save that payee'),
+        {code: j.error?.code || 'save_failed'});
+      return j.payee;
+    });
+
+  const banks = () =>
+    fetch(API + '/api/v1/payments/banks', {headers: authHeaders()})
+      .then(r => r.ok ? r.json() : {banks:[]}).then(j => j.banks || []).catch(() => []);
+
+  async function walletToBank({accountId, amountMinor, msisdn, destination, narration}){
+    const res = await fetch(API + '/api/v1/payments/wallet-to-bank', {
+      method:'POST',
+      headers:{'Content-Type':'application/json',
+        'Idempotency-Key':'w2b-' + Date.now() + '-' + Math.random().toString(36).slice(2), ...authHeaders()},
+      body: JSON.stringify({accountId, amountMinor, msisdn, destination, narration})
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(new Error(json.error?.message || 'That transfer did not go through'),
+      {code: json.error?.code || 'w2b_failed'});
+    return json;
+  }
+
   const kycStatus = () =>
     fetch(API + '/api/v1/kyc/status', {headers: authHeaders()})
       .then(r => r.ok ? r.json() : {status:'unknown'}).catch(() => ({status:'unknown'}));
@@ -1361,6 +1401,7 @@ const FID = (() => {
            signIn, signOut, register, topUp, primaryAccountId, submitGhanaCard, kycStatus,
            apiReady, get apiMissing(){ return apiMissing; }, APP_URL,
            applyLiveProfile, get entitiesAvailable(){ return availableEntities; },
+           nameEnquiry, savePayee, banks, walletToBank,
            get liveGoals(){ return liveGoals; },
            get signedIn(){ return signedIn(); },
            get customer(){ return session && session.subject; },
@@ -1796,7 +1837,7 @@ function vOverview(){
         <div class="bal"><small>GHS</small>${total.toLocaleString('en-GB',{minimumFractionDigits:2})}</div>
         <div class="delta">${I('growth',14)} ${m0(6400)} in this month</div>
         <div style="display:flex;gap:8px;margin-top:20px">
-          <button class="btn primary sm" data-view="transfers">Send money</button>
+          <button class="btn primary sm" data-act="sendmoney2">Send money</button>
           <button class="btn sm" style="background:rgba(255,255,255,.14)" data-view="bills">Pay a bill</button>
         </div>
       </div>
@@ -2511,6 +2552,203 @@ async function doVerify(){
     if (out.account) return accountOpenSheet(out.account);
     verifySheet(out.message || 'A colleague is reviewing your details.', 'o');
   } catch (err) { verifySheet(err.message); }
+}
+
+/* ------------------------------------------------------------------ send money
+   Nobody sends money to a number. They send it to a person, and they want to see
+   the person's name before the money leaves. So every destination here resolves
+   to a name first, and only then offers an amount.
+
+   Three destinations, three lookups:
+     Digital Bank — our own ledger, so the answer is immediate, and it says
+                    whether the account is one of theirs or somebody else's
+     Another bank — GIP name enquiry, whose session id has to travel back with
+                    the transfer, so it is carried through untouched
+     MoMo wallet  — the network's own holder lookup
+
+   Confirming and saving are separate on purpose: a one-off payment should not
+   quietly leave a beneficiary behind, and a payee someone keeps should be one
+   they chose to keep. */
+
+const SEND = {
+  method: null,      // internal | bank | mobile_money
+  who: null,         // self | other, for our own accounts
+  resolved: null,    // what the enquiry answered
+  bankList: null
+};
+
+function sendReset(){ SEND.method = null; SEND.who = null; SEND.resolved = null; }
+
+function sendPickSheet(){
+  sendReset();
+  openSheet(`<h3 class="d2">Send money</h3>
+    <p class="sub">Where is it going?</p>
+    <div style="display:grid;gap:8px;margin-top:16px">
+      <button class="btn ghost wide" data-act="send-internal">A Digital Bank account</button>
+      <button class="btn ghost wide" data-act="send-bank">Another bank</button>
+      <button class="btn ghost wide" data-act="send-momo">A mobile money wallet</button>
+    </div>
+    <button class="btn quiet wide" style="margin-top:12px" data-act="close">Cancel</button>`);
+}
+
+function sendWhoSheet(){
+  openSheet(`<h3 class="d2">A Digital Bank account</h3>
+    <p class="sub">Is this for you, or for somebody else?</p>
+    <div style="display:grid;gap:8px;margin-top:16px">
+      <button class="btn ghost wide" data-act="send-self">One of my own accounts</button>
+      <button class="btn ghost wide" data-act="send-other">Someone else</button>
+    </div>
+    <button class="btn quiet wide" style="margin-top:12px" data-act="send-back">Back</button>`);
+}
+
+async function sendDetailSheet(message){
+  const m = SEND.method;
+  if (m === 'bank' && !SEND.bankList) SEND.bankList = await FID.banks();
+
+  const field = m === 'mobile_money'
+    ? `<label class="field"><span>Wallet number</span>
+         <input id="sdTo" inputmode="tel" placeholder="+233241234567" autofocus></label>`
+    : m === 'bank'
+      ? `<label class="field"><span>Bank</span><select id="sdBank">
+           <option value="">Choose the bank</option>
+           ${(SEND.bankList || []).map(b => `<option value="${b.code}">${b.name}</option>`).join('')}
+         </select></label>
+         <label class="field" style="margin-top:12px"><span>Account number</span>
+           <input id="sdTo" inputmode="numeric" placeholder="1234567890"></label>`
+      : `<label class="field"><span>Digital Bank account number</span>
+           <input id="sdTo" inputmode="numeric" placeholder="5010000000" autofocus></label>`;
+
+  openSheet(`<h3 class="d2">${m === 'mobile_money' ? 'Mobile money wallet'
+      : m === 'bank' ? 'Another bank' : (SEND.who === 'self' ? 'Between my accounts' : 'Digital Bank account')}</h3>
+    <p class="sub">We check the name before anything is sent.</p>
+    ${message ? `<span class="badge r">${message}</span>` : ''}
+    <div style="margin-top:16px">${field}</div>
+    <button class="btn primary wide" style="margin-top:16px" data-act="send-lookup">Check the name</button>
+    <button class="btn quiet wide" style="margin-top:8px" data-act="send-back">Back</button>`);
+}
+
+async function sendLookup(){
+  const to = ($('sdTo')?.value || '').trim();
+  const bankCode = $('sdBank')?.value || '';
+  if (!to) return sendDetailSheet('Enter the account number');
+  if (SEND.method === 'bank' && !bankCode) return sendDetailSheet('Choose the bank first');
+  if (SEND.method === 'mobile_money' && !/^(\+233|0)\d{9}$/.test(to))
+    return sendDetailSheet('Use a Ghanaian mobile number');
+
+  openSheet(`<h3 class="d2">Checking…</h3><p class="sub">Looking up the account holder.</p>`);
+  try {
+    const body = SEND.method === 'mobile_money'
+      ? {method:'mobile_money', msisdn: to}
+      : {method: SEND.method, accountNumber: to, bankCode};
+    const out = await FID.nameEnquiry(body);
+
+    // Sending to your own account is a different intention from sending to
+    // someone else; if the answer disagrees with what they picked, say so.
+    if (SEND.method === 'internal' && SEND.who === 'self' && !out.self)
+      return sendDetailSheet('That account is not one of yours');
+    if (SEND.method === 'internal' && SEND.who === 'other' && out.self)
+      return sendDetailSheet('That is your own account — choose "One of my own accounts"');
+
+    SEND.resolved = {...out, accountNumber: out.accountNumber || to, bankCode};
+    sendConfirmSheet();
+  } catch (err) {
+    sendDetailSheet(err.message);
+  }
+}
+
+function sendConfirmSheet(message, kind){
+  const r = SEND.resolved;
+  openSheet(`<h3 class="d2">${r.name}</h3>
+    <p class="sub">${r.bank || ''}${r.branch ? ' · ' + r.branch : ''}<br>
+      <span class="ref">${r.accountNumber}</span></p>
+    ${message ? `<span class="badge ${kind || 'r'}">${message}</span>` : ''}
+    <label class="field" style="margin-top:16px"><span>Amount (GH₵)</span>
+      <input id="sdAmt" inputmode="decimal" placeholder="0.00" autofocus></label>
+    <label class="field" style="margin-top:12px"><span>What is this for?</span>
+      <input id="sdNote" maxlength="100" placeholder="Rent"></label>
+    <div style="display:grid;gap:8px;margin-top:18px">
+      <button class="btn primary wide" data-act="send-save-go">Save payee and send</button>
+      <button class="btn ghost wide" data-act="send-go">Send without saving</button>
+    </div>
+    <button class="btn quiet wide" style="margin-top:8px" data-act="send-back">Back</button>`);
+}
+
+async function sendGo(save){
+  const r = SEND.resolved;
+  const amount = Number(($('sdAmt')?.value || '').replace(/[^0-9.]/g, ''));
+  const note = ($('sdNote')?.value || '').trim() || `Transfer to ${r.name}`;
+  if (!amount || amount < 1) return sendConfirmSheet('Enter GH₵1.00 or more');
+
+  if (save){
+    try {
+      await FID.savePayee({
+        name: r.name, method: SEND.method, accountRef: r.accountNumber,
+        bank: r.bank, bankCode: r.bankCode || undefined
+      });
+    } catch (err) {
+      // Failing to save is not a reason to lose the payment they came here to make.
+      return sendConfirmSheet(err.message + ' — you can still send without saving.', 'o');
+    }
+  }
+
+  /* The existing payment gate runs from here: PIN, then a one-time code, then
+     the screening the rest of the product already applies. */
+  requireAuthForPayment(
+    {account: S.acct, merchant: r.name, amount: -amount, category: 'Transfer',
+     method: SEND.method === 'internal' ? 'Digital Bank' : SEND.method === 'bank' ? 'Bank transfer' : 'Mobile money'},
+    () => { syncAccountsFromServer(); }
+  );
+}
+
+/* ---- wallet to bank: money that never touches the card ------------------------------
+   The other direction from a top up. The wallet is debited first and the bank
+   leg follows only once that has actually settled. */
+async function walletToBankSheet(message){
+  if (!SEND.bankList) SEND.bankList = await FID.banks();
+  openSheet(`<h3 class="d2">Wallet to bank</h3>
+    <p class="sub">Move money from your mobile wallet straight to a bank account.
+      You approve the wallet debit on your phone; the bank leg follows once it clears.</p>
+    ${message ? `<span class="badge r">${message}</span>` : ''}
+    <label class="field" style="margin-top:16px"><span>Your wallet number</span>
+      <input id="w2bFrom" inputmode="tel" placeholder="+233241234567"></label>
+    <label class="field" style="margin-top:12px"><span>Bank</span><select id="w2bBank">
+      <option value="">Choose the bank</option>
+      ${(SEND.bankList || []).map(b => `<option value="${b.code}">${b.name}</option>`).join('')}
+    </select></label>
+    <label class="field" style="margin-top:12px"><span>Account number</span>
+      <input id="w2bTo" inputmode="numeric"></label>
+    <label class="field" style="margin-top:12px"><span>Amount (GH₵)</span>
+      <input id="w2bAmt" inputmode="decimal" placeholder="0.00"></label>
+    <button class="btn primary wide" style="margin-top:16px" data-act="w2b-go">Check and send</button>
+    <button class="btn quiet wide" style="margin-top:8px" data-act="close">Cancel</button>`);
+}
+
+async function walletToBankGo(){
+  const from = ($('w2bFrom')?.value || '').trim();
+  const to = ($('w2bTo')?.value || '').trim();
+  const bankCode = $('w2bBank')?.value || '';
+  const amount = Number(($('w2bAmt')?.value || '').replace(/[^0-9.]/g, ''));
+  if (!/^(\+233|0)\d{9}$/.test(from)) return walletToBankSheet('Use a Ghanaian wallet number');
+  if (!bankCode || !to) return walletToBankSheet('Choose the bank and enter the account number');
+  if (!amount || amount < 1) return walletToBankSheet('Enter GH₵1.00 or more');
+
+  try {
+    const enquiry = await FID.nameEnquiry({method:'bank', accountNumber: to, bankCode});
+    const accountId = await FID.primaryAccountId();
+    const out = await FID.walletToBank({
+      accountId, amountMinor: Math.round(amount * 100),
+      msisdn: from.replace(/^0/, '+233'),
+      destination: {accountNumber: to, bankCode, name: enquiry.name, enquiry: enquiry.enquiry},
+      narration: `To ${enquiry.name}`
+    });
+    openSheet(`<h3 class="d2">Approve it on your phone</h3>
+      <p class="sub">${out.awaiting}</p>
+      <p class="sub">Going to <b>${enquiry.name}</b> at ${enquiry.bank}.</p>
+      <button class="btn primary wide" style="margin-top:16px" data-act="close">Done</button>`);
+    setTimeout(() => syncAccountsFromServer(), 6000);
+  } catch (err) {
+    walletToBankSheet(err.message);
+  }
 }
 
 function businessSheet(message, kind){
@@ -3288,6 +3526,20 @@ document.addEventListener('click', ev => {
     case 'signin': signInSheet(); break;
     case 'openaccount': openAccountSheet(); break;
     case 'openaccountsubmit': doOpenAccount(); break;
+    case 'send-internal': SEND.method='internal'; sendWhoSheet(); break;
+    case 'send-bank': SEND.method='bank'; sendDetailSheet(); break;
+    case 'send-momo': SEND.method='mobile_money'; sendDetailSheet(); break;
+    case 'send-self': SEND.who='self'; sendDetailSheet(); break;
+    case 'send-other': SEND.who='other'; sendDetailSheet(); break;
+    case 'send-lookup': sendLookup(); break;
+    case 'send-save-go': sendGo(true); break;
+    case 'send-go': sendGo(false); break;
+    case 'send-back': SEND.resolved ? (SEND.resolved=null, sendDetailSheet())
+                      : SEND.method==='internal' && SEND.who ? (SEND.who=null, sendWhoSheet())
+                      : sendPickSheet(); break;
+    case 'sendmoney2': sendPickSheet(); break;
+    case 'wallettobank': walletToBankSheet(); break;
+    case 'w2b-go': walletToBankGo(); break;
     case 'openbusiness': businessSheet(); break;
     case 'businesssubmit': doOpenBusiness(); break;
     case 'verify': verifySheet(); break;
