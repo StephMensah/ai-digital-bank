@@ -408,6 +408,12 @@ input[type=range]{width:100%;accent-color:var(--orange)}
   color:var(--orange-d);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .gate .back{display:block;margin:16px auto 0;background:none;border:0;font:inherit;font-size:12.5px;
   color:rgba(255,255,255,.7);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+
+/* Taps on the keypad were waiting on Safari's double-tap-to-zoom timer and had
+   no pressed state, so every digit felt late twice over. */
+.pad button, .btn, .chips button, .qa button, .tabs button{touch-action:manipulation}
+.pad button{transition:background .06s linear, transform .06s linear}
+.pad button:active{background:var(--line);transform:scale(.96)}
 </style>
 <style>
 body{background:var(--sand)}
@@ -980,6 +986,41 @@ const FID = (() => {
 
   const ENTITIES = { personal: PERSONAL, business: BUSINESS };
 
+  /* ---- one customer, one profile ------------------------------------------------------
+     The bundled entities above are sample content for a page with no session. The moment
+     someone signs in, their own data replaces it wholesale — name, accounts, history —
+     rather than being patched over the top, which is how a new customer ended up looking
+     at Ama's business. Anything not yet backed by the API is emptied rather than
+     inherited: no borrowed cards, no borrowed payees. */
+  let availableEntities = ['personal'];
+
+  function applyLiveProfile(customer, accounts, transactions){
+    const own = accounts || [];
+    const business = own.filter(a => a.type === 'business');
+    const personal = own.filter(a => a.type !== 'business');
+
+    const blankCard = {num:'•••• •••• •••• ••••', fullNum:'', cvv:'', exp:'', frozen:false};
+    const since = customer?.created_at ? String(new Date(customer.created_at).getFullYear()) : '';
+
+    Object.assign(ENTITIES.personal, {
+      holder: customer?.full_name || customer?.fullName || 'Your account',
+      since, accounts: personal, transactions: transactions || [],
+      beneficiaries: [], virtualCards: [], card: blankCard
+    });
+
+    if (business.length){
+      Object.assign(ENTITIES.business, {
+        label: business[0].name || 'Business', holder: business[0].name || 'Business',
+        since, accounts: business, transactions: [],
+        beneficiaries: [], virtualCards: [], card: blankCard
+      });
+      availableEntities = ['personal', 'business'];
+    } else {
+      availableEntities = ['personal'];
+    }
+    return availableEntities;
+  }
+
   /* -------------------------------------------------------------- language */
   const LANG = {
     English:{base:.93, writes:true}, Twi:{base:.80, writes:true},
@@ -1253,8 +1294,13 @@ const FID = (() => {
       body: JSON.stringify(body || {})}); }
     catch (e) { throw Object.assign(new Error('offline'), {code:'offline'}); }
     const json = await res.json().catch(() => ({}));
-    if (!res.ok) throw Object.assign(new Error(json.error || 'request failed'),
-      {code: json.error || 'request_failed', status: res.status});
+    /* The compat surface used to answer {error:'invalid_pin'} and now answers
+       {error:{code,message}}. Read both, so the sentence reaches the screen. */
+    if (!res.ok){
+      const code = (json.error && json.error.code) || json.error || 'request_failed';
+      const message = (json.error && json.error.message) || json.message || String(code).replace(/_/g,' ');
+      throw Object.assign(new Error(message), {code, status: res.status});
+    }
     return json;
   }
   async function fetchAccount(customerId){
@@ -1312,6 +1358,7 @@ const FID = (() => {
   return { CCY, money, money0, pct, seed, ENTITIES, LANG, FLOOR, get live(){ return apiUp; },
            signIn, signOut, register, topUp, primaryAccountId, submitGhanaCard, kycStatus,
            apiReady, get apiMissing(){ return apiMissing; }, APP_URL,
+           applyLiveProfile, get entitiesAvailable(){ return availableEntities; },
            get signedIn(){ return signedIn(); },
            get customer(){ return session && session.subject; },
            assessPayment, screenBeneficiary, preapprove, parse,
@@ -2004,7 +2051,10 @@ function vYou(){
     <div class="sect"><div class="surface flush">
       ${[['support','headset','Ask Digital Bank, or a person'],['branches','pin','Branches and ATMs'],
          ['statement','statement','Statements and certificates'],['security','lock','Security and devices'],
-         ['switch','exchange','Switch to '+(S.entity==='personal'?"Ama's Kitchen Ltd":'Personal')]]
+         ...(FID.entitiesAvailable.length > 1
+             ? [['switch','exchange','Switch to '+(S.entity==='personal'
+                 ? (FID.ENTITIES.business.label || 'Business') : 'Personal')]]
+             : [['openbusiness','exchange','Open a business account']])]
         .map(([k2,ic,l])=>`<button class="item" data-act="${k2}"><div class="av">${I(ic,19)}</div>
           <div class="txt"><b>${l}</b></div><span class="go">${I('chevron',17)}</span></button>`).join('')}
     </div></div></div>`;
@@ -2136,12 +2186,13 @@ function authError(e){
 async function syncAccountsFromServer(){
   try {
     const data = await FID.fetchAccount(S.entity);
-    const e = E();
-    data.accounts.forEach((a,i) => { if (e.accounts[i]) e.accounts[i].balance = a.balance; });
-    e.mustChangePin = data.mustChangePin;
-    const known = new Set(e.transactions.map(t => t.id));
-    const fresh = (data.transactions || []).filter(t => !known.has(t.id)).map(fromServerTx);
-    if (fresh.length) e.transactions = [...fresh, ...e.transactions].sort((a,b) => b.ts - a.ts);
+    /* Signed in: this customer's own name, accounts and history, and nothing
+       carried over from the sample profile. Signed out we never get here. */
+    const entities = FID.applyLiveProfile(FID.customer, data.accounts,
+      (data.transactions || []).map(fromServerTx));
+    E().mustChangePin = data.mustChangePin;
+    if (!entities.includes(S.entity)) S.entity = 'personal';
+    S.acct = 0;
     render();
   } catch (err) {
     /* offline or signed out: the bundled sample content stays on screen, and the
@@ -2268,6 +2319,29 @@ async function doVerify(){
   } catch (err) { verifySheet(err.message); }
 }
 
+function businessSheet(message, kind){
+  openSheet(`<h3>Open a business account</h3>
+    <p class="sub">A separate account in your business's name, under the same login.
+      Your personal account stays as it is.</p>
+    ${message ? `<span class="badge ${kind || 'r'}">${message}</span>` : ''}
+    <label class="field" style="margin-top:18px"><span>Registered business name</span>
+      <input id="bizName" placeholder="Ama's Kitchen Ltd" autofocus></label>
+    <button class="btn primary wide" style="margin-top:16px" data-act="businesssubmit">Open it</button>
+    <button class="btn quiet wide" style="margin-top:8px" data-act="close">Cancel</button>`);
+}
+
+async function doOpenBusiness(){
+  const name = ($('bizName')?.value || '').trim();
+  if (name.length < 2) return businessSheet('Enter the business name');
+  try {
+    const out = await FID.openAccount(S.entity, name, 'business');
+    closeSheet();
+    await syncAccountsFromServer();
+    S.entity = 'business'; S.acct = 0; render();
+    accountOpenSheet({accountNumber: out.account?.accountNumber || out.account?.num, currency:'GHS'});
+  } catch (err) { businessSheet(err.message); }
+}
+
 function topUpSheet(message, kind){
   openSheet(`<h3>Add money</h3>
     <p class="sub">We send a prompt to your wallet. Approve it and the money lands in seconds.</p>
@@ -2353,6 +2427,16 @@ function applyGate(){
   if (FID.live && !FID.signedIn) showGate(document.querySelector('.gate') ? undefined : 'login');
   else hideGate();
 }
+
+/* The keypad runs off pointerdown rather than click: a click arrives only after
+   the browser has ruled out a double-tap, which is what made every digit feel a
+   beat late. Everything else stays on click. */
+document.addEventListener('pointerdown', ev => {
+  const k = ev.target.closest('[data-key]');
+  if (!k) return;
+  ev.preventDefault();
+  padKey(k.dataset.key);
+}, {passive:false});
 
 document.addEventListener('click', ev => {
   const b = ev.target.closest('[data-gate]');
@@ -3264,7 +3348,9 @@ function render(){
   const e = E();
   $('bellbtn').innerHTML = I('bell',19) + '<i></i>';
   $('avatar').textContent = initials(e.holder);
-  $('whoami').textContent = S.entity==='personal' ? 'Ama' : "Ama's Kitchen";
+  // the signed-in customer, never a bundled name
+  const who = E().holder || 'Your account';
+  $('whoami').textContent = S.entity==='personal' ? who.split(' ')[0] : who;
   $('greet').textContent = S.entity==='personal' ? greeting() : 'Business account';
   $('scroll').innerHTML = (V[S.tab] || vHome)();
   const strip = $('scroll').querySelector('.acctstrip');
@@ -3315,7 +3401,7 @@ document.addEventListener('click', ev => {
       ['Compared to','anonymised peer median'],['Not used','name, location, contacts'],['Confidence','0.86']],
       'Turn off spending insights under You and we stop reading transactions for tips.');
     b.hidden = !b.hidden; el.innerHTML = b.hidden ? I('info',15) + ' Where this came from' : I('close',15) + ' Hide'; return; }
-  if (d.key){ padKey(d.key); return; }
+  if (d.key) return;  // handled on pointerdown, so a digit lands as the finger does
   if (d.padset){ S.flow.amount = d.padset;
     $('padAmt').innerHTML = `<span>GHS </span>${(+d.padset).toLocaleString('en-GB')}`; return; }
   if (d.tab){ if (d.tab === 'pay') return openPay();
@@ -3552,6 +3638,8 @@ document.addEventListener('click', ev => {
     case 'cards': S.tab='cards'; closeSheet(); render(); break;
     case 'save': case 'invest': S.tab='save'; closeSheet(); render(); break;
     case 'allservices': openPay(); break;
+    case 'openbusiness': businessSheet(); break;
+    case 'businesssubmit': doOpenBusiness(); break;
     case 'switch': S.entity = S.entity==='personal'?'business':'personal'; S.acct=0; S.tab='home';
       closeSheet(); render(); syncAccountsFromServer(); break;
     case 'addgoal': { const g = S.goals.find(x => x.id === d.g), v = +$('goalAdd').value || 0;

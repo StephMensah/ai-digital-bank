@@ -407,6 +407,12 @@ input[type=range]{width:100%;accent-color:var(--orange)}
   color:var(--orange-d);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .gate .back{display:block;margin:16px auto 0;background:none;border:0;font:inherit;font-size:12.5px;
   color:rgba(255,255,255,.7);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+
+/* Taps on the keypad were waiting on Safari's double-tap-to-zoom timer and had
+   no pressed state, so every digit felt late twice over. */
+.pad button, .btn, .chips button, .qa button, .tabs button{touch-action:manipulation}
+.pad button{transition:background .06s linear, transform .06s linear}
+.pad button:active{background:var(--line);transform:scale(.96)}
 </style>
 <style>
 /* ------------------------------------------------------------- web shell */
@@ -969,6 +975,41 @@ const FID = (() => {
 
   const ENTITIES = { personal: PERSONAL, business: BUSINESS };
 
+  /* ---- one customer, one profile ------------------------------------------------------
+     The bundled entities above are sample content for a page with no session. The moment
+     someone signs in, their own data replaces it wholesale — name, accounts, history —
+     rather than being patched over the top, which is how a new customer ended up looking
+     at Ama's business. Anything not yet backed by the API is emptied rather than
+     inherited: no borrowed cards, no borrowed payees. */
+  let availableEntities = ['personal'];
+
+  function applyLiveProfile(customer, accounts, transactions){
+    const own = accounts || [];
+    const business = own.filter(a => a.type === 'business');
+    const personal = own.filter(a => a.type !== 'business');
+
+    const blankCard = {num:'•••• •••• •••• ••••', fullNum:'', cvv:'', exp:'', frozen:false};
+    const since = customer?.created_at ? String(new Date(customer.created_at).getFullYear()) : '';
+
+    Object.assign(ENTITIES.personal, {
+      holder: customer?.full_name || customer?.fullName || 'Your account',
+      since, accounts: personal, transactions: transactions || [],
+      beneficiaries: [], virtualCards: [], card: blankCard
+    });
+
+    if (business.length){
+      Object.assign(ENTITIES.business, {
+        label: business[0].name || 'Business', holder: business[0].name || 'Business',
+        since, accounts: business, transactions: [],
+        beneficiaries: [], virtualCards: [], card: blankCard
+      });
+      availableEntities = ['personal', 'business'];
+    } else {
+      availableEntities = ['personal'];
+    }
+    return availableEntities;
+  }
+
   /* -------------------------------------------------------------- language */
   const LANG = {
     English:{base:.93, writes:true}, Twi:{base:.80, writes:true},
@@ -1242,8 +1283,13 @@ const FID = (() => {
       body: JSON.stringify(body || {})}); }
     catch (e) { throw Object.assign(new Error('offline'), {code:'offline'}); }
     const json = await res.json().catch(() => ({}));
-    if (!res.ok) throw Object.assign(new Error(json.error || 'request failed'),
-      {code: json.error || 'request_failed', status: res.status});
+    /* The compat surface used to answer {error:'invalid_pin'} and now answers
+       {error:{code,message}}. Read both, so the sentence reaches the screen. */
+    if (!res.ok){
+      const code = (json.error && json.error.code) || json.error || 'request_failed';
+      const message = (json.error && json.error.message) || json.message || String(code).replace(/_/g,' ');
+      throw Object.assign(new Error(message), {code, status: res.status});
+    }
     return json;
   }
   async function fetchAccount(customerId){
@@ -1301,6 +1347,7 @@ const FID = (() => {
   return { CCY, money, money0, pct, seed, ENTITIES, LANG, FLOOR, get live(){ return apiUp; },
            signIn, signOut, register, topUp, primaryAccountId, submitGhanaCard, kycStatus,
            apiReady, get apiMissing(){ return apiMissing; }, APP_URL,
+           applyLiveProfile, get entitiesAvailable(){ return availableEntities; },
            get signedIn(){ return signedIn(); },
            get customer(){ return session && session.subject; },
            assessPayment, screenBeneficiary, preapprove, parse,
@@ -1702,8 +1749,12 @@ const NAV = {
 };
 
 function chrome(){
-  $('ent').innerHTML = Object.values(FID.ENTITIES).map(e =>
-    `<button data-entity="${e.id}" aria-pressed="${S.entity===e.id}">${e.id==='personal'?'Personal':'Business'}</button>`).join('');
+  // only the profiles this customer actually has
+  $('ent').innerHTML = FID.entitiesAvailable.map(id => FID.ENTITIES[id]).map(e =>
+    `<button data-entity="${e.id}" aria-pressed="${S.entity===e.id}">${
+      e.id==='personal'?'Personal':(e.label || 'Business')}</button>`).join('')
+    + (FID.entitiesAvailable.length > 1 ? ''
+       : `<button data-act="openbusiness">+ Business</button>`);
   $('nav').innerHTML = NAV[S.entity].map(([grp, items]) =>
     `<div class="navgrp">${grp}</div>` + items.map(([id,i,l]) =>
       `<button data-view="${id}" aria-current="${S.view===id?'page':'false'}">${IS(i,21)}${l}</button>`).join('')).join('');
@@ -2321,12 +2372,13 @@ function authError(e){
 async function syncAccountsFromServer(){
   try {
     const data = await FID.fetchAccount(S.entity);
-    const e = E();
-    data.accounts.forEach((a,i) => { if (e.accounts[i]) e.accounts[i].balance = a.balance; });
-    e.mustChangePin = data.mustChangePin;
-    const known = new Set(e.transactions.map(t => t.id));
-    const fresh = (data.transactions || []).filter(t => !known.has(t.id)).map(fromServerTx);
-    if (fresh.length) e.transactions = [...fresh, ...e.transactions].sort((a,b) => b.ts - a.ts);
+    /* Signed in: this customer's own name, accounts and history, and nothing
+       carried over from the sample profile. Signed out we never get here. */
+    const entities = FID.applyLiveProfile(FID.customer, data.accounts,
+      (data.transactions || []).map(fromServerTx));
+    E().mustChangePin = data.mustChangePin;
+    if (!entities.includes(S.entity)) S.entity = 'personal';
+    S.acct = 0;
     render();
   } catch (err) {
     /* offline or signed out: keep the bundled sample content on screen, and let the
@@ -2441,6 +2493,29 @@ async function doVerify(){
     if (out.account) return accountOpenSheet(out.account);
     verifySheet(out.message || 'A colleague is reviewing your details.', 'o');
   } catch (err) { verifySheet(err.message); }
+}
+
+function businessSheet(message, kind){
+  openSheet(`<h3 class="d2">Open a business account</h3>
+    <p class="sub">A separate account in your business's name, under the same login.</p>
+    ${message ? `<span class="badge ${kind || 'r'}">${message}</span>` : ''}
+    <label class="field" style="margin-top:18px"><span>Registered business name</span>
+      <input id="bizName" placeholder="Ama's Kitchen Ltd" autofocus></label>
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <button class="btn primary" style="flex:1" data-act="businesssubmit">Open it</button>
+      <button class="btn quiet" data-act="close">Cancel</button></div>`);
+}
+
+async function doOpenBusiness(){
+  const name = ($('bizName')?.value || '').trim();
+  if (name.length < 2) return businessSheet('Enter the business name');
+  try {
+    const out = await FID.openAccount(S.entity, name, 'business');
+    closeSheet();
+    await syncAccountsFromServer();
+    S.entity = 'business'; render();
+    accountOpenSheet({accountNumber: out.account?.accountNumber || out.account?.num, currency:'GHS'});
+  } catch (err) { businessSheet(err.message); }
 }
 
 function topUpSheet(message, kind){
@@ -3195,6 +3270,8 @@ document.addEventListener('click', ev => {
     case 'signin': signInSheet(); break;
     case 'openaccount': openAccountSheet(); break;
     case 'openaccountsubmit': doOpenAccount(); break;
+    case 'openbusiness': businessSheet(); break;
+    case 'businesssubmit': doOpenBusiness(); break;
     case 'verify': verifySheet(); break;
     case 'verifysubmit': doVerify(); break;
     case 'topup': topUpSheet(); break;

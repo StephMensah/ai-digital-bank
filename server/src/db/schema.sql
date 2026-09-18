@@ -267,3 +267,8 @@ CREATE INDEX IF NOT EXISTS decision_log_created_idx ON decision_log(created_at D
 ALTER TABLE service_health DROP CONSTRAINT IF EXISTS service_health_status_check;
 ALTER TABLE service_health ADD CONSTRAINT service_health_status_check
   CHECK (status IN ('up','degraded','down','mock'));
+
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS segment text NOT NULL DEFAULT 'personal';
+ALTER TABLE accounts DROP CONSTRAINT IF EXISTS accounts_segment_check;
+ALTER TABLE accounts ADD CONSTRAINT accounts_segment_check
+  CHECK (segment IN ('personal','business'));

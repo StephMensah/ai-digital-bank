@@ -408,6 +408,12 @@ input[type=range]{width:100%;accent-color:var(--orange)}
   color:var(--orange-d);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .gate .back{display:block;margin:16px auto 0;background:none;border:0;font:inherit;font-size:12.5px;
   color:rgba(255,255,255,.7);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+
+/* Taps on the keypad were waiting on Safari's double-tap-to-zoom timer and had
+   no pressed state, so every digit felt late twice over. */
+.pad button, .btn, .chips button, .qa button, .tabs button{touch-action:manipulation}
+.pad button{transition:background .06s linear, transform .06s linear}
+.pad button:active{background:var(--line);transform:scale(.96)}
 </style>
 <style>
 body{background:var(--white);color:var(--ink)}
@@ -1082,6 +1088,41 @@ const FID = (() => {
 
   const ENTITIES = { personal: PERSONAL, business: BUSINESS };
 
+  /* ---- one customer, one profile ------------------------------------------------------
+     The bundled entities above are sample content for a page with no session. The moment
+     someone signs in, their own data replaces it wholesale — name, accounts, history —
+     rather than being patched over the top, which is how a new customer ended up looking
+     at Ama's business. Anything not yet backed by the API is emptied rather than
+     inherited: no borrowed cards, no borrowed payees. */
+  let availableEntities = ['personal'];
+
+  function applyLiveProfile(customer, accounts, transactions){
+    const own = accounts || [];
+    const business = own.filter(a => a.type === 'business');
+    const personal = own.filter(a => a.type !== 'business');
+
+    const blankCard = {num:'•••• •••• •••• ••••', fullNum:'', cvv:'', exp:'', frozen:false};
+    const since = customer?.created_at ? String(new Date(customer.created_at).getFullYear()) : '';
+
+    Object.assign(ENTITIES.personal, {
+      holder: customer?.full_name || customer?.fullName || 'Your account',
+      since, accounts: personal, transactions: transactions || [],
+      beneficiaries: [], virtualCards: [], card: blankCard
+    });
+
+    if (business.length){
+      Object.assign(ENTITIES.business, {
+        label: business[0].name || 'Business', holder: business[0].name || 'Business',
+        since, accounts: business, transactions: [],
+        beneficiaries: [], virtualCards: [], card: blankCard
+      });
+      availableEntities = ['personal', 'business'];
+    } else {
+      availableEntities = ['personal'];
+    }
+    return availableEntities;
+  }
+
   /* -------------------------------------------------------------- language */
   const LANG = {
     English:{base:.93, writes:true}, Twi:{base:.80, writes:true},
@@ -1355,8 +1396,13 @@ const FID = (() => {
       body: JSON.stringify(body || {})}); }
     catch (e) { throw Object.assign(new Error('offline'), {code:'offline'}); }
     const json = await res.json().catch(() => ({}));
-    if (!res.ok) throw Object.assign(new Error(json.error || 'request failed'),
-      {code: json.error || 'request_failed', status: res.status});
+    /* The compat surface used to answer {error:'invalid_pin'} and now answers
+       {error:{code,message}}. Read both, so the sentence reaches the screen. */
+    if (!res.ok){
+      const code = (json.error && json.error.code) || json.error || 'request_failed';
+      const message = (json.error && json.error.message) || json.message || String(code).replace(/_/g,' ');
+      throw Object.assign(new Error(message), {code, status: res.status});
+    }
     return json;
   }
   async function fetchAccount(customerId){
@@ -1414,6 +1460,7 @@ const FID = (() => {
   return { CCY, money, money0, pct, seed, ENTITIES, LANG, FLOOR, get live(){ return apiUp; },
            signIn, signOut, register, topUp, primaryAccountId, submitGhanaCard, kycStatus,
            apiReady, get apiMissing(){ return apiMissing; }, APP_URL,
+           applyLiveProfile, get entitiesAvailable(){ return availableEntities; },
            get signedIn(){ return signedIn(); },
            get customer(){ return session && session.subject; },
            assessPayment, screenBeneficiary, preapprove, parse,

@@ -9,12 +9,13 @@ import { enqueue } from '../core/outbox.js';
  * mirror the client and account into Mambu. If Mambu is unreachable the
  * mirroring is queued in the outbox rather than failing the signup.
  */
-export async function openCustomerAccount(customer) {
+export async function openCustomerAccount(customer, { productName = null, segment = 'personal' } = {}) {
   const accountNumber = generateAccountNumber();
   const { rows } = await query(
-    `INSERT INTO accounts (customer_id, account_number, product_type, product_id, currency)
-     VALUES ($1,$2,'deposit',$3,'GHS') RETURNING *`,
-    [customer.id, accountNumber, config.mambu.depositProductId]
+    `INSERT INTO accounts (customer_id, account_number, product_type, product_id, currency,
+                           product_name, segment)
+     VALUES ($1,$2,'deposit',$3,'GHS',$4,$5) RETURNING *`,
+    [customer.id, accountNumber, config.mambu.depositProductId, productName, segment]
   );
   const account = rows[0];
 

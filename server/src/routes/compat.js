@@ -73,7 +73,8 @@ compatRouter.get('/accounts/:entity', authenticate('customer'), async (req, res,
         // Present once the account is mirrored into the core.
         mambuRef: a.mambu_account_key || null,
         balance: asMajor(a.available_minor ?? a.balance_minor),
-        type: /sav/i.test(a.product_name || '') ? 'savings' : 'current',
+        type: a.segment === 'business' ? 'business'
+              : /sav/i.test(a.product_name || '') ? 'savings' : 'current',
         currency: a.currency
       })),
       transactions: txs.map(toServerTx)
@@ -86,18 +87,22 @@ compatRouter.post('/accounts/open',
   validate(z.object({
     customerId: z.string().optional(),
     name: z.string().min(2).max(60),
-    type: z.enum(['current', 'savings'])
+    type: z.enum(['current', 'savings', 'business'])
   })),
   async (req, res, next) => {
     try {
-      const account = await openCustomerAccount(req.customer);
-      await query('UPDATE accounts SET product_name=$2 WHERE id=$1', [account.id, req.body.name]);
+      const account = await openCustomerAccount(req.customer, {
+        productName: req.body.name,
+        segment: req.body.type === 'business' ? 'business' : 'personal'
+      });
       res.status(201).json({
         account: {
           name: req.body.name,
-          num: '•••• ' + String(account.account_number).slice(-4),
+          num: account.account_number,
+          accountNumber: account.account_number,
           balance: 0,
-          type: req.body.type
+          type: req.body.type,
+          currency: account.currency
         }
       });
     } catch (err) { next(err); }
@@ -119,7 +124,21 @@ function readStepUp(token, customerId, purpose) {
   } catch { return false; }
 }
 
-const fail = (res, code, status = 400) => res.status(status).json({ error: code });
+/* Bare {error:'invalid_pin'} gives the screen nothing to say. Every failure now
+   carries the same shape as the rest of the API — a code to branch on and a
+   sentence a customer can act on. */
+const SAYS = {
+  otp_expired: 'That code has expired. Ask for a new one.',
+  otp_locked: 'Too many wrong codes. Wait a few minutes and try again.',
+  invalid_otp: 'That code is not right. Check the message and try again.',
+  invalid_pin: 'That PIN is not right.',
+  invalid_step_up: 'That confirmation has expired. Start again.',
+  pin_change_required: 'Set your PIN before moving money.',
+  unknown_account: 'We could not find that account.',
+  insufficient_funds: 'There is not enough in the account for that.'
+};
+const fail = (res, code, status = 400) =>
+  res.status(status).json({ error: { code, message: SAYS[code] || 'That did not work.' } });
 
 compatRouter.post('/otp/request',
   authenticate('customer'),
