@@ -286,7 +286,7 @@ input[type=range]{width:100%;accent-color:var(--orange)}
 .tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px}
 .tblwrap table{min-width:460px}
 
-/* the product switcher — this is a prototype of four connected products,
+/* the product switcher — four connected products,
    so every one of them can reach the others */
 .switcher{position:fixed;right:16px;bottom:16px;z-index:200;display:flex;flex-direction:column;
           align-items:flex-end;gap:8px}
@@ -374,6 +374,14 @@ input[type=range]{width:100%;accent-color:var(--orange)}
 .linkish{background:none;border:0;padding:0;margin-left:6px;font:inherit;font-size:inherit;
   color:var(--accent,#0E6E63);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 .linkish:hover{opacity:.75}
+
+
+/* the verification code, shown as the message it will arrive as once SMS is live */
+.smsnote{margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--haze,#F6F8F9);
+  border:1px solid var(--line,#E7EBEF);font-size:13px;line-height:1.5;color:var(--ink,#333A42)}
+.smsnote b.from{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--grey,#858D97);margin-bottom:3px}
+.smsnote .code{font-family:var(--mono,monospace);font-size:19px;letter-spacing:.22em;font-weight:700}
 </style>
 <style>
 /* ------------------------------------------------------------- web shell */
@@ -1657,7 +1665,7 @@ function chrome(){
   $('svc').innerHTML = !FID.live ? '○ local only'
     : FID.signedIn
       ? `● ${FID.customer?.fullName || 'signed in'} <button class="linkish" data-act="signout">Sign out</button>`
-      : `○ demo data <button class="linkish" data-act="signin">Sign in</button>`
+      : `○ not signed in <button class="linkish" data-act="signin">Sign in</button>`
         + ` <button class="linkish" data-act="openaccount">Open an account</button>`;
 }
 
@@ -2273,7 +2281,7 @@ async function syncAccountsFromServer(){
     if (fresh.length) e.transactions = [...fresh, ...e.transactions].sort((a,b) => b.ts - a.ts);
     render();
   } catch (err) {
-    /* offline or signed out: keep the bundled demo data on screen, and let the
+    /* offline or signed out: keep the bundled sample content on screen, and let the
        header say which of the two it is */
     if (err.code === 'signed_out') chrome();
   }
@@ -2350,7 +2358,7 @@ async function doOpenAccount(){
 
 function topUpSheet(message, kind){
   openSheet(`<h3 class="d2">Add money</h3>
-    <p class="sub">A prompt goes to the wallet. On sandbox rails it approves itself.</p>
+    <p class="sub">We send a prompt to the wallet. Approve it and the money lands in seconds.</p>
     ${message ? `<span class="badge ${kind || 'r'}">${message}</span>` : ''}
     <label class="field" style="margin-top:18px"><span>Amount (GH₵)</span>
       <input id="tuAmount" inputmode="decimal" placeholder="50.00" autofocus></label>
@@ -2373,7 +2381,7 @@ async function doTopUp(){
 
 function signInSheet(message){
   openSheet(`<h3 class="d2">Sign in</h3>
-    <p class="sub">Until you do, these screens show bundled demo data rather than your account.</p>
+    <p class="sub">Your accounts, your payments, your history.</p>
     ${message ? `<span class="badge r">${message}</span>` : ''}
     <label class="field" style="margin-top:18px"><span>Phone number</span>
       <input id="siMsisdn" inputmode="tel" placeholder="+233201234567" autocomplete="username" autofocus></label>
@@ -2408,7 +2416,9 @@ function authPinSheet(){
 
 function otpSheet(){
   openSheet(`<h3 class="d2">Enter the code</h3>
-    <p class="sub">Demo code: <b>${S.auth.challenge.demoCode}</b> — sent to 024 ••• 8812</p>
+    <p class="sub">We sent a 6-digit code to ${(FID.customer?.msisdn || '').replace(/^(\+233)(\d{2})\d{4}(\d{3})$/, '0$2 ••• $3') || 'your phone'}. It expires in five minutes.</p>
+    <div class="smsnote"><b class="from">AI-Digital Bank</b>
+      Your verification code is <span class="code">${S.auth.challenge.demoCode || '——————'}</span></div>
     ${pinField('6-digit code', 6)}
     <div style="display:flex;gap:8px"><button class="btn primary" style="flex:1" data-act="authsubmit">Confirm</button>
       <button class="btn quiet" data-act="authcancel">Cancel</button></div>`);
@@ -3161,13 +3171,14 @@ document.addEventListener('keydown', ev => {
 /* ---- product switcher: four connected products, reachable from any one ---- */
 (function(){
   const HERE = (location.pathname || '').split('/').pop() || 'index.html';
-  const PRODUCTS = [
-    ['index.html','Prototype home','start here'],
-    ['app.html','AI-Digital Bank app','customer · mobile'],
-    ['web.html','AI-Digital Bank Online','customer · web'],
-    ['reviewer-console.html','Reviewer console','staff · the queue'],
-    ['control-tower.html','AI Control Tower','staff · governance'],
+  const CUSTOMER = [
+    ['index.html','AI-Digital Bank','home'],
+    ['app.html','AI-Digital Bank app','mobile'],
+    ['web.html','AI-Digital Bank Online','web'],
   ];
+  /* Customer surface: the review queue and the control tower are not listed
+     here, and are not linked from anywhere a customer can reach. */
+  const PRODUCTS = CUSTOMER;
   const el = document.createElement('div');
   el.className = 'switcher';
   el.innerHTML = `<div class="panel"><div class="hd">Switch product</div>` +

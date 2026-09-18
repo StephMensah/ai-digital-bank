@@ -277,7 +277,7 @@ input[type=range]{width:100%;accent-color:var(--orange)}
 .tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px}
 .tblwrap table{min-width:460px}
 
-/* the product switcher — this is a prototype of four connected products,
+/* the product switcher — four connected products,
    so every one of them can reach the others */
 .switcher{position:fixed;right:16px;bottom:16px;z-index:200;display:flex;flex-direction:column;
           align-items:flex-end;gap:8px}
@@ -365,3 +365,11 @@ input[type=range]{width:100%;accent-color:var(--orange)}
 .linkish{background:none;border:0;padding:0;margin-left:6px;font:inherit;font-size:inherit;
   color:var(--accent,#0E6E63);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 .linkish:hover{opacity:.75}
+
+
+/* the verification code, shown as the message it will arrive as once SMS is live */
+.smsnote{margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--haze,#F6F8F9);
+  border:1px solid var(--line,#E7EBEF);font-size:13px;line-height:1.5;color:var(--ink,#333A42)}
+.smsnote b.from{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--grey,#858D97);margin-bottom:3px}
+.smsnote .code{font-family:var(--mono,monospace);font-size:19px;letter-spacing:.22em;font-weight:700}
