@@ -508,6 +508,58 @@ const FID = (() => {
     return json.customer;
   }
   const signOut = () => keepSession(null);
+
+  /** Open a brand new customer: creates the person, their account, and a session. */
+  async function register({fullName, msisdn, email, password}){
+    const res = await fetch(API + '/api/v1/auth/register', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({fullName, msisdn, email, password})
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(new Error(json.error?.message || json.message || 'Could not open the account'),
+      {code: json.error?.code || 'register_failed', fields: json.error?.details?.fieldErrors});
+    const tokens = json.tokens || json;
+    keepSession({accessToken: tokens.accessToken, refreshToken: tokens.refreshToken, subject: json.customer});
+    return json.customer;
+  }
+
+  /** Move money in over the wallet or card rail. Returns the pending transaction. */
+  async function topUp({accountId, amountMinor, method = 'mobile_money', msisdn}){
+    if (!signedIn()) throw Object.assign(new Error('sign in required'), {code:'signed_out'});
+    const res = await fetch(API + '/api/v1/payments/deposits', {
+      method:'POST',
+      headers:{'Content-Type':'application/json', 'Idempotency-Key': 'web-' + Date.now() + '-' + Math.random().toString(36).slice(2), ...authHeaders()},
+      body: JSON.stringify({accountId, amountMinor, method, msisdn})
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(new Error(json.error?.message || 'Top up failed'),
+      {code: json.error?.code || 'topup_failed'});
+    return json;
+  }
+
+  /** The id of the signed-in customer's first account, needed for top ups. */
+  async function primaryAccountId(){
+    const res = await fetch(API + '/api/v1/accounts', {headers: authHeaders()});
+    if (!res.ok) throw Object.assign(new Error('offline'), {code:'offline'});
+    const json = await res.json();
+    return json.accounts?.[0]?.id || null;
+  }
+
+  /** Submit a Ghana Card for verification. */
+  async function submitGhanaCard({idNumber, dateOfBirth}){
+    const res = await fetch(API + '/api/v1/kyc/ghana-card', {
+      method:'POST', headers:{'Content-Type':'application/json', ...authHeaders()},
+      body: JSON.stringify({idNumber, dateOfBirth})
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(new Error(json.error?.message || 'Verification failed'),
+      {code: json.error?.code || 'kyc_failed'});
+    return json;
+  }
+
+  const kycStatus = () =>
+    fetch(API + '/api/v1/kyc/status', {headers: authHeaders()})
+      .then(r => r.ok ? r.json() : {status:'unknown'}).catch(() => ({status:'unknown'}));
   function sync(rec, extra){
     if (!apiUp) return;
     fetch(API + '/api/decisions', {method:'POST',
@@ -586,7 +638,8 @@ const FID = (() => {
   }
 
   return { CCY, money, money0, pct, seed, ENTITIES, LANG, FLOOR, get live(){ return apiUp; },
-           signIn, signOut, get signedIn(){ return signedIn(); },
+           signIn, signOut, register, topUp, primaryAccountId, submitGhanaCard, kycStatus,
+           get signedIn(){ return signedIn(); },
            get customer(){ return session && session.subject; },
            assessPayment, screenBeneficiary, preapprove, parse,
            forecastCashflow, verifyDocument, categorise,

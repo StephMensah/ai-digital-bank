@@ -31,7 +31,7 @@ kycRouter.post('/ghana-card',
   async (req, res, next) => {
     try {
       const idp = usingMocks() ? providers.mock : providers.kyc;
-      const identity = await idp.ghanaCard({ idNumber: req.body.idNumber });
+      const identity = await idp.ghanaCard({ idNumber: req.body.idNumber, fullName: req.customer.full_name });
       let matchScore = null;
       if (req.body.selfieBase64 && identity?.picture) {
         const match = await idp.selfieMatch({

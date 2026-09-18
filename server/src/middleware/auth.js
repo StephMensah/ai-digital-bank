@@ -31,7 +31,9 @@ export function authenticate(expectedType) {
 
       if (claims.type === 'customer') {
         const { rows } = await query(
-          'SELECT id, msisdn, full_name, email, kyc_status, kyc_tier, status, mambu_client_key, created_at FROM customers WHERE id=$1',
+          `SELECT id, msisdn, full_name, email, kyc_status, kyc_tier, status, mambu_client_key,
+                  pin_hash, must_change_pin, created_at
+             FROM customers WHERE id=$1`,
           [claims.sub]
         );
         if (!rows[0]) throw unauthorized('Session no longer valid');

@@ -1114,6 +1114,58 @@ const FID = (() => {
     return json.customer;
   }
   const signOut = () => keepSession(null);
+
+  /** Open a brand new customer: creates the person, their account, and a session. */
+  async function register({fullName, msisdn, email, password}){
+    const res = await fetch(API + '/api/v1/auth/register', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({fullName, msisdn, email, password})
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(new Error(json.error?.message || json.message || 'Could not open the account'),
+      {code: json.error?.code || 'register_failed', fields: json.error?.details?.fieldErrors});
+    const tokens = json.tokens || json;
+    keepSession({accessToken: tokens.accessToken, refreshToken: tokens.refreshToken, subject: json.customer});
+    return json.customer;
+  }
+
+  /** Move money in over the wallet or card rail. Returns the pending transaction. */
+  async function topUp({accountId, amountMinor, method = 'mobile_money', msisdn}){
+    if (!signedIn()) throw Object.assign(new Error('sign in required'), {code:'signed_out'});
+    const res = await fetch(API + '/api/v1/payments/deposits', {
+      method:'POST',
+      headers:{'Content-Type':'application/json', 'Idempotency-Key': 'web-' + Date.now() + '-' + Math.random().toString(36).slice(2), ...authHeaders()},
+      body: JSON.stringify({accountId, amountMinor, method, msisdn})
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(new Error(json.error?.message || 'Top up failed'),
+      {code: json.error?.code || 'topup_failed'});
+    return json;
+  }
+
+  /** The id of the signed-in customer's first account, needed for top ups. */
+  async function primaryAccountId(){
+    const res = await fetch(API + '/api/v1/accounts', {headers: authHeaders()});
+    if (!res.ok) throw Object.assign(new Error('offline'), {code:'offline'});
+    const json = await res.json();
+    return json.accounts?.[0]?.id || null;
+  }
+
+  /** Submit a Ghana Card for verification. */
+  async function submitGhanaCard({idNumber, dateOfBirth}){
+    const res = await fetch(API + '/api/v1/kyc/ghana-card', {
+      method:'POST', headers:{'Content-Type':'application/json', ...authHeaders()},
+      body: JSON.stringify({idNumber, dateOfBirth})
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(new Error(json.error?.message || 'Verification failed'),
+      {code: json.error?.code || 'kyc_failed'});
+    return json;
+  }
+
+  const kycStatus = () =>
+    fetch(API + '/api/v1/kyc/status', {headers: authHeaders()})
+      .then(r => r.ok ? r.json() : {status:'unknown'}).catch(() => ({status:'unknown'}));
   function sync(rec, extra){
     if (!apiUp) return;
     fetch(API + '/api/decisions', {method:'POST',
@@ -1192,7 +1244,8 @@ const FID = (() => {
   }
 
   return { CCY, money, money0, pct, seed, ENTITIES, LANG, FLOOR, get live(){ return apiUp; },
-           signIn, signOut, get signedIn(){ return signedIn(); },
+           signIn, signOut, register, topUp, primaryAccountId, submitGhanaCard, kycStatus,
+           get signedIn(){ return signedIn(); },
            get customer(){ return session && session.subject; },
            assessPayment, screenBeneficiary, preapprove, parse,
            forecastCashflow, verifyDocument, categorise,
@@ -1604,7 +1657,8 @@ function chrome(){
   $('svc').innerHTML = !FID.live ? '○ local only'
     : FID.signedIn
       ? `● ${FID.customer?.fullName || 'signed in'} <button class="linkish" data-act="signout">Sign out</button>`
-      : `○ demo data <button class="linkish" data-act="signin">Sign in</button>`;
+      : `○ demo data <button class="linkish" data-act="signin">Sign in</button>`
+        + ` <button class="linkish" data-act="openaccount">Open an account</button>`;
 }
 
 /* -------------------------------------------------------------- overview */
@@ -2259,6 +2313,64 @@ function pinChangeSheet(){
       <button class="btn quiet" data-act="authcancel">Cancel</button></div>`);
 }
 
+function openAccountSheet(message){
+  openSheet(`<h3 class="d2">Open an account</h3>
+    <p class="sub">Your name, your number, and a password. The account is created on the spot.</p>
+    ${message ? `<span class="badge r">${message}</span>` : ''}
+    <label class="field" style="margin-top:18px"><span>Full name</span><input id="oaName" autofocus></label>
+    <label class="field" style="margin-top:12px"><span>Phone number</span>
+      <input id="oaMsisdn" inputmode="tel" placeholder="+233201234567"></label>
+    <label class="field" style="margin-top:12px"><span>Email</span><input id="oaEmail" type="email"></label>
+    <label class="field" style="margin-top:12px"><span>Password</span>
+      <input id="oaPass" type="password" autocomplete="new-password"></label>
+    <p class="sub" style="margin-top:6px">At least 10 characters.</p>
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <button class="btn primary" style="flex:1" data-act="openaccountsubmit">Open my account</button>
+      <button class="btn quiet" data-act="close">Cancel</button></div>`);
+}
+
+async function doOpenAccount(){
+  const fullName = ($('oaName')?.value || '').trim();
+  const msisdn = ($('oaMsisdn')?.value || '').trim();
+  const password = $('oaPass')?.value || '';
+  if (fullName.length < 3) return openAccountSheet('Enter your full name');
+  if (!/^\+233\d{9}$/.test(msisdn)) return openAccountSheet('Use a Ghanaian number, +233 then nine digits');
+  if (password.length < 10) return openAccountSheet('Passwords need at least 10 characters');
+  try {
+    await FID.register({fullName, msisdn, email: ($('oaEmail')?.value || '').trim(), password});
+    closeSheet();
+    render();
+    syncAccountsFromServer();
+    S.auth = {stage:'setpin1', purpose:'pin_change'};
+    pinChangeSheet();
+  } catch (err) {
+    openAccountSheet(err.code === 'conflict' ? 'That number or email already has an account' : err.message);
+  }
+}
+
+function topUpSheet(message, kind){
+  openSheet(`<h3 class="d2">Add money</h3>
+    <p class="sub">A prompt goes to the wallet. On sandbox rails it approves itself.</p>
+    ${message ? `<span class="badge ${kind || 'r'}">${message}</span>` : ''}
+    <label class="field" style="margin-top:18px"><span>Amount (GH₵)</span>
+      <input id="tuAmount" inputmode="decimal" placeholder="50.00" autofocus></label>
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <button class="btn primary" style="flex:1" data-act="topupsubmit">Add money</button>
+      <button class="btn quiet" data-act="close">Close</button></div>`);
+}
+
+async function doTopUp(){
+  const amount = Number(($('tuAmount')?.value || '').replace(/[^0-9.]/g, ''));
+  if (!amount || amount < 1) return topUpSheet('Enter GH₵1.00 or more');
+  try {
+    const accountId = await FID.primaryAccountId();
+    if (!accountId) return topUpSheet('No account to fund yet');
+    await FID.topUp({accountId, amountMinor: Math.round(amount * 100)});
+    topUpSheet('Sent to the rail. Your balance updates in a moment.', 'j');
+    setTimeout(() => { syncAccountsFromServer(); render(); }, 2500);
+  } catch (err) { topUpSheet(err.message); }
+}
+
 function signInSheet(message){
   openSheet(`<h3 class="d2">Sign in</h3>
     <p class="sub">Until you do, these screens show bundled demo data rather than your account.</p>
@@ -2861,6 +2973,10 @@ document.addEventListener('click', ev => {
   switch (d.act){
     case 'close': closeSheet(); render(); break;
     case 'signin': signInSheet(); break;
+    case 'openaccount': openAccountSheet(); break;
+    case 'openaccountsubmit': doOpenAccount(); break;
+    case 'topup': topUpSheet(); break;
+    case 'topupsubmit': doTopUp(); break;
     case 'signinsubmit': doSignIn(); break;
     case 'signout': FID.signOut(); closeSheet(); render(); break;
     case 'authsubmit': authSubmit(); break;

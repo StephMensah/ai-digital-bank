@@ -10,6 +10,7 @@ import { openTransaction, settleTransaction, loadAccount, GL } from '../core/led
 import { openCustomerAccount } from '../services/onboarding.js';
 import { scoreTransaction } from '../services/risk.js';
 import { logger } from '../lib/logger.js';
+import { usingMocks } from '../providers/index.js';
 
 /**
  * Compatibility layer for the front ends built by build.py.
@@ -133,7 +134,9 @@ compatRouter.post('/otp/request',
       logger.info({ challengeId, msisdn: req.customer.msisdn }, 'otp issued');
       res.json({
         challengeId,
-        demoCode: config.env === 'production' ? undefined : code,
+        // No SMS provider on sandbox rails, so the code comes back in the
+        // response. Never on real rails, whatever the environment.
+        demoCode: (usingMocks() || config.env !== 'production') ? code : undefined,
         sentTo: '•••• ' + String(req.customer.msisdn).slice(-4)
       });
     } catch (err) { next(err); }
