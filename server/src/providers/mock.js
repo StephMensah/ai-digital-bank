@@ -217,8 +217,23 @@ export const mock = {
     };
   },
 
+  /**
+   * Answers in the identity provider's shape, not its own, so the route's name
+   * match works unchanged. Echoes the customer's own name so a well-formed card
+   * verifies; cards ending -0 return nothing, which the route refers to review.
+   */
   async ghanaCard({ idNumber, fullName }) {
-    return this.verifyIdentity({ idNumber, fullName });
+    await pause(LATENCY_MS * 2);
+    if (!/^GHA-\d{9}-\d$/.test(String(idNumber || '')) || String(idNumber).endsWith('-0')) return null;
+    const [first, ...rest] = String(fullName || holderFor(idNumber)).split(' ');
+    return {
+      full_name: fullName || holderFor(idNumber),
+      first_name: first,
+      surname: rest.join(' '),
+      id_number: idNumber,
+      picture: null,
+      mock: true
+    };
   },
 
   async selfieMatch() {

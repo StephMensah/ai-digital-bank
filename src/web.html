@@ -214,7 +214,8 @@ function chrome(){
   $('svc').innerHTML = !FID.live ? '○ local only'
     : FID.signedIn
       ? `● ${FID.customer?.fullName || 'signed in'} <button class="linkish" data-act="signout">Sign out</button>`
-      : `○ demo data <button class="linkish" data-act="signin">Sign in</button>`;
+      : `○ demo data <button class="linkish" data-act="signin">Sign in</button>`
+        + ` <button class="linkish" data-act="openaccount">Open an account</button>`;
 }
 
 /* -------------------------------------------------------------- overview */
@@ -869,6 +870,64 @@ function pinChangeSheet(){
       <button class="btn quiet" data-act="authcancel">Cancel</button></div>`);
 }
 
+function openAccountSheet(message){
+  openSheet(`<h3 class="d2">Open an account</h3>
+    <p class="sub">Your name, your number, and a password. The account is created on the spot.</p>
+    ${message ? `<span class="badge r">${message}</span>` : ''}
+    <label class="field" style="margin-top:18px"><span>Full name</span><input id="oaName" autofocus></label>
+    <label class="field" style="margin-top:12px"><span>Phone number</span>
+      <input id="oaMsisdn" inputmode="tel" placeholder="+233201234567"></label>
+    <label class="field" style="margin-top:12px"><span>Email</span><input id="oaEmail" type="email"></label>
+    <label class="field" style="margin-top:12px"><span>Password</span>
+      <input id="oaPass" type="password" autocomplete="new-password"></label>
+    <p class="sub" style="margin-top:6px">At least 10 characters.</p>
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <button class="btn primary" style="flex:1" data-act="openaccountsubmit">Open my account</button>
+      <button class="btn quiet" data-act="close">Cancel</button></div>`);
+}
+
+async function doOpenAccount(){
+  const fullName = ($('oaName')?.value || '').trim();
+  const msisdn = ($('oaMsisdn')?.value || '').trim();
+  const password = $('oaPass')?.value || '';
+  if (fullName.length < 3) return openAccountSheet('Enter your full name');
+  if (!/^\+233\d{9}$/.test(msisdn)) return openAccountSheet('Use a Ghanaian number, +233 then nine digits');
+  if (password.length < 10) return openAccountSheet('Passwords need at least 10 characters');
+  try {
+    await FID.register({fullName, msisdn, email: ($('oaEmail')?.value || '').trim(), password});
+    closeSheet();
+    render();
+    syncAccountsFromServer();
+    S.auth = {stage:'setpin1', purpose:'pin_change'};
+    pinChangeSheet();
+  } catch (err) {
+    openAccountSheet(err.code === 'conflict' ? 'That number or email already has an account' : err.message);
+  }
+}
+
+function topUpSheet(message, kind){
+  openSheet(`<h3 class="d2">Add money</h3>
+    <p class="sub">A prompt goes to the wallet. On sandbox rails it approves itself.</p>
+    ${message ? `<span class="badge ${kind || 'r'}">${message}</span>` : ''}
+    <label class="field" style="margin-top:18px"><span>Amount (GH₵)</span>
+      <input id="tuAmount" inputmode="decimal" placeholder="50.00" autofocus></label>
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <button class="btn primary" style="flex:1" data-act="topupsubmit">Add money</button>
+      <button class="btn quiet" data-act="close">Close</button></div>`);
+}
+
+async function doTopUp(){
+  const amount = Number(($('tuAmount')?.value || '').replace(/[^0-9.]/g, ''));
+  if (!amount || amount < 1) return topUpSheet('Enter GH₵1.00 or more');
+  try {
+    const accountId = await FID.primaryAccountId();
+    if (!accountId) return topUpSheet('No account to fund yet');
+    await FID.topUp({accountId, amountMinor: Math.round(amount * 100)});
+    topUpSheet('Sent to the rail. Your balance updates in a moment.', 'j');
+    setTimeout(() => { syncAccountsFromServer(); render(); }, 2500);
+  } catch (err) { topUpSheet(err.message); }
+}
+
 function signInSheet(message){
   openSheet(`<h3 class="d2">Sign in</h3>
     <p class="sub">Until you do, these screens show bundled demo data rather than your account.</p>
@@ -1471,6 +1530,10 @@ document.addEventListener('click', ev => {
   switch (d.act){
     case 'close': closeSheet(); render(); break;
     case 'signin': signInSheet(); break;
+    case 'openaccount': openAccountSheet(); break;
+    case 'openaccountsubmit': doOpenAccount(); break;
+    case 'topup': topUpSheet(); break;
+    case 'topupsubmit': doTopUp(); break;
     case 'signinsubmit': doSignIn(); break;
     case 'signout': FID.signOut(); closeSheet(); render(); break;
     case 'authsubmit': authSubmit(); break;

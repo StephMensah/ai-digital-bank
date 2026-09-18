@@ -446,8 +446,14 @@ function vYou(){
         <div class="tiny">${!FID.live ? 'Opened as a file, so nothing reaches the bank.'
           : FID.signedIn ? (FID.customer?.fullName || '') + ' · balances come from your account'
           : 'Sign in to see your own balances and move real money.'}</div></div>
-      ${FID.live ? `<button class="btn quiet" data-act="${FID.signedIn ? 'signout' : 'signin'}">${
-        FID.signedIn ? 'Sign out' : 'Sign in'}</button>` : ''}</div>
+      ${FID.live ? (FID.signedIn
+        ? `<button class="btn quiet" data-act="signout">Sign out</button>`
+        : `<div style="display:grid;gap:6px">
+             <button class="btn primary" data-act="openaccount">Open an account</button>
+             <button class="btn quiet" data-act="signin">Sign in</button></div>`) : ''}</div>
+    ${FID.signedIn ? `<div class="surface" style="margin-top:10px;display:flex;gap:12px;align-items:center">
+      <div style="flex:1"><b>Add money</b><div class="tiny">Fund this account over the wallet rail.</div></div>
+      <button class="btn quiet" data-act="topup">Add money</button></div>` : ''}
 
     ${S.consent.insights && S.entity==='personal' ? `
     <div class="sect"><div class="surface" style="border-left:3px solid var(--orange);cursor:pointer" data-act="toggleinsight">
@@ -681,6 +687,69 @@ function pinChangeSheet(){
     ${authDots(4)}
     ${keypad()}
     <button class="btn quiet wide" style="margin-top:10px" data-act="authcancel">Cancel</button>`);
+}
+
+function openAccountSheet(message){
+  openSheet(`<h3>Open an account</h3>
+    <p class="sub">Your name, your number, and a password. The account is created on the spot.</p>
+    ${message ? `<span class="badge r">${message}</span>` : ''}
+    <label class="field" style="margin-top:18px"><span>Full name</span>
+      <input id="oaName" placeholder="Ama Boateng" autofocus></label>
+    <label class="field" style="margin-top:12px"><span>Phone number</span>
+      <input id="oaMsisdn" inputmode="tel" placeholder="+233201234567"></label>
+    <label class="field" style="margin-top:12px"><span>Email</span>
+      <input id="oaEmail" type="email" placeholder="you@example.com"></label>
+    <label class="field" style="margin-top:12px"><span>Password</span>
+      <input id="oaPass" type="password" autocomplete="new-password"></label>
+    <p class="tiny" style="margin-top:6px">At least 10 characters.</p>
+    <button class="btn primary wide" style="margin-top:16px" data-act="openaccountsubmit">Open my account</button>
+    <button class="btn quiet wide" style="margin-top:8px" data-act="close">Cancel</button>`);
+}
+
+async function doOpenAccount(){
+  const fullName = ($('oaName')?.value || '').trim();
+  const msisdn = ($('oaMsisdn')?.value || '').trim();
+  const email = ($('oaEmail')?.value || '').trim();
+  const password = $('oaPass')?.value || '';
+  if (fullName.length < 3) return openAccountSheet('Enter your full name');
+  if (!/^\+233\d{9}$/.test(msisdn)) return openAccountSheet('Use a Ghanaian number, +233 then nine digits');
+  if (password.length < 10) return openAccountSheet('Passwords need at least 10 characters');
+  try {
+    await FID.register({fullName, msisdn, email, password});
+    closeSheet();
+    render();
+    syncAccountsFromServer();
+    // A new customer has no PIN yet, and nothing moves without one.
+    S.auth = {stage:'setpin1', purpose:'pin_change'};
+    pinChangeSheet();
+  } catch (err) {
+    openAccountSheet(err.code === 'conflict' ? 'That number or email already has an account' : err.message);
+  }
+}
+
+function topUpSheet(message, kind){
+  openSheet(`<h3>Add money</h3>
+    <p class="sub">A prompt goes to your wallet. On sandbox rails it approves itself.</p>
+    ${message ? `<span class="badge ${kind || 'r'}">${message}</span>` : ''}
+    <label class="field" style="margin-top:18px"><span>Amount (GH₵)</span>
+      <input id="tuAmount" inputmode="decimal" placeholder="50.00" autofocus></label>
+    <button class="btn primary wide" style="margin-top:16px" data-act="topupsubmit">Add money</button>
+    <button class="btn quiet wide" style="margin-top:8px" data-act="close">Close</button>`);
+}
+
+async function doTopUp(){
+  const amount = Number(($('tuAmount')?.value || '').replace(/[^0-9.]/g, ''));
+  if (!amount || amount < 1) return topUpSheet('Enter GH₵1.00 or more');
+  try {
+    const accountId = await FID.primaryAccountId();
+    if (!accountId) return topUpSheet('No account to fund yet');
+    await FID.topUp({accountId, amountMinor: Math.round(amount * 100)});
+    topUpSheet('Sent to the rail. Your balance updates in a moment.', 'j');
+    // The rail settles out of band, so re-read rather than guess.
+    setTimeout(() => { syncAccountsFromServer(); render(); }, 2500);
+  } catch (err) {
+    topUpSheet(err.message);
+  }
 }
 
 function signInSheet(message){
@@ -1628,6 +1697,10 @@ document.addEventListener('click', ev => {
   switch (d.act){
     case 'close': closeSheet(); render(); break;
     case 'signin': signInSheet(); break;
+    case 'openaccount': openAccountSheet(); break;
+    case 'openaccountsubmit': doOpenAccount(); break;
+    case 'topup': topUpSheet(); break;
+    case 'topupsubmit': doTopUp(); break;
     case 'signinsubmit': doSignIn(); break;
     case 'signout': FID.signOut(); closeSheet(); render(); break;
     case 'authcancel': S.auth = null; closeSheet(); render(); break;
@@ -1891,6 +1964,8 @@ document.addEventListener('keydown', ev => {
 render();
 tickClock();
 syncAccountsFromServer();
+// arriving from the website's "Open an account" button drops straight into the flow
+if (new URLSearchParams(location.search).has('open') && !FID.signedIn) { go('you'); openAccountSheet(); }
 </script>
 </body>
 </html>
