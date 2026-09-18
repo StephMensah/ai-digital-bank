@@ -4,13 +4,18 @@ import { kyc } from './kyc.js';
 import { ghipss } from './ghipss.js';
 import { hubtel } from './hubtel.js';
 import { mambu } from '../core/mambu.js';
+import { mock } from './mock.js';
+import { config } from '../config.js';
 import { isConfigured } from '../config.js';
 import { badRequest } from '../lib/errors.js';
 
-export const providers = { momo, paystack, kyc, ghipss, hubtel };
+export const providers = { momo, paystack, kyc, ghipss, hubtel, mock };
+
+export const usingMocks = () => config.mockProviders;
 
 /** Route a money-in/out instruction to the right rail. */
 export function railFor(method) {
+  if (config.mockProviders && ['mobile_money', 'card', 'bank'].includes(method)) return mock;
   switch (method) {
     // Hubtel covers every Ghanaian network on one contract, so it leads when it
     // is configured; the direct MTN MoMo integration stays as the fallback.
@@ -24,6 +29,18 @@ export function railFor(method) {
 }
 
 export async function healthSnapshot() {
+  if (config.mockProviders) {
+    // Labelled mock, never up: the control tower should never imply a live rail.
+    const detail = {
+      mambu: isConfigured.mambu() ? 'live core, mock rails' : 'not configured, core postings skipped',
+      mtn_momo: 'sandbox rail', hubtel: 'sandbox rail',
+      paystack: 'sandbox rail', ghipss_gip: 'sandbox rail', identity: 'sandbox rail'
+    };
+    return Object.keys(detail).map((component) => ({
+      component, status: 'mock', detail: detail[component], latencyMs: 1
+    }));
+  }
+
   const components = [
     ['mambu', isConfigured.mambu(), () => mambu.ping()],
     ['mtn_momo', momo.configured(), () => momo.ping()],

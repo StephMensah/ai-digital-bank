@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { query } from '../db/pool.js';
 import { authenticate } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
-import { providers } from '../providers/index.js';
+import { providers, usingMocks } from '../providers/index.js';
 import { mambu } from '../core/mambu.js';
 import { isConfigured } from '../config.js';
 import { audit, auditFrom } from '../middleware/audit.js';
@@ -30,10 +30,11 @@ kycRouter.post('/ghana-card',
   })),
   async (req, res, next) => {
     try {
-      const identity = await providers.kyc.ghanaCard({ idNumber: req.body.idNumber });
+      const idp = usingMocks() ? providers.mock : providers.kyc;
+      const identity = await idp.ghanaCard({ idNumber: req.body.idNumber });
       let matchScore = null;
       if (req.body.selfieBase64 && identity?.picture) {
-        const match = await providers.kyc.selfieMatch({
+        const match = await idp.selfieMatch({
           selfieBase64: req.body.selfieBase64, idBase64: identity.picture
         });
         matchScore = Number(match?.confidence_value ?? match?.match_score ?? 0);

@@ -8,7 +8,7 @@ import { requireIdempotencyKey } from '../middleware/idempotency.js';
 import { audit, auditFrom } from '../middleware/audit.js';
 import { loadAccount, assertWithinLimits, openTransaction, settleTransaction, failTransaction, GL } from '../core/ledger.js';
 import { scoreTransaction } from '../services/risk.js';
-import { railFor, providers } from '../providers/index.js';
+import { railFor, providers, usingMocks } from '../providers/index.js';
 import { mambu } from '../core/mambu.js';
 import { isConfigured, config } from '../config.js';
 import { enqueue } from '../core/outbox.js';
@@ -172,6 +172,7 @@ paymentsRouter.get('/transactions/:reference', async (req, res, next) => {
 
 paymentsRouter.get('/banks', async (_req, res, next) => {
   try {
+    if (usingMocks()) return res.json({ banks: await providers.mock.banks(), rail: 'mock' });
     // Prefer the GIP member directory when GhIPSS is live — it is the
     // authoritative list of banks we can actually settle with.
     if (providers.ghipss.configured()) {
@@ -209,7 +210,12 @@ paymentsRouter.post('/name-enquiry',
 export async function dispatchPayout({ transaction, method, destination, narration, account }) {
   try {
     let result;
-    if (method === 'mobile_money' && providers.hubtel.configured()) {
+    if (usingMocks()) {
+      result = await providers.mock.payout({
+        amountMinor: Number(transaction.amount_minor),
+        msisdn: destination.msisdn, reference: transaction.reference, narration
+      });
+    } else if (method === 'mobile_money' && providers.hubtel.configured()) {
       result = await providers.hubtel.payout({
         amountMinor: Number(transaction.amount_minor), msisdn: destination.msisdn,
         reference: transaction.reference, narration, recipientName: destination.name

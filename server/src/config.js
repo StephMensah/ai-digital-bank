@@ -88,6 +88,13 @@ export const config = {
   }
 };
 
+/* Sandbox rails. Explicitly MOCK_PROVIDERS=false forces the real ones even when
+   unconfigured, so a misconfigured production service fails loudly instead of
+   quietly paying imaginary people. */
+config.mockProviders = process.env.MOCK_PROVIDERS
+  ? process.env.MOCK_PROVIDERS === 'true'
+  : !(process.env.HUBTEL_CLIENT_ID || process.env.MOMO_API_KEY || process.env.PAYSTACK_SECRET_KEY);
+
 export const isConfigured = {
   mambu: () => Boolean(config.mambu.baseUrl && config.mambu.apiKey),
   momo: () => Boolean(config.momo.collection.key && config.momo.collection.userId),
