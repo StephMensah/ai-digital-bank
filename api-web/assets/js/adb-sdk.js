@@ -1,5 +1,5 @@
 /*!
- * AI Digital Bank — browser SDK
+ * Digital Bank — browser SDK
  * Drop into any page: <script src="/assets/js/adb-sdk.js"></script>
  * Then: const adb = ADB.client();
  *

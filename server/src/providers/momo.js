@@ -63,7 +63,7 @@ export const momo = {
         currency: config.momo.targetEnv === 'sandbox' ? 'EUR' : 'GHS',
         externalId: reference,
         payer: { partyIdType: 'MSISDN', partyId: msisdn.replace(/^\+/, '') },
-        payerMessage: payerMessage || 'AI Digital Bank deposit',
+        payerMessage: payerMessage || 'Digital Bank deposit',
         payeeNote: payeeNote || reference
       },
       label: 'momo requesttopay',
@@ -95,7 +95,7 @@ export const momo = {
         currency: config.momo.targetEnv === 'sandbox' ? 'EUR' : 'GHS',
         externalId: reference,
         payee: { partyIdType: 'MSISDN', partyId: msisdn.replace(/^\+/, '') },
-        payerMessage: note || 'AI Digital Bank payout',
+        payerMessage: note || 'Digital Bank payout',
         payeeNote: reference
       },
       label: 'momo transfer',

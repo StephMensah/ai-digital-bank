@@ -27,7 +27,7 @@ const FID = (() => {
     virtualCards:[{num:'4821 •••• •••• 7719', fullNum:'4821 5507 4413 7719', cvv:'091', exp:'11/28', locked:'one merchant'}],
     credit:{bureau:648, dti:0.31, income:6400, thinFile:false},
     beneficiaries:[
-      {name:'Kojo Mensah', bank:'AI-Digital Bank', acct:'•••• 2210', last:'GHS 200'},
+      {name:'Kojo Mensah', bank:'Digital Bank', acct:'•••• 2210', last:'GHS 200'},
       {name:'MTN MoMo 024 447 8812', bank:'MoMo', acct:'024 447 8812', last:'GHS 50'},
       {name:'Electro World Accra', bank:'GCB', acct:'•••• 9931', last:'GHS 1,240'},
       {name:'Global Marine Ltd', bank:'Correspondent · Dubai', acct:'AE07 •••• 3311', last:'first payment'},
@@ -54,7 +54,7 @@ const FID = (() => {
     credit:{bureau:702, dti:0.24, income:41000, thinFile:true},
     beneficiaries:[
       {name:'Adom Poultry Farms', bank:'CalBank', acct:'•••• 8820', last:'GHS 12,400'},
-      {name:'Payroll — 14 staff', bank:'AI-Digital Bank', acct:'batch', last:'GHS 18,900'},
+      {name:'Payroll — 14 staff', bank:'Digital Bank', acct:'batch', last:'GHS 18,900'},
       {name:'Global Marine Ltd', bank:'Correspondent · Dubai', acct:'AE07 •••• 3311', last:'first payment'},
     ],
     transactions:[
@@ -597,7 +597,7 @@ Object.assign(FID, (() => {
     M(/netflix/i,         'Netflix',             '#E50914', 'NF', 'Subscriptions'),
     M(/spotify/i,         'Spotify',             '#1DB954', 'SP', 'Subscriptions'),
     M(/mensah properties|rent/i,'Mensah Properties','#6D4C41','MP','Housing'),
-    M(/ai-digital|ai digital|settlement|card settlement/i,'AI-Digital Bank','#14B8AC','AD','Income'),
+    M(/ai-digital|ai digital|digital bank|settlement|card settlement/i,'Digital Bank','#14B8AC','AD','Income'),
   ];
 
   /** Resolve a raw transaction description to a known merchant, or synthesise one. */
@@ -661,7 +661,7 @@ Object.assign(FID, (() => {
 
   /** Post a real movement. Balances change, the statement grows, and the row
       carries the record the decision layer already wrote. */
-  function post(entity, {merchant:name, amount, account = 0, method = 'AI-Digital Bank account',
+  function post(entity, {merchant:name, amount, account = 0, method = 'Digital Bank account',
                          category, status = 'Completed', note = '', hash}){
     const acct = entity.accounts[account];
     const m = merchant_(name);
