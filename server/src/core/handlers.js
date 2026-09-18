@@ -6,6 +6,36 @@ import { logger } from '../lib/logger.js';
 
 /** Everything that must eventually reach the core banking system lands here. */
 export function registerOutboxHandlers() {
+  /* Wallet to bank, second leg. The job waits for the collection to post
+     before it sends anything onward: paying a bank account out of money the
+     wallet never gave us is the one failure this design exists to prevent. */
+  onTopic('payments.onward_bank_leg', async ({ transactionId, accountId, amountMinor, destination, narration }) => {
+    const { query } = await import('../db/pool.js');
+    const { rows } = await query('SELECT status FROM transactions WHERE id=$1', [transactionId]);
+    const status = rows[0]?.status;
+
+    if (status === 'failed' || status === 'reversed') return;          // nothing collected, nothing to send
+    if (status !== 'posted') throw new Error('collection still pending');  // retried by the outbox
+
+    const { loadAccount, openTransaction } = await import('./ledger.js');
+    const { dispatchPayout } = await import('../routes/payments.js');
+    const { rows: acct } = await query('SELECT customer_id FROM accounts WHERE id=$1', [accountId]);
+    const account = await loadAccount(accountId, acct[0].customer_id);
+
+    const { transaction } = await openTransaction({
+      account, direction: 'debit', kind: 'withdrawal', amountMinor,
+      channel: 'wallet_to_bank', provider: 'bank',
+      counterparty: destination,
+      metadata: { narration, leg: 'onward', collectedBy: transactionId },
+      idempotencyKey: `onward-${transactionId}`,
+      status: 'processing'
+    });
+
+    await dispatchPayout({
+      transaction, method: 'bank', destination, narration, account
+    });
+  });
+
   onTopic('mambu.mirror_customer', async ({ customerId, accountId }) => {
     const { rows: c } = await query('SELECT * FROM customers WHERE id=$1', [customerId]);
     const { rows: a } = await query('SELECT * FROM accounts WHERE id=$1', [accountId]);

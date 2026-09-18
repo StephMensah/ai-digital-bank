@@ -1385,6 +1385,46 @@ const FID = (() => {
     return json;
   }
 
+  /** Who owns this destination, before any money moves. */
+  async function nameEnquiry(body){
+    const res = await fetch(API + '/api/v1/payments/name-enquiry', {
+      method:'POST', headers:{'Content-Type':'application/json', ...authHeaders()},
+      body: JSON.stringify(body)
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(new Error(json.error?.message || 'We could not find that account'),
+      {code: json.error?.code || 'enquiry_failed', status: res.status});
+    return json;
+  }
+
+  const savePayee = (payee) =>
+    fetch(API + '/api/v1/payees', {
+      method:'POST', headers:{'Content-Type':'application/json', ...authHeaders()},
+      body: JSON.stringify(payee)
+    }).then(async r => {
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw Object.assign(new Error(j.error?.message || 'Could not save that payee'),
+        {code: j.error?.code || 'save_failed'});
+      return j.payee;
+    });
+
+  const banks = () =>
+    fetch(API + '/api/v1/payments/banks', {headers: authHeaders()})
+      .then(r => r.ok ? r.json() : {banks:[]}).then(j => j.banks || []).catch(() => []);
+
+  async function walletToBank({accountId, amountMinor, msisdn, destination, narration}){
+    const res = await fetch(API + '/api/v1/payments/wallet-to-bank', {
+      method:'POST',
+      headers:{'Content-Type':'application/json',
+        'Idempotency-Key':'w2b-' + Date.now() + '-' + Math.random().toString(36).slice(2), ...authHeaders()},
+      body: JSON.stringify({accountId, amountMinor, msisdn, destination, narration})
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(new Error(json.error?.message || 'That transfer did not go through'),
+      {code: json.error?.code || 'w2b_failed'});
+    return json;
+  }
+
   const kycStatus = () =>
     fetch(API + '/api/v1/kyc/status', {headers: authHeaders()})
       .then(r => r.ok ? r.json() : {status:'unknown'}).catch(() => ({status:'unknown'}));
@@ -1474,6 +1514,7 @@ const FID = (() => {
            signIn, signOut, register, topUp, primaryAccountId, submitGhanaCard, kycStatus,
            apiReady, get apiMissing(){ return apiMissing; }, APP_URL,
            applyLiveProfile, get entitiesAvailable(){ return availableEntities; },
+           nameEnquiry, savePayee, banks, walletToBank,
            get liveGoals(){ return liveGoals; },
            get signedIn(){ return signedIn(); },
            get customer(){ return session && session.subject; },

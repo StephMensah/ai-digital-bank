@@ -13,6 +13,7 @@ import { mambu } from '../core/mambu.js';
 import { isConfigured, config } from '../config.js';
 import { enqueue } from '../core/outbox.js';
 import { badRequest, notFound } from '../lib/errors.js';
+import { newReference } from '../lib/crypto.js';
 
 export const paymentsRouter = Router();
 paymentsRouter.use(authenticate('customer'));
@@ -182,9 +183,28 @@ paymentsRouter.get('/banks', async (_req, res, next) => {
   } catch (err) { next(err); }
 });
 
+const NETWORKS = { mtn: 'MTN MoMo', vodafone: 'Telecel Cash', airteltigo: 'AirtelTigo Money' };
+function networkName(msisdn) {
+  const local = String(msisdn || '').replace(/^\+233/, '').replace(/^0/, '').slice(0, 2);
+  if (['24', '54', '55', '59', '25', '53'].includes(local)) return NETWORKS.mtn;
+  if (['20', '50'].includes(local)) return NETWORKS.vodafone;
+  if (['27', '57', '26', '56'].includes(local)) return NETWORKS.airteltigo;
+  return 'Mobile wallet';
+}
+
+/** The picker sends a code; the confirmation screen needs the name back. */
+async function bankNameFor(bankCode) {
+  try {
+    const list = providers.ghipss.configured()
+      ? await providers.ghipss.banks()
+      : usingMocks() ? await providers.mock.banks() : await providers.paystack.listBanks();
+    return (list.find((b) => String(b.code) === String(bankCode)) || {}).name || 'Selected bank';
+  } catch { return 'Selected bank'; }
+}
+
 paymentsRouter.post('/name-enquiry',
   validate(z.object({
-    method: z.enum(['mobile_money', 'bank']),
+    method: z.enum(['mobile_money', 'bank', 'internal']),
     msisdn: z.string().optional(),
     accountNumber: z.string().optional(),
     bankCode: z.string().optional()
@@ -192,18 +212,137 @@ paymentsRouter.post('/name-enquiry',
   async (req, res, next) => {
     try {
       const { method, msisdn, accountNumber, bankCode } = req.body;
+
+      /* On-us: the account is in our own ledger, so no rail is involved. The
+         answer says whether it is one of the caller's own accounts, because
+         sending to yourself and sending to someone else are different
+         intentions and the screen asks which before it asks for a number. */
+      if (method === 'internal') {
+        const { rows } = await query(
+          `SELECT a.id, a.account_number, a.customer_id, a.segment,
+                  COALESCE(a.product_name, 'Current account') AS product_name,
+                  c.full_name
+             FROM accounts a JOIN customers c ON c.id = a.customer_id
+            WHERE a.account_number = $1 AND a.status = 'active'`,
+          [String(accountNumber || '').trim()]
+        );
+        const found = rows[0];
+        if (!found) throw notFound('No Digital Bank account with that number');
+        return res.json({
+          name: found.segment === 'business' ? found.product_name : found.full_name,
+          bank: 'Digital Bank',
+          branch: 'Digital — no branch',
+          accountNumber: found.account_number,
+          self: found.customer_id === req.customer.id,
+          rail: 'internal'
+        });
+      }
+
       if (method === 'mobile_money') {
         const rail = railFor('mobile_money');
-        return res.json({ name: await rail.accountHolderName(msisdn), rail: rail.name });
+        return res.json({
+          name: await rail.accountHolderName(msisdn),
+          bank: networkName(msisdn), branch: 'Mobile wallet',
+          accountNumber: msisdn, rail: rail.name
+        });
+      }
+      if (usingMocks()) {
+        const enquiry = await providers.mock.nameEnquiry({ accountNumber, bankCode });
+        return res.json({
+          name: enquiry.accountName, enquiry, accountNumber,
+          bank: await bankNameFor(bankCode), branch: 'Not returned by the rail',
+          rail: 'mock'
+        });
       }
       if (providers.ghipss.configured()) {
         const enquiry = await providers.ghipss.nameEnquiry({ accountNumber, bankCode });
+        const bankName = await bankNameFor(bankCode);
         // The session id has to travel back with the transfer request, so hand
         // it to the client and let it round-trip.
-        return res.json({ name: enquiry.accountName, enquiry, rail: 'gip' });
+        return res.json({
+          name: enquiry.accountName, enquiry, accountNumber,
+          bank: bankName,
+          /* GIP answers with the account name; it does not carry a branch.
+             Saying so is better than inventing one. */
+          branch: enquiry.branch || 'Not returned by GIP',
+          rail: 'gip'
+        });
       }
       const resolved = await providers.paystack.resolveAccount({ accountNumber, bankCode });
-      res.json({ name: resolved.account_name, rail: 'paystack' });
+      res.json({
+        name: resolved.account_name, accountNumber,
+        bank: await bankNameFor(bankCode), branch: 'Not returned by the rail',
+        rail: 'paystack'
+      });
+    } catch (err) { next(err); }
+  });
+
+/**
+ * Wallet to bank: pull from the customer's mobile wallet and push the same
+ * amount to a bank account, in that order.
+ *
+ * It is two legs, not one, and the order matters: nothing is sent to the bank
+ * until the wallet debit has actually settled, because the alternative is
+ * paying a stranger with money we never collected. The customer's own account
+ * is the waypoint, so the movement is on the ledger at every moment and the
+ * statement shows both halves rather than a sum that appeared from nowhere.
+ */
+paymentsRouter.post('/wallet-to-bank',
+  payLimiter, requireIdempotencyKey,
+  validate(z.object({
+    accountId: z.string().uuid(),
+    amountMinor,
+    msisdn: z.string().regex(/^\+233\d{9}$/, 'Use a Ghana mobile number in +233 format'),
+    destination: z.object({
+      accountNumber: z.string().min(5),
+      bankCode: z.string().min(2),
+      name: z.string().optional(),
+      enquiry: z.object({}).passthrough().optional()
+    }),
+    narration: z.string().max(100).optional()
+  })),
+  async (req, res, next) => {
+    try {
+      const account = await loadAccount(req.body.accountId, req.customer.id);
+      const rail = railFor('mobile_money');
+      const reference = newReference('W2B');
+
+      const { transaction } = await openTransaction({
+        account, direction: 'credit', kind: 'deposit',
+        amountMinor: req.body.amountMinor,
+        channel: 'wallet_to_bank', provider: rail.name,
+        counterparty: { msisdn: req.body.msisdn, onward: req.body.destination },
+        metadata: { narration: req.body.narration || 'Wallet to bank', leg: 'collection' },
+        idempotencyKey: req.get('Idempotency-Key'),
+        status: 'processing', reference
+      });
+
+      const collection = rail.chargeWallet
+        ? await rail.chargeWallet({
+            amountMinor: req.body.amountMinor, msisdn: req.body.msisdn,
+            reference: transaction.reference, description: 'Wallet to bank'
+          })
+        : await rail.requestToPay({
+            amountMinor: req.body.amountMinor, msisdn: req.body.msisdn,
+            reference: transaction.reference, payerMessage: 'Wallet to bank'
+          });
+
+      await query('UPDATE transactions SET provider_ref=$2 WHERE id=$1',
+        [transaction.id, collection.providerRef || null]);
+
+      /* The onward leg is queued against the collection, not fired now. The
+         settlement path releases it once the wallet debit lands. */
+      await enqueue('payments.onward_bank_leg', {
+        transactionId: transaction.id, accountId: account.id,
+        amountMinor: req.body.amountMinor, destination: req.body.destination,
+        narration: req.body.narration || 'Wallet to bank'
+      });
+
+      await audit({ ...auditFrom(req), action: 'payment.wallet_to_bank', entity: 'transaction', entityId: transaction.id });
+      res.status(202).json({
+        transaction,
+        awaiting: 'Approve the prompt on your phone. The bank leg follows once it clears.'
+      });
     } catch (err) { next(err); }
   });
 
