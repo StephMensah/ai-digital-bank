@@ -162,7 +162,8 @@ webhooksRouter.post('/mambu', async (req, res, next) => {
 });
 
 async function postToCore(t) {
-  if (!isConfigured.mambu()) return;
+  // The mock core stands in when no tenant is configured, so postings are
+  // exercised rather than silently skipped.
   const { rows } = await query('SELECT mambu_account_key FROM accounts WHERE id=$1', [t.account_id]);
   const accountKey = rows[0]?.mambu_account_key;
   if (!accountKey) return;
