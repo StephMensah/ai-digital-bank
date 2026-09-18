@@ -2162,7 +2162,11 @@ document.addEventListener('keydown', ev => {
 if (FID.live) FID.blankProfile();
 applyGate();
 
-render();
+/* Gated means signed out, and there is nothing behind the gate worth drawing.
+   Skipping it also avoids rendering a home screen that has no account in it. */
+const gated = FID.live && !FID.signedIn;
+
+if (!gated) render();
 syncAccountsFromServer();
 // ?open=1 from the website lands on the account-opening half of the gate
 if (FID.live && !FID.signedIn && new URLSearchParams(location.search).has('open')) showGate('open');
