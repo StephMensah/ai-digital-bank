@@ -5,7 +5,7 @@
 <meta name="adb-app-url" content="https://pokztechnologies.org">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#15161A">
-<title>AI-Digital Bank</title>
+<title>Digital Bank</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
@@ -118,19 +118,19 @@ body{background:var(--sand)}
 <body>
 <div class="stage">
   <div class="rail">
-    <span class="kick">AI-Digital Bank · Ghana</span>
+    <span class="kick">Digital Bank · Ghana</span>
     <h1>A bank with <em>no branch</em>, and nothing missing</h1>
     <p class="lede">Everything the counter used to do — transfers, bills, airtime, cards, cheques, treasury
       bills, foreign exchange, loans, payroll — running on the AI engine, with <b>a plain note behind every
       decision a model makes</b>.</p>
     <div class="feat">
-      <div><b>Move money</b><span>AI-Digital Bank, GhIPSS instant, MoMo, SWIFT, standing orders, bulk payroll</span></div>
+      <div><b>Move money</b><span>Digital Bank, GhIPSS instant, MoMo, SWIFT, standing orders, bulk payroll</span></div>
       <div><b>Grow money</b><span>Goal savings, fixed deposits, 91–364 day treasury bills, FX</span></div>
       <div><b>Borrow</b><span>Salary advance, personal loan, overdraft — priced by model, declined only by a person</span></div>
       <div><b>Stay safe</b><span>Card freeze, tier limits, sanctions screening, live fraud step-up</span></div>
     </div>
     <div id="railart" style="margin:30px 0 6px;max-width:420px"></div>
-    <div class="railfoot">Shares core.js with AI-Digital Bank Online and the reviewer console.<br>
+    <div class="railfoot">Shares core.js with Digital Bank Online and the reviewer console.<br>
       Below 520px the frame drops and it fills the screen.</div>
   </div>
 
@@ -504,7 +504,7 @@ function vYou(){
         </div></div></div>
 
     <div class="sect"><div class="surface flush">
-      ${[['support','headset','Ask AI-Digital Bank, or a person'],['branches','pin','Branches and ATMs'],
+      ${[['support','headset','Ask Digital Bank, or a person'],['branches','pin','Branches and ATMs'],
          ['statement','statement','Statements and certificates'],['security','lock','Security and devices'],
          ['switch','exchange','Switch to '+(S.entity==='personal'?"Ama's Kitchen Ltd":'Personal')]]
         .map(([k2,ic,l])=>`<button class="item" data-act="${k2}"><div class="av">${I(ic,19)}</div>
@@ -619,7 +619,7 @@ function fromServerTx(tx){
 
 function authError(e){
   const [title, body] = ({
-    offline: ['Can’t connect', 'AI-Digital Bank is unreachable right now. This needs a live connection and cannot be completed offline.'],
+    offline: ['Can’t connect', 'Digital Bank is unreachable right now. This needs a live connection and cannot be completed offline.'],
     invalid_pin: ['Wrong PIN', 'That PIN is not right. Nothing has moved.'],
     invalid_step_up: ['Code expired', 'That code is no longer valid or was already used. Start again.'],
     insufficient_funds: ['Not enough there', 'That account does not hold enough to cover this. Nothing has moved.'],
@@ -802,7 +802,7 @@ function gateMarkup(mode, message){
   const login = mode !== 'open';
   if (FID.apiMissing){
     return `<div class="panel">
-      <div class="brandrow"><span class="m">${I('node',15).replace(/currentColor/g,'#fff')}</span>AI-Digital Bank</div>
+      <div class="brandrow"><span class="m">${I('node',15).replace(/currentColor/g,'#fff')}</span>Digital Bank</div>
       <h2>Not the banking address</h2>
       <p class="sub">This address serves the pages but not the banking service, so logging in and
         opening an account cannot work here.${FID.APP_URL ? ' Use the banking address instead.' : ''}</p>
@@ -812,7 +812,7 @@ function gateMarkup(mode, message){
   }
 
   return `<div class="panel">
-    <div class="brandrow"><span class="m">${I('node',15).replace(/currentColor/g,'#fff')}</span>AI-Digital Bank</div>
+    <div class="brandrow"><span class="m">${I('node',15).replace(/currentColor/g,'#fff')}</span>Digital Bank</div>
     <h2>${login ? 'Log in' : 'Open an account'}</h2>
     <p class="sub">${login
       ? 'Your phone number and the password you chose when you opened the account.'
@@ -945,7 +945,7 @@ function authPinSheet(){
 function otpSheet(){
   openSheet(`<h3>Enter the code</h3>
     <p class="sub">We sent a 6-digit code to ${(FID.customer?.msisdn || '').replace(/^(\+233)(\d{2})\d{4}(\d{3})$/, '0$2 ••• $3') || 'your phone'}. It expires in five minutes.</p>
-    <div class="smsnote"><b class="from">AI-Digital Bank</b>
+    <div class="smsnote"><b class="from">Digital Bank</b>
       Your verification code is <span class="code">${S.auth.challenge.demoCode || '——————'}</span></div>
     ${authDots(6)}
     ${keypad()}
@@ -1022,7 +1022,7 @@ async function authSubmit(){
 
 function openPay(){
   openSheet(`<h3>What are you doing?</h3><div style="margin-top:14px">${[
-      ['sendmoney','send','Send money','AI-Digital Bank, other banks, mobile money'],
+      ['sendmoney','send','Send money','Digital Bank, other banks, mobile money'],
       ['bills','bills','Pay a bill','ECG, water, DStv, school fees, GRA'],
       ['airtime','airtime','Airtime & data','MTN, Telecel, AT'],
       ['fx','swap','Buy foreign currency','USD, GBP, EUR, NGN'],
@@ -1035,7 +1035,7 @@ function openPay(){
 function flowWho(){
   const e = E();
   openSheet(`<h3>Send money</h3>
-    <p class="sub" style="margin-bottom:14px">To an AI-Digital Bank account, any Ghanaian bank by GhIPSS instant,
+    <p class="sub" style="margin-bottom:14px">To an Digital Bank account, any Ghanaian bank by GhIPSS instant,
       or mobile money.</p>
     <div class="chiprow" style="margin-bottom:8px">
       <button class="chip" aria-pressed="true">Saved</button>
@@ -1634,7 +1634,7 @@ function flowSupport(){
       box-shadow:var(--sh-sm);padding:10px 14px;border-radius:16px 16px 16px 4px;font-size:14px;
       max-width:85%">${m.text}</span></div>`;
   }).join('');
-  openSheet(`<h3>Ask AI-Digital Bank</h3>
+  openSheet(`<h3>Ask Digital Bank</h3>
     <div class="chiprow" style="margin:12px 0;flex-wrap:nowrap;overflow-x:auto">${Object.keys(FID.LANG).map(l=>
       `<button class="chip" data-lang="${l}" aria-pressed="${S.lang===l}" style="flex:none">${l}</button>`).join('')}</div>
     ${S.chat.length ? '' : `<div class="artbox sm">${ART.support()}</div>
@@ -1940,7 +1940,7 @@ document.addEventListener('click', ev => {
       <p class="sub">We screen the name against sanctions and PEP lists before you can save it.</p>
       <div class="chiprow" style="margin:16px 0">
         <button class="chip" aria-pressed="true" data-pick="dest">Another bank</button>
-        <button class="chip" data-pick="dest">AI-Digital Bank account</button>
+        <button class="chip" data-pick="dest">Digital Bank account</button>
         <button class="chip" data-pick="dest">Mobile money</button></div>
       <label class="field"><span>Account name</span><input id="benName" placeholder="As it appears at their bank"></label>
       <label class="field"><span>Account number</span><input id="benAcct" inputmode="numeric" placeholder="0000000000"></label>
@@ -1960,7 +1960,7 @@ document.addEventListener('click', ev => {
       if (!name) break;
       const dest = document.querySelector('[data-pick="dest"][aria-pressed="true"]')?.textContent || 'Another bank';
       const bank = dest === 'Another bank' ? ($('benBank')?.value || 'CalBank')
-                 : dest === 'Mobile money' ? 'MoMo' : 'AI-Digital Bank';
+                 : dest === 'Mobile money' ? 'MoMo' : 'Digital Bank';
       const sanc = FID.screenBeneficiary(name);
       FID.decide('fcc.sanctions', sanc, {floor:FID.FLOOR.sanctions, title:'Beneficiary screened',
         customer:E().holder, channel:'app',
@@ -2103,9 +2103,9 @@ document.addEventListener('keydown', ev => {
 (function(){
   const HERE = (location.pathname || '').split('/').pop() || 'index.html';
   const CUSTOMER = [
-    ['index.html','AI-Digital Bank','home'],
-    ['app.html','AI-Digital Bank app','mobile'],
-    ['web.html','AI-Digital Bank Online','web'],
+    ['index.html','Digital Bank','home'],
+    ['app.html','Digital Bank app','mobile'],
+    ['web.html','Digital Bank Online','web'],
   ];
   /* Customer surface: the review queue and the control tower are not listed
      here, and are not linked from anywhere a customer can reach. */

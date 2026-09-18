@@ -236,7 +236,7 @@ export async function dispatchPayout({ transaction, method, destination, narrati
         reference: transaction.reference,
         narration,
         enquiry,
-        originator: { accountNumber: account.account_number, name: account.holder_name || 'AI Digital Bank' }
+        originator: { accountNumber: account.account_number, name: account.holder_name || 'Digital Bank' }
       });
     } else {
       const recipient = await providers.paystack.createRecipient({
