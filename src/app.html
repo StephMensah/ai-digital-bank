@@ -291,13 +291,17 @@ function vHome(){
       <button data-sheet="newaccount">+ Open account</button></div>
   </div>
 
-  <div class="sect"><div class="qa">
-    ${[['sendmoney2','transfer','Send'],['bills','receipt','Pay bills'],['airtime','airtime','Airtime'],
+  <div class="sect">
+    <div class="hd"><h3>Quick actions</h3><button data-act="allservices">All services</button></div>
+    <div class="qa">
+    ${/* Eight, so the grid is two clean rows and the page keeps its scroll.
+         "All services" moved up into the section header, where every other
+         section already puts its overflow link. */
+      [['sendmoney2','transfer','Send'],['bills','receipt','Pay bills'],['airtime','airtime','Airtime'],
        ['cards','card','Cards'],['save','piggy','Save'],['invest','growth','Invest'],
-       ['fx','exchange','Exchange'],['wallettobank','transfer','Wallet to bank'],
-       ['allservices','dashboard','All']]
+       ['fx','exchange','Exchange'],['wallettobank','transfer','Wallet to bank']]
       .map(([k,ic,l])=>`<button data-act="${k}"><span class="ic">${IS(ic,27)}</span><span>${l}</span></button>`).join('')}
-  </div></div>
+    </div></div>
   </div>
 
   ${S.entity==='business' ? businessStrip(e) : `
