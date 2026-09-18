@@ -21,14 +21,12 @@ export async function openCustomerAccount(customer, { productName = null, segmen
   const account = rows[0];
   await seedAccountProducts(customer, account);
 
-  if (isConfigured.mambu()) {
-    try {
-      await mirrorToMambu({ customer, account });
-    } catch (err) {
-      logger.warn({ err: err.message, customerId: customer.id }, 'deferring Mambu mirror to outbox');
-      await enqueue('mambu.mirror_customer', { customerId: customer.id, accountId: account.id });
-    }
-  } else {
+  // Mirrored into the core either way: a live tenant when configured, the
+  // in-memory one otherwise. Skipping it meant the mirror was never tested.
+  try {
+    await mirrorToMambu({ customer, account });
+  } catch (err) {
+    logger.warn({ err: err.message, customerId: customer.id }, 'deferring Mambu mirror to outbox');
     await enqueue('mambu.mirror_customer', { customerId: customer.id, accountId: account.id });
   }
   return account;

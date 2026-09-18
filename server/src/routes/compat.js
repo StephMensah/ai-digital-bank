@@ -51,7 +51,8 @@ const toServerTx = (t) => ({
 compatRouter.get('/accounts/:entity', authenticate('customer'), async (req, res, next) => {
   try {
     const { rows: accounts } = await query(
-      `SELECT id, account_number, balance_minor, available_minor, product_name, currency
+      `SELECT id, account_number, mambu_account_key, balance_minor, available_minor,
+              COALESCE(product_name, product_id) AS product_name, segment, currency
          FROM accounts WHERE customer_id=$1 ORDER BY created_at`,
       [req.customer.id]
     );

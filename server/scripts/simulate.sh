@@ -171,3 +171,14 @@ done
 
 echo
 echo "final: passed $pass, failed $fail"
+
+echo "── mambu core (mock tenant)"
+sleep 2
+MB=$(curl -s -H "Authorization: Bearer $T1" "$B/api/accounts/personal" | P '["accounts"][0]["mambuRef"]')
+[ -n "$MB" ] && [ "$MB" != "None" ] && ok "account mirrored into the core: ${MB:0:12}…" || bad "account mirrored" "$MB"
+MB2=$(curl -s -H "Authorization: Bearer $T2" "$B/api/accounts/personal" | P '["accounts"][0]["mambuRef"]')
+[ "$MB" != "$MB2" ] && ok "each account has its own core key" || bad "distinct core keys" "$MB = $MB2"
+case "$MB" in ????????????????????????????????) ok "core key is a 32-char encodedKey" ;; *) bad "encodedKey shape" "$MB" ;; esac
+
+echo
+echo "final: passed $pass, failed $fail"
