@@ -370,6 +370,11 @@ input[type=range]{width:100%;accent-color:var(--orange)}
 }
 /* wide screens: let content breathe rather than stretch */
 @media (min-width:1600px){ .surface{padding:22px} }
+
+/* inline link inside the status line — sign in / sign out */
+.linkish{background:none;border:0;padding:0;margin-left:6px;font:inherit;font-size:inherit;
+  color:var(--accent,#0E6E63);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.linkish:hover{opacity:.75}
 </style>
 <style>
 body{background:var(--sand)}
@@ -1826,6 +1831,14 @@ function vYou(){
         <div class="tiny">Customer since ${e.since} · ${e.accounts[0].num}</div></div>
       <span class="badge j">${k.label}</span></div>
 
+    <div class="surface" style="display:flex;gap:12px;align-items:center;margin-top:10px">
+      <div style="flex:1"><b>${!FID.live ? 'Local only' : FID.signedIn ? 'Signed in' : 'Showing demo data'}</b>
+        <div class="tiny">${!FID.live ? 'Opened as a file, so nothing reaches the bank.'
+          : FID.signedIn ? (FID.customer?.fullName || '') + ' · balances come from your account'
+          : 'Sign in to see your own balances and move real money.'}</div></div>
+      ${FID.live ? `<button class="btn quiet" data-act="${FID.signedIn ? 'signout' : 'signin'}">${
+        FID.signedIn ? 'Sign out' : 'Sign in'}</button>` : ''}</div>
+
     ${S.consent.insights && S.entity==='personal' ? `
     <div class="sect"><div class="surface" style="border-left:3px solid var(--orange);cursor:pointer" data-act="toggleinsight">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
@@ -2015,7 +2028,11 @@ async function syncAccountsFromServer(){
     const fresh = (data.transactions || []).filter(t => !known.has(t.id)).map(fromServerTx);
     if (fresh.length) e.transactions = [...fresh, ...e.transactions].sort((a,b) => b.ts - a.ts);
     render();
-  } catch (err) { /* offline: keep bundled demo data for viewing */ }
+  } catch (err) {
+    /* offline or signed out: the bundled demo data stays on screen, and the
+       You tab says which of the two it is */
+    if (err.code === 'signed_out') render();
+  }
 }
 
 /* commitFn(pin, stepUpToken) does the actual work once both are proven — a payment, or just
@@ -2054,6 +2071,33 @@ function pinChangeSheet(){
     ${authDots(4)}
     ${keypad()}
     <button class="btn quiet wide" style="margin-top:10px" data-act="authcancel">Cancel</button>`);
+}
+
+function signInSheet(message){
+  openSheet(`<h3>Sign in</h3>
+    <p class="sub">Until you do, the app shows bundled demo data rather than your account.</p>
+    ${message ? `<span class="badge r">${message}</span>` : ''}
+    <label class="field" style="margin-top:18px"><span>Phone number</span>
+      <input id="siMsisdn" inputmode="tel" placeholder="+233201234567" autocomplete="username" autofocus></label>
+    <label class="field" style="margin-top:12px"><span>Password</span>
+      <input id="siPass" type="password" autocomplete="current-password"></label>
+    <button class="btn primary wide" style="margin-top:18px" data-act="signinsubmit">Sign in</button>
+    <button class="btn quiet wide" style="margin-top:8px" data-act="close">Not now</button>`);
+}
+
+async function doSignIn(){
+  const msisdn = ($('siMsisdn')?.value || '').trim();
+  const pass = $('siPass')?.value || '';
+  if (!/^\+233\d{9}$/.test(msisdn)) return signInSheet('Use a Ghanaian number, +233 then nine digits');
+  try {
+    await FID.signIn(msisdn, pass);
+    closeSheet();
+    render();
+    syncAccountsFromServer();
+  } catch (err) {
+    signInSheet(err.code === 'invalid_credentials' ? 'That phone number and password did not match'
+      : 'Could not sign you in just now');
+  }
 }
 
 function authPinSheet(){
@@ -2973,6 +3017,9 @@ document.addEventListener('click', ev => {
 
   switch (d.act){
     case 'close': closeSheet(); render(); break;
+    case 'signin': signInSheet(); break;
+    case 'signinsubmit': doSignIn(); break;
+    case 'signout': FID.signOut(); closeSheet(); render(); break;
     case 'authcancel': S.auth = null; closeSheet(); render(); break;
     case 'authcontinue': { const r = S.pendingResume; S.pendingResume = null; if (r) r(); break; }
     case 'stepupcontinue': flowSendAuthorize(); break;
