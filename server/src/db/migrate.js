@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { pool } from './pool.js';
+import { pool, SCHEMA } from './pool.js';
 import { logger } from '../lib/logger.js';
 import { hashSecret } from '../lib/crypto.js';
 
@@ -10,7 +10,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 async function run() {
   const sql = readFileSync(join(here, 'schema.sql'), 'utf8');
   await pool.query(sql);
-  logger.info('schema applied');
+  logger.info({ schema: SCHEMA }, 'schema applied');
 
   // bootstrap one admin so the reviewer console and control tower are reachable
   const email = process.env.BOOTSTRAP_ADMIN_EMAIL;
