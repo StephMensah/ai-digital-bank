@@ -7,7 +7,6 @@ import { badRequest, conflict, unauthorized } from '../lib/errors.js';
 import { validate } from '../middleware/validate.js';
 import { signAccessToken, signRefreshToken, authenticate } from '../middleware/auth.js';
 import { audit, auditFrom } from '../middleware/audit.js';
-import { openCustomerAccount } from '../services/onboarding.js';
 
 export const authRouter = Router();
 
@@ -38,12 +37,15 @@ authRouter.post('/register',
         [phone, email || null, fullName, dateOfBirth || null, hashSecret(pw)]
       );
       const customer = rows[0];
-      const account = await openCustomerAccount(customer);
+      /* No account yet. A customer exists, and can sign in, but the account
+         number is issued once the Ghana Card check and screening clear — which
+         is the order a bank actually opens accounts in. */
       await audit({ ...auditFrom(req), actorId: customer.id, actorType: 'customer', action: 'customer.registered', entity: 'customer', entityId: customer.id });
 
       res.status(201).json({
         customer,
-        account,
+        account: null,
+        nextStep: 'verify_identity',
         tokens: issueTokens(customer)
       });
     } catch (err) { next(err); }

@@ -1160,6 +1160,8 @@ const FID = (() => {
   }
 
   /** Submit a Ghana Card for verification. */
+  /* Returns {status, tier, account, message}; account carries the number the
+     customer has been waiting for, and is null until the check passes. */
   async function submitGhanaCard({idNumber, dateOfBirth}){
     const res = await fetch(API + '/api/v1/kyc/ghana-card', {
       method:'POST', headers:{'Content-Type':'application/json', ...authHeaders()},
@@ -2348,12 +2350,49 @@ async function doOpenAccount(){
     await FID.register({fullName, msisdn, email: ($('oaEmail')?.value || '').trim(), password});
     closeSheet();
     render();
-    syncAccountsFromServer();
+    S.afterPin = 'verify';
     S.auth = {stage:'setpin1', purpose:'pin_change'};
     pinChangeSheet();
   } catch (err) {
     openAccountSheet(err.code === 'conflict' ? 'That number or email already has an account' : err.message);
   }
+}
+
+function verifySheet(message, kind){
+  openSheet(`<h3 class="d2">Verify your identity</h3>
+    <p class="sub">Your Ghana Card, exactly as it appears on the front. Your account number
+      is issued as soon as it clears.</p>
+    ${message ? `<span class="badge ${kind || 'r'}">${message}</span>` : ''}
+    <label class="field" style="margin-top:18px"><span>Ghana Card number</span>
+      <input id="kycNo" placeholder="GHA-123456789-1" autofocus></label>
+    <label class="field" style="margin-top:12px"><span>Date of birth</span>
+      <input id="kycDob" type="date"></label>
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <button class="btn primary" style="flex:1" data-act="verifysubmit">Submit for verification</button>
+      <button class="btn quiet" data-act="close">Later</button></div>`);
+}
+
+function accountOpenSheet(account){
+  openSheet(`<h3 class="d2">Your account is open</h3>
+    <p class="sub">Verified. This is your account number.</p>
+    <div class="money" style="font-size:30px;letter-spacing:.06em;margin:18px 0 6px">${account.accountNumber}</div>
+    <div class="tiny">${account.currency || 'GHS'} · current account</div>
+    <div style="display:flex;gap:8px;margin-top:22px">
+      <button class="btn primary" style="flex:1" data-act="topup">Add money</button>
+      <button class="btn quiet" data-act="close">Done</button></div>`);
+}
+
+async function doVerify(){
+  const idNumber = ($('kycNo')?.value || '').trim().toUpperCase();
+  const dateOfBirth = $('kycDob')?.value || '';
+  if (!/^GHA-\d{9}-\d$/.test(idNumber)) return verifySheet('Ghana Card numbers look like GHA-123456789-1');
+  try {
+    const out = await FID.submitGhanaCard({idNumber, dateOfBirth});
+    syncAccountsFromServer();
+    render();
+    if (out.account) return accountOpenSheet(out.account);
+    verifySheet(out.message || 'A colleague is reviewing your details.', 'o');
+  } catch (err) { verifySheet(err.message); }
 }
 
 function topUpSheet(message, kind){
@@ -2452,6 +2491,10 @@ async function authSubmit(){
         await FID.setPin(S.entity, S.auth.currentPin, S.auth.newPin, stepUpToken);
         E().mustChangePin = false;
         S.pendingResume = S.auth.resume; S.auth = null;
+        if (S.afterPin === 'verify') {
+          S.afterPin = null;
+          return verifySheet('PIN set. One more step and your account is open.', 'j');
+        }
         return openSheet(`<div style="text-align:center;padding:16px 0 4px">
             <div class="av p hex" style="width:72px;height:72px;margin:0 auto">${I('check',30,2.2)}</div>
             <h3 class="d2" style="margin-top:18px">PIN set</h3>
@@ -2985,6 +3028,8 @@ document.addEventListener('click', ev => {
     case 'signin': signInSheet(); break;
     case 'openaccount': openAccountSheet(); break;
     case 'openaccountsubmit': doOpenAccount(); break;
+    case 'verify': verifySheet(); break;
+    case 'verifysubmit': doVerify(); break;
     case 'topup': topUpSheet(); break;
     case 'topupsubmit': doTopUp(); break;
     case 'signinsubmit': doSignIn(); break;
@@ -3199,6 +3244,13 @@ document.addEventListener('keydown', ev => {
 
 render();
 syncAccountsFromServer();
+// arriving from the website with an intent opens the right sheet straight away
+(function(){
+  const intent = new URLSearchParams(location.search);
+  if (FID.signedIn || !FID.live) return;
+  if (intent.has('open')) openAccountSheet();
+  else if (intent.has('signin')) signInSheet();
+})();
 </script>
 </body>
 </html>

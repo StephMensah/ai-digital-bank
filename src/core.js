@@ -286,6 +286,8 @@ const FID = (() => {
   }
 
   /** Submit a Ghana Card for verification. */
+  /* Returns {status, tier, account, message}; account carries the number the
+     customer has been waiting for, and is null until the check passes. */
   async function submitGhanaCard({idNumber, dateOfBirth}){
     const res = await fetch(API + '/api/v1/kyc/ghana-card', {
       method:'POST', headers:{'Content-Type':'application/json', ...authHeaders()},

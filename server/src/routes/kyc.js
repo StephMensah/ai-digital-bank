@@ -4,6 +4,7 @@ import { query } from '../db/pool.js';
 import { authenticate } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { providers, usingMocks } from '../providers/index.js';
+import { openCustomerAccount } from '../services/onboarding.js';
 import { mambu } from '../core/mambu.js';
 import { isConfigured } from '../config.js';
 import { audit, auditFrom } from '../middleware/audit.js';
@@ -51,11 +52,19 @@ kycRouter.post('/ghana-card',
          JSON.stringify({ nameMatches, matchScore })]
       );
 
+      let openedAccount = null;
       if (passed) {
         await query(
           `UPDATE customers SET kyc_status='verified', kyc_tier=GREATEST(kyc_tier,2), updated_at=now() WHERE id=$1`,
           [req.customer.id]
         );
+
+        /* Issue the account number now, not at signup. Repeat submissions must
+           not mint a second account, so only open one if none exists yet. */
+        const { rows: existing } = await query(
+          'SELECT * FROM accounts WHERE customer_id=$1 ORDER BY created_at LIMIT 1', [req.customer.id]
+        );
+        openedAccount = existing[0] || await openCustomerAccount(req.customer);
         if (isConfigured.mambu() && req.customer.mambu_client_key) {
           mambu.patchClientState(req.customer.mambu_client_key, 'ACTIVE')
             .catch((err) => logger.warn({ err: err.message }, 'mambu client activation deferred'));
@@ -73,9 +82,12 @@ kycRouter.post('/ghana-card',
       res.json({
         status: passed ? 'verified' : 'in_review',
         tier: passed ? 2 : req.customer.kyc_tier,
+        account: openedAccount
+          ? { id: openedAccount.id, accountNumber: openedAccount.account_number, currency: openedAccount.currency }
+          : null,
         message: passed
-          ? 'You are verified. Your limits have gone up.'
-          : 'We need a closer look at your details. This usually takes a few hours.'
+          ? `You are verified. Your account number is ${openedAccount?.account_number}.`
+          : 'We need a closer look at your details. A colleague picks this up within four hours.'
       });
     } catch (err) { next(err); }
   });
