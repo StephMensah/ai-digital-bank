@@ -49,6 +49,61 @@ a{color:inherit}
 .hero .btn.quiet:hover{background:rgba(255,255,255,.16)}
 .hero .reassure{margin-top:18px;font-size:12.5px;color:rgba(255,255,255,.55);position:relative}
 
+/* --------------------------------------- the walkthrough: login, then the account */
+.demo{display:flex;flex-direction:column;align-items:center;gap:14px}
+.phone{position:relative;width:min(272px,78%);aspect-ratio:9/17.4;background:#fff;border-radius:30px;
+  border:9px solid #0A1E33;box-shadow:0 26px 60px rgba(4,18,32,.45);overflow:hidden;
+  animation:float 16s ease-in-out infinite}
+.notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:84px;height:18px;
+  background:#0A1E33;border-radius:0 0 12px 12px;z-index:4}
+.pane{position:absolute;inset:0;padding:34px 18px 16px;background:#fff;opacity:0;
+  display:flex;flex-direction:column}
+#dLogin{animation:paneA 16s ease-in-out infinite}
+#dHome{animation:paneB 16s ease-in-out infinite}
+@keyframes paneA{0%{opacity:0;transform:translateX(-8%)}4%,44%{opacity:1;transform:none}
+  50%,96%{opacity:0;transform:translateX(-8%)}100%{opacity:0}}
+@keyframes paneB{0%,46%{opacity:0;transform:translateX(8%)}52%,92%{opacity:1;transform:none}
+  98%,100%{opacity:0;transform:translateX(8%)}}
+
+.pbrand{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--grey);
+  margin-bottom:16px}
+.ph2{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;color:var(--ink)}
+.psub{font-size:11px;color:var(--slate);margin:3px 0 16px}
+.pfield{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:9px;min-height:40px}
+.pfield i{display:block;font-style:normal;font-size:9px;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--grey)}
+.pfield b{font-size:12.5px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.caret{display:inline-block;width:1px;height:12px;background:var(--orange-d);vertical-align:-2px;
+  animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+.pbtn{margin-top:6px;background:var(--orange);color:#04312C;border-radius:10px;padding:10px;
+  text-align:center;font-size:12.5px;font-weight:700}
+.pbtn.press{animation:press 16s ease-in-out infinite}
+@keyframes press{0%,40%{transform:none;filter:none}43%{transform:scale(.96);filter:brightness(.9)}
+  46%,100%{transform:none;filter:none}}
+
+.phead{background:var(--jet);margin:-34px -18px 12px;padding:38px 18px 16px;color:#fff}
+.pgreet{font-size:10.5px;color:rgba(255,255,255,.62)}
+.pbal{font-family:var(--display);font-weight:700;font-size:22px;letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums}
+.pacct{font-size:9.5px;color:rgba(255,255,255,.48);letter-spacing:.04em}
+.prow{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line-2);
+  font-size:11px;opacity:0;animation:rowin 16s ease-in-out infinite}
+.prow:nth-of-type(1){animation-delay:.25s}
+.prow:nth-of-type(2){animation-delay:.6s}
+.prow:nth-of-type(3){animation-delay:.95s}
+@keyframes rowin{0%,50%{opacity:0;transform:translateY(5px)}56%,90%{opacity:1;transform:none}
+  96%,100%{opacity:0}}
+.pd{flex:none;width:22px;height:22px;border-radius:7px;display:grid;place-items:center;font-size:10px;
+  background:var(--line-2);color:var(--slate);font-style:normal}
+.pd.in{background:rgba(20,184,172,.14);color:var(--orange-d)}
+.prow span{flex:1;color:var(--ink);line-height:1.25}
+.prow span em{display:block;font-style:normal;font-size:9.5px;color:var(--grey)}
+.prow b{font-variant-numeric:tabular-nums;color:var(--ink)}
+.prow b.in{color:var(--orange-d)}
+
+.demolabel{font-size:11.5px;color:rgba(255,255,255,.62);letter-spacing:.04em}
+
 /* ------------------------------------------------- the live scene, moving slowly */
 .scene{position:relative;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.14);
        border-radius:24px;padding:20px;backdrop-filter:blur(8px);
@@ -218,19 +273,35 @@ function page(){
     <p class="reassure">No monthly fee · No minimum balance · Cedis, held to the pesewa</p>
   </div>
 
-  <div class="scene" aria-label="A live view of an account">
-    <div class="ball"><i class="pulse"></i>Available balance</div>
-    <div class="bal" id="heroBal">GH₵ 1,450.00</div>
+  <div class="demo" aria-label="A walkthrough: logging in, then the account">
+    <div class="phone">
+      <div class="notch"></div>
 
-    <div class="rail" aria-hidden="true">
-      <div class="line"></div>
-      <div class="node n1"></div><div class="node n2"></div><div class="node n3"></div>
-      <div class="spark"></div>
-      <div class="legend"><span>You</span><span>Checked</span><span>Landed</span></div>
+      <!-- step 1: the login screen -->
+      <div class="pane" id="dLogin">
+        <div class="pbrand">AI-Digital Bank</div>
+        <div class="ph2">Log in</div>
+        <div class="psub">Your number and password.</div>
+        <div class="pfield"><i>Phone number</i><b id="dMsisdn"></b><span class="caret"></span></div>
+        <div class="pfield"><i>Password</i><b id="dPass"></b></div>
+        <div class="pbtn" id="dBtn">Log in</div>
+      </div>
+
+      <!-- step 2: the account -->
+      <div class="pane" id="dHome">
+        <div class="phead">
+          <div class="pgreet">Good morning, Ama</div>
+          <div class="pbal" id="dBal">GH₵ 3,280.00</div>
+          <div class="pacct">Current · •••• 8707</div>
+        </div>
+        <div class="prow"><i class="pd in">↙</i><span>Salary<em>Confirmed</em></span><b class="in">+2,400.00</b></div>
+        <div class="prow"><i class="pd">↗</i><span>Kwame — MTN wallet<em>Sent in 3 seconds</em></span><b>−450.00</b></div>
+        <div class="prow"><i class="pd">↗</i><span>ECG prepaid<em>Token delivered</em></span><b>−120.00</b></div>
+      </div>
     </div>
-
-    <div class="feedline"><i class="dot">↙</i>
-      <div class="who">Salary<span>Confirmed</span></div><div class="amt in">+2,400.00</div></div>
+    <div class="demolabel" id="dLabel">Logging in</div>
+  </div>
+</div></div>
     <div class="feedline"><i class="dot out">↗</i>
       <div class="who">Kwame — MTN wallet<span>Sent in 3 seconds</span></div><div class="amt">−450.00</div></div>
     <div class="feedline"><i class="dot out">↗</i>
@@ -322,26 +393,39 @@ function page(){
 
 document.getElementById('page').innerHTML = page();
 
-/* The balance drifts as the scene's payments land and arrive, so the hero reads
-   as something alive rather than a screenshot. Slow on purpose. */
-(function liveBalance(){
-  const el = document.getElementById('heroBal');
-  if (!el || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const steps = [1450.00, 3850.00, 3400.00, 3280.00];
-  let i = 0, shown = steps[0];
-  const paint = v => { el.textContent = 'GH₵ ' + v.toLocaleString('en-GH',
-    {minimumFractionDigits:2, maximumFractionDigits:2}); };
+/* Drives the walkthrough: the number and password type themselves, the button
+   presses, then the account appears. One 16-second loop, matching the CSS. */
+(function walkthrough(){
+  const msisdn = document.getElementById('dMsisdn');
+  const pass = document.getElementById('dPass');
+  const label = document.getElementById('dLabel');
+  const btn = document.getElementById('dBtn');
+  if (!msisdn) return;
 
-  setInterval(() => {
-    const target = steps[i = (i + 1) % steps.length];
-    const from = shown, started = performance.now(), ms = 900;
-    (function ease(now){
-      const t = Math.min((now - started) / ms, 1);
-      shown = from + (target - from) * (1 - Math.pow(1 - t, 3));
-      paint(shown);
-      if (t < 1) requestAnimationFrame(ease);
-    })(started);
-  }, 3000);
+  const NUMBER = '+233 20 123 4567';
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (still){
+    msisdn.textContent = NUMBER; pass.textContent = '••••••••••';
+    label.textContent = 'Log in, then your account';
+    return;
+  }
+  btn.classList.add('press');
+
+  function type(el, text, startAt, perChar){
+    text.split('').forEach((ch, i) => setTimeout(() => { el.textContent = text.slice(0, i + 1); },
+      startAt + i * perChar));
+  }
+
+  function cycle(){
+    msisdn.textContent = ''; pass.textContent = '';
+    label.textContent = 'Logging in';
+    type(msisdn, NUMBER, 700, 85);
+    type(pass, '••••••••••', 2400, 90);
+    setTimeout(() => { label.textContent = 'Checking your details'; }, 6400);
+    setTimeout(() => { label.textContent = 'Your account'; }, 8400);
+  }
+  cycle();
+  setInterval(cycle, 16000);
 })();
 </script>
 </body>
