@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="adb-app-url" content="https://ai-digital-bank-api.onrender.com">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI-Digital Bank Online</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -972,6 +973,17 @@ async function doTopUp(){
    sample content is only ever visible with no API to sign in to. */
 function gateMarkup(mode, message){
   const login = mode !== 'open';
+  if (FID.apiMissing){
+    return `<div class="panel">
+      <div class="brandrow"><span class="m">${I('node',15).replace(/currentColor/g,'#fff')}</span>AI-Digital Bank</div>
+      <h2>Not the banking address</h2>
+      <p class="sub">This address serves the pages but not the banking service, so logging in and
+        opening an account cannot work here.${FID.APP_URL ? ' Use the banking address instead.' : ''}</p>
+      ${FID.APP_URL ? `<a class="btn primary wide" style="display:block;text-align:center;text-decoration:none"
+        href="${FID.APP_URL}${location.pathname}">Go to banking</a>` : ''}
+    </div>`;
+  }
+
   return `<div class="panel">
     <div class="brandrow"><span class="m">${I('node',15).replace(/currentColor/g,'#fff')}</span>AI-Digital Bank</div>
     <h2>${login ? 'Log in' : 'Open an account'}</h2>
@@ -1898,6 +1910,9 @@ syncAccountsFromServer();
 // signed out, the gate is the whole page; ?open=1 lands on the right half of it
 applyGate();
 if (FID.live && !FID.signedIn && new URLSearchParams(location.search).has('open')) showGate('open');
+// the health probe answers a moment later; redraw so the gate can say if this
+// host has no banking service behind it
+FID.apiReady.then(() => { if (document.querySelector('.gate')) applyGate(); });
 </script>
 </body>
 </html>

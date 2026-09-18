@@ -222,6 +222,18 @@ const FID = (() => {
      the id below only selects which of the signed-in customer's accounts to act on. Opened
      as a bare file, or before anyone signs in, everything falls back to the bundled demo
      data exactly as it did before. */
+  /* This markup is served from two hosts: the Node API serves it with the
+     banking API behind it, and the Python decision service serves the same
+     files with no /api/v1 at all. Probe once, so a page on the wrong host can
+     say so plainly instead of failing every form with a vague error. */
+  const APP_URL = (typeof document !== 'undefined' &&
+    document.querySelector('meta[name="adb-app-url"]')?.content) || '';
+  let apiMissing = false;
+  const apiReady = API === null ? Promise.resolve(false) : fetch(API + '/api/health')
+    .then(r => r.ok ? r.json() : null)
+    .then(b => { apiMissing = !b || b.status !== 'ok'; return !apiMissing; })
+    .catch(() => { apiMissing = true; return false; });
+
   const STORE = 'adb.session';
   let session = (() => {
     try { return JSON.parse(localStorage.getItem(STORE) || 'null'); } catch { return null; }
@@ -241,8 +253,12 @@ const FID = (() => {
       body: JSON.stringify({msisdn, password})
     });
     const json = await res.json().catch(() => ({}));
-    if (!res.ok) throw Object.assign(new Error(json.message || 'Could not sign you in'),
-      {code: json.code || 'sign_in_failed'});
+    if (!res.ok) throw Object.assign(new Error(
+      json.error?.message || json.message ||
+      (res.status === 404 ? 'Logging in is not available at this address.'
+                          : `Could not log you in (${res.status}).`)),
+      {code: json.error?.code || json.code || (res.status === 404 ? 'no_api' : 'sign_in_failed'),
+       status: res.status});
     const tokens = json.tokens || json;
     keepSession({accessToken: tokens.accessToken, refreshToken: tokens.refreshToken, subject: json.customer});
     return json.customer;
@@ -256,8 +272,12 @@ const FID = (() => {
       body: JSON.stringify({fullName, msisdn, email, password})
     });
     const json = await res.json().catch(() => ({}));
-    if (!res.ok) throw Object.assign(new Error(json.error?.message || json.message || 'Could not open the account'),
-      {code: json.error?.code || 'register_failed', fields: json.error?.details?.fieldErrors});
+    if (!res.ok) throw Object.assign(new Error(
+      json.error?.message || json.message ||
+      (res.status === 404 ? 'Account opening is not available at this address.'
+                          : `Could not open the account (${res.status}).`)),
+      {code: json.error?.code || (res.status === 404 ? 'no_api' : 'register_failed'),
+       status: res.status, fields: json.error?.details?.fieldErrors});
     const tokens = json.tokens || json;
     keepSession({accessToken: tokens.accessToken, refreshToken: tokens.refreshToken, subject: json.customer});
     return json.customer;
@@ -381,6 +401,7 @@ const FID = (() => {
 
   return { CCY, money, money0, pct, seed, ENTITIES, LANG, FLOOR, get live(){ return apiUp; },
            signIn, signOut, register, topUp, primaryAccountId, submitGhanaCard, kycStatus,
+           apiReady, get apiMissing(){ return apiMissing; }, APP_URL,
            get signedIn(){ return signedIn(); },
            get customer(){ return session && session.subject; },
            assessPayment, screenBeneficiary, preapprove, parse,
