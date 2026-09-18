@@ -542,6 +542,23 @@ const FID = (() => {
     .then(b => { apiMissing = !b || b.status !== 'ok'; return !apiMissing; })
     .catch(() => { apiMissing = true; return false; });
 
+  /* Ghana mobile numbers, entered the way people say them: 024 123 4567.
+     The canonical +233 form is what travels to the API, so the customer never
+     has to know it exists. */
+  const MOBILE_PREFIXES = ['20','23','24','25','26','27','28','50','53','54','55','56','57','59'];
+  function normaliseMsisdn(input){
+    if (!input) return null;
+    const d = String(input).replace(/[^\d]/g, '');
+    let local;
+    if (d.length === 10 && d[0] === '0') local = d.slice(1);
+    else if (d.length === 9) local = d;
+    else if (d.length === 12 && d.startsWith('233')) local = d.slice(3);
+    else if (d.length === 13 && d.startsWith('2330')) local = d.slice(4);
+    else return null;
+    return MOBILE_PREFIXES.includes(local.slice(0,2)) ? '+233' + local : null;
+  }
+  const localMsisdn = v => { const n = normaliseMsisdn(v); return n ? '0' + n.slice(4) : String(v || ''); };
+
   const STORE = 'adb.session';
   let session = (() => {
     try { return JSON.parse(localStorage.getItem(STORE) || 'null'); } catch { return null; }
@@ -756,7 +773,7 @@ const FID = (() => {
            signIn, signOut, register, topUp, primaryAccountId, submitGhanaCard, kycStatus,
            apiReady, get apiMissing(){ return apiMissing; }, APP_URL,
            applyLiveProfile, get entitiesAvailable(){ return availableEntities; },
-           nameEnquiry, savePayee, banks, walletToBank,
+           nameEnquiry, savePayee, banks, walletToBank, normaliseMsisdn, localMsisdn,
            get liveGoals(){ return liveGoals; },
            get signedIn(){ return signedIn(); },
            get customer(){ return session && session.subject; },

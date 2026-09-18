@@ -706,7 +706,7 @@ function openAccountSheet(message){
     <label class="field" style="margin-top:18px"><span>Full name</span>
       <input id="oaName" placeholder="Ama Boateng" autofocus></label>
     <label class="field" style="margin-top:12px"><span>Phone number</span>
-      <input id="oaMsisdn" inputmode="tel" placeholder="+233201234567"></label>
+      <input id="oaMsisdn" inputmode="tel" placeholder="024 123 4567"></label>
     <label class="field" style="margin-top:12px"><span>Email</span>
       <input id="oaEmail" type="email" placeholder="you@example.com"></label>
     <label class="field" style="margin-top:12px"><span>Password</span>
@@ -722,7 +722,7 @@ async function doOpenAccount(){
   const email = ($('oaEmail')?.value || '').trim();
   const password = $('oaPass')?.value || '';
   if (fullName.length < 3) return openAccountSheet('Enter your full name');
-  if (!/^\+233\d{9}$/.test(msisdn)) return openAccountSheet('Use a Ghanaian number, +233 then nine digits');
+  if (!FID.normaliseMsisdn(msisdn)) return openAccountSheet('Enter a Ghana mobile number, for example 024 123 4567');
   if (password.length < 10) return openAccountSheet('Passwords need at least 10 characters');
   try {
     await FID.register({fullName, msisdn, email, password});
@@ -832,7 +832,7 @@ async function sendDetailSheet(message){
 
   const field = m === 'mobile_money'
     ? `<label class="field"><span>Wallet number</span>
-         <input id="sdTo" inputmode="tel" placeholder="+233241234567" autofocus></label>`
+         <input id="sdTo" inputmode="tel" placeholder="024 123 4567" autofocus></label>`
     : m === 'bank'
       ? `<label class="field"><span>Bank</span><select id="sdBank">
            <option value="">Choose the bank</option>
@@ -857,8 +857,8 @@ async function sendLookup(){
   const bankCode = $('sdBank')?.value || '';
   if (!to) return sendDetailSheet('Enter the account number');
   if (SEND.method === 'bank' && !bankCode) return sendDetailSheet('Choose the bank first');
-  if (SEND.method === 'mobile_money' && !/^(\+233|0)\d{9}$/.test(to))
-    return sendDetailSheet('Use a Ghanaian mobile number');
+  if (SEND.method === 'mobile_money' && !FID.normaliseMsisdn(to))
+    return sendDetailSheet('Enter a Ghana mobile number, for example 024 123 4567');
 
   openSheet(`<h3 >Checking…</h3><p class="sub">Looking up the account holder.</p>`);
   try {
@@ -935,7 +935,7 @@ async function walletToBankSheet(message){
       You approve the wallet debit on your phone; the bank leg follows once it clears.</p>
     ${message ? `<span class="badge r">${message}</span>` : ''}
     <label class="field" style="margin-top:16px"><span>Your wallet number</span>
-      <input id="w2bFrom" inputmode="tel" placeholder="+233241234567"></label>
+      <input id="w2bFrom" inputmode="tel" placeholder="024 123 4567"></label>
     <label class="field" style="margin-top:12px"><span>Bank</span><select id="w2bBank">
       <option value="">Choose the bank</option>
       ${(SEND.bankList || []).map(b => `<option value="${b.code}">${b.name}</option>`).join('')}
@@ -953,7 +953,7 @@ async function walletToBankGo(){
   const to = ($('w2bTo')?.value || '').trim();
   const bankCode = $('w2bBank')?.value || '';
   const amount = Number(($('w2bAmt')?.value || '').replace(/[^0-9.]/g, ''));
-  if (!/^(\+233|0)\d{9}$/.test(from)) return walletToBankSheet('Use a Ghanaian wallet number');
+  if (!FID.normaliseMsisdn(from)) return walletToBankSheet('Enter a Ghana mobile number, for example 024 123 4567');
   if (!bankCode || !to) return walletToBankSheet('Choose the bank and enter the account number');
   if (!amount || amount < 1) return walletToBankSheet('Enter GH₵1.00 or more');
 
@@ -962,7 +962,7 @@ async function walletToBankGo(){
     const accountId = await FID.primaryAccountId();
     const out = await FID.walletToBank({
       accountId, amountMinor: Math.round(amount * 100),
-      msisdn: from.replace(/^0/, '+233'),
+      msisdn: FID.normaliseMsisdn(from),
       destination: {accountNumber: to, bankCode, name: enquiry.name, enquiry: enquiry.enquiry},
       narration: `To ${enquiry.name}`
     });
@@ -1051,7 +1051,7 @@ function gateMarkup(mode, message){
     ${message ? `<div class="err">${message}</div>` : ''}
     ${login ? `
       <label class="field"><span>Phone number</span>
-        <input id="gMsisdn" inputmode="tel" placeholder="+233201234567" autocomplete="username"></label>
+        <input id="gMsisdn" inputmode="tel" placeholder="024 123 4567" autocomplete="username"></label>
       <label class="field" style="margin-top:12px"><span>Password</span>
         <input id="gPass" type="password" autocomplete="current-password"></label>
       <button class="btn primary wide" style="margin-top:18px" data-gate="login">Log in</button>
@@ -1059,7 +1059,7 @@ function gateMarkup(mode, message){
     : `
       <label class="field"><span>Full name</span><input id="gName" placeholder="Ama Boateng"></label>
       <label class="field" style="margin-top:12px"><span>Phone number</span>
-        <input id="gMsisdn2" inputmode="tel" placeholder="+233201234567"></label>
+        <input id="gMsisdn2" inputmode="tel" placeholder="024 123 4567"></label>
       <label class="field" style="margin-top:12px"><span>Email</span><input id="gEmail" type="email"></label>
       <label class="field" style="margin-top:12px"><span>Password</span>
         <input id="gPass2" type="password" autocomplete="new-password"></label>
@@ -1116,7 +1116,7 @@ document.addEventListener('keydown', ev => {
 async function gateLogin(){
   const msisdn = (document.getElementById('gMsisdn')?.value || '').trim();
   const pass = document.getElementById('gPass')?.value || '';
-  if (!/^\+233\d{9}$/.test(msisdn)) return showGate('login', 'Use a Ghanaian number, +233 then nine digits.');
+  if (!FID.normaliseMsisdn(msisdn)) return showGate('login', 'Enter a Ghana mobile number, for example 024 123 4567.');
   if (!pass) return showGate('login', 'Enter your password.');
   try {
     await FID.signIn(msisdn, pass);
@@ -1135,7 +1135,7 @@ async function gateOpen(){
   const msisdn = (document.getElementById('gMsisdn2')?.value || '').trim();
   const password = document.getElementById('gPass2')?.value || '';
   if (fullName.length < 3) return showGate('open', 'Enter your full name.');
-  if (!/^\+233\d{9}$/.test(msisdn)) return showGate('open', 'Use a Ghanaian number, +233 then nine digits.');
+  if (!FID.normaliseMsisdn(msisdn)) return showGate('open', 'Enter a Ghana mobile number, for example 024 123 4567.');
   if (password.length < 10) return showGate('open', 'Passwords need at least 10 characters.');
   try {
     await FID.register({fullName, msisdn, email: (document.getElementById('gEmail')?.value || '').trim(), password});
@@ -1157,7 +1157,7 @@ function signInSheet(message){
     <p class="sub">Your accounts, your payments, your history.</p>
     ${message ? `<span class="badge r">${message}</span>` : ''}
     <label class="field" style="margin-top:18px"><span>Phone number</span>
-      <input id="siMsisdn" inputmode="tel" placeholder="+233201234567" autocomplete="username" autofocus></label>
+      <input id="siMsisdn" inputmode="tel" placeholder="024 123 4567" autocomplete="username" autofocus></label>
     <label class="field" style="margin-top:12px"><span>Password</span>
       <input id="siPass" type="password" autocomplete="current-password"></label>
     <button class="btn primary wide" style="margin-top:18px" data-act="signinsubmit">Sign in</button>
@@ -1167,7 +1167,7 @@ function signInSheet(message){
 async function doSignIn(){
   const msisdn = ($('siMsisdn')?.value || '').trim();
   const pass = $('siPass')?.value || '';
-  if (!/^\+233\d{9}$/.test(msisdn)) return signInSheet('Use a Ghanaian number, +233 then nine digits');
+  if (!FID.normaliseMsisdn(msisdn)) return signInSheet('Enter a Ghana mobile number, for example 024 123 4567');
   try {
     await FID.signIn(msisdn, pass);
     closeSheet();
