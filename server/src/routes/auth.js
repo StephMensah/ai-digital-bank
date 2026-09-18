@@ -4,6 +4,7 @@ import rateLimit from 'express-rate-limit';
 import { query } from '../db/pool.js';
 import { hashSecret, verifySecret } from '../lib/crypto.js';
 import { badRequest, conflict, unauthorized } from '../lib/errors.js';
+import { normaliseMsisdn } from '../lib/msisdn.js';
 import { validate } from '../middleware/validate.js';
 import { signAccessToken, signRefreshToken, authenticate } from '../middleware/auth.js';
 import { audit, auditFrom } from '../middleware/audit.js';
@@ -12,7 +13,17 @@ export const authRouter = Router();
 
 const loginLimiter = rateLimit({ windowMs: 15 * 60_000, limit: 10, standardHeaders: true, legacyHeaders: false });
 
-const msisdn = z.string().regex(/^\+233\d{9}$/, 'Use a Ghana mobile number in +233 format');
+/* Accepts 0241234567, 241234567 or +233241234567 and hands on the canonical
+   +233 form, so the number a customer types is never the number we store. */
+const msisdn = z.string().transform((v, ctx) => {
+  const norm = normaliseMsisdn(v);
+  if (!norm) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom,
+      message: 'Enter a Ghana mobile number, for example 024 123 4567' });
+    return z.NEVER;
+  }
+  return norm;
+});
 const password = z.string().min(10, 'Use at least 10 characters');
 
 authRouter.post('/register',

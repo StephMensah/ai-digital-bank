@@ -51,7 +51,7 @@ async function sendDetailSheet(message){
 
   const field = m === 'mobile_money'
     ? `<label class="field"><span>Wallet number</span>
-         <input id="sdTo" inputmode="tel" placeholder="+233241234567" autofocus></label>`
+         <input id="sdTo" inputmode="tel" placeholder="024 123 4567" autofocus></label>`
     : m === 'bank'
       ? `<label class="field"><span>Bank</span><select id="sdBank">
            <option value="">Choose the bank</option>
@@ -76,8 +76,8 @@ async function sendLookup(){
   const bankCode = $('sdBank')?.value || '';
   if (!to) return sendDetailSheet('Enter the account number');
   if (SEND.method === 'bank' && !bankCode) return sendDetailSheet('Choose the bank first');
-  if (SEND.method === 'mobile_money' && !/^(\+233|0)\d{9}$/.test(to))
-    return sendDetailSheet('Use a Ghanaian mobile number');
+  if (SEND.method === 'mobile_money' && !FID.normaliseMsisdn(to))
+    return sendDetailSheet('Enter a Ghana mobile number, for example 024 123 4567');
 
   openSheet(`<h3 ${TITLE_CLASS}>Checking…</h3><p class="sub">Looking up the account holder.</p>`);
   try {
@@ -154,7 +154,7 @@ async function walletToBankSheet(message){
       You approve the wallet debit on your phone; the bank leg follows once it clears.</p>
     ${message ? `<span class="badge r">${message}</span>` : ''}
     <label class="field" style="margin-top:16px"><span>Your wallet number</span>
-      <input id="w2bFrom" inputmode="tel" placeholder="+233241234567"></label>
+      <input id="w2bFrom" inputmode="tel" placeholder="024 123 4567"></label>
     <label class="field" style="margin-top:12px"><span>Bank</span><select id="w2bBank">
       <option value="">Choose the bank</option>
       ${(SEND.bankList || []).map(b => `<option value="${b.code}">${b.name}</option>`).join('')}
@@ -172,7 +172,7 @@ async function walletToBankGo(){
   const to = ($('w2bTo')?.value || '').trim();
   const bankCode = $('w2bBank')?.value || '';
   const amount = Number(($('w2bAmt')?.value || '').replace(/[^0-9.]/g, ''));
-  if (!/^(\+233|0)\d{9}$/.test(from)) return walletToBankSheet('Use a Ghanaian wallet number');
+  if (!FID.normaliseMsisdn(from)) return walletToBankSheet('Enter a Ghana mobile number, for example 024 123 4567');
   if (!bankCode || !to) return walletToBankSheet('Choose the bank and enter the account number');
   if (!amount || amount < 1) return walletToBankSheet('Enter GH₵1.00 or more');
 
@@ -181,7 +181,7 @@ async function walletToBankGo(){
     const accountId = await FID.primaryAccountId();
     const out = await FID.walletToBank({
       accountId, amountMinor: Math.round(amount * 100),
-      msisdn: from.replace(/^0/, '+233'),
+      msisdn: FID.normaliseMsisdn(from),
       destination: {accountNumber: to, bankCode, name: enquiry.name, enquiry: enquiry.enquiry},
       narration: `To ${enquiry.name}`
     });

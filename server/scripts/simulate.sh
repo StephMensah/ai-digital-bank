@@ -4,6 +4,10 @@
 B="http://localhost:10095"
 P() { python3 -c "import sys,json;d=json.load(sys.stdin);print(eval('d$1'))" 2>/dev/null; }
 IDK() { echo "idem-$RANDOM$RANDOM$RANDOM"; }
+gh() {  # a valid Ghanaian mobile number, in the local form people actually type
+  local p=(024 054 055 059 025 053 020 050 027 057 026 056)
+  echo "${p[$((RANDOM % ${#p[@]}))]}$(printf %07d $((RANDOM % 10000000)))"
+}
 pass=0; fail=0
 ok()   { pass=$((pass+1)); printf "  ✓ %s\n" "$1"; }
 bad()  { fail=$((fail+1)); printf "  ✗ %s — got: %s\n" "$1" "$2"; }
@@ -25,8 +29,8 @@ onboard() {  # name msisdn password card -> echoes token
   echo "$T"
 }
 
-M1="+233$(printf %09d $((RANDOM%899999999+100000000)))"
-M2="+233$(printf %09d $((RANDOM%899999999+100000000)))"
+M1="$(gh)"
+M2="$(gh)"
 
 echo "── onboarding two separate customers"
 T1=$(onboard "Ama Boateng" "$M1" "PassOne12345" "GHA-111111111-1" "1111")
@@ -75,7 +79,7 @@ is "customer 2 unaffected"           "$(curl -s -H "Authorization: Bearer $T2" "
 
 echo "── verification and limits"
 is "customer 1 verified" "$(curl -s -H "Authorization: Bearer $T1" "$B/api/v1/kyc/status" | P '["status"]')" "verified"
-M3="+233$(printf %09d $((RANDOM%899999999+100000000)))"
+M3="$(gh)"
 T3=$(curl -s -X POST -H 'Content-Type: application/json' -d "{\"fullName\":\"Referred Person\",\"msisdn\":\"$M3\",\"email\":\"r$RANDOM@x.com\",\"password\":\"PassThree123\"}" "$B/api/v1/auth/register" | P '["tokens"]["accessToken"]')
 K3=$(curl -s -X POST -H "Authorization: Bearer $T3" -H 'Content-Type: application/json' -d '{"idNumber":"GHA-333333333-0","dateOfBirth":"1990-01-01"}' "$B/api/v1/kyc/ghana-card")
 is "bad card refers, no account" "$(echo "$K3" | P '["status"]')" "in_review"
@@ -146,6 +150,24 @@ is "collection leg opened" "$(echo "$W" | P '["transaction"]["status"]')" "proce
 ok "  $(echo "$W" | P '["awaiting"]')"
 sleep 22
 is "onward leg left the account" "$(curl -s -H "Authorization: Bearer $T1" "$B/api/v1/accounts" | P '["accounts"][0]["balance_minor"]')" "55000"
+
+echo
+echo "final: passed $pass, failed $fail"
+
+echo "── local mobile numbers"
+LOCAL="$(gh)"
+RL=$(curl -s -X POST -H 'Content-Type: application/json' \
+  -d "{\"fullName\":\"Local Format\",\"msisdn\":\"$LOCAL\",\"email\":\"l$RANDOM@x.com\",\"password\":\"LocalPass1234\"}" "$B/api/v1/auth/register")
+is "registers in the local form" "$(echo "$RL" | P '["customer"]["msisdn"]')" "+233${LOCAL:1}"
+is "logs in with the local form"        "$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d "{\"msisdn\":\"$LOCAL\",\"password\":\"LocalPass1234\"}" "$B/api/v1/auth/login")" "200"
+is "logs in with the +233 form"         "$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d "{\"msisdn\":\"+233${LOCAL:1}\",\"password\":\"LocalPass1234\"}" "$B/api/v1/auth/login")" "200"
+is "logs in with spaces"                "$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d "{\"msisdn\":\"${LOCAL:0:3} ${LOCAL:3:3} ${LOCAL:6}\",\"password\":\"LocalPass1234\"}" "$B/api/v1/auth/login")" "200"
+is "landline rejected"                  "$(curl -s -X POST -H 'Content-Type: application/json' -d '{"msisdn":"0302123456","password":"x"}' "$B/api/v1/auth/login" | P '["error"]["code"]')" "bad_request"
+for pfx in 024 054 027 026 050 055 059 023; do
+  N="${pfx}$(printf %07d $((RANDOM%9999999)))"
+  code=$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -d "{\"method\":\"mobile_money\",\"msisdn\":\"$N\"}" "$B/api/v1/payments/name-enquiry" | P '["bank"]')
+  [ -n "$code" ] && ok "$pfx accepted · $code" || bad "$pfx accepted" "rejected"
+done
 
 echo
 echo "final: passed $pass, failed $fail"

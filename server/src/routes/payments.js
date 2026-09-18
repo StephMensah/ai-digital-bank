@@ -14,6 +14,7 @@ import { isConfigured, config } from '../config.js';
 import { enqueue } from '../core/outbox.js';
 import { badRequest, notFound } from '../lib/errors.js';
 import { newReference } from '../lib/crypto.js';
+import { normaliseMsisdn, networkOf, NETWORK_NAMES } from '../lib/msisdn.js';
 
 export const paymentsRouter = Router();
 paymentsRouter.use(authenticate('customer'));
@@ -28,7 +29,7 @@ paymentsRouter.post('/deposits',
     accountId: z.string().uuid(),
     amountMinor,
     method: z.enum(['mobile_money', 'card', 'bank']),
-    msisdn: z.string().regex(/^\+233\d{9}$/).optional(),
+    msisdn: z.string().optional().transform((v) => (v ? normaliseMsisdn(v) || v : v)),
     channel: z.enum(['app', 'web', 'ussd', 'agent']).default('app')
   })),
   async (req, res, next) => {
@@ -96,7 +97,7 @@ paymentsRouter.post('/payouts',
     amountMinor,
     method: z.enum(['mobile_money', 'bank']),
     destination: z.object({
-      msisdn: z.string().regex(/^\+233\d{9}$/).optional(),
+      msisdn: z.string().optional().transform((v) => (v ? normaliseMsisdn(v) || v : v)),
       accountNumber: z.string().min(6).optional(),
       bankCode: z.string().min(2).optional(),
       name: z.string().min(2).optional()
@@ -183,14 +184,7 @@ paymentsRouter.get('/banks', async (_req, res, next) => {
   } catch (err) { next(err); }
 });
 
-const NETWORKS = { mtn: 'MTN MoMo', vodafone: 'Telecel Cash', airteltigo: 'AirtelTigo Money' };
-function networkName(msisdn) {
-  const local = String(msisdn || '').replace(/^\+233/, '').replace(/^0/, '').slice(0, 2);
-  if (['24', '54', '55', '59', '25', '53'].includes(local)) return NETWORKS.mtn;
-  if (['20', '50'].includes(local)) return NETWORKS.vodafone;
-  if (['27', '57', '26', '56'].includes(local)) return NETWORKS.airteltigo;
-  return 'Mobile wallet';
-}
+const networkName = (msisdn) => NETWORK_NAMES[networkOf(msisdn)] || 'Mobile wallet';
 
 /** The picker sends a code; the confirmation screen needs the name back. */
 async function bankNameFor(bankCode) {
@@ -205,7 +199,7 @@ async function bankNameFor(bankCode) {
 paymentsRouter.post('/name-enquiry',
   validate(z.object({
     method: z.enum(['mobile_money', 'bank', 'internal']),
-    msisdn: z.string().optional(),
+    msisdn: z.string().optional().transform((v) => (v ? normaliseMsisdn(v) || v : v)),
     accountNumber: z.string().optional(),
     bankCode: z.string().optional()
   })),
@@ -292,7 +286,15 @@ paymentsRouter.post('/wallet-to-bank',
   validate(z.object({
     accountId: z.string().uuid(),
     amountMinor,
-    msisdn: z.string().regex(/^\+233\d{9}$/, 'Use a Ghana mobile number in +233 format'),
+    msisdn: z.string().transform((v, ctx) => {
+      const norm = normaliseMsisdn(v);
+      if (!norm) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom,
+          message: 'Enter a Ghana mobile number, for example 024 123 4567' });
+        return z.NEVER;
+      }
+      return norm;
+    }),
     destination: z.object({
       accountNumber: z.string().min(5),
       bankCode: z.string().min(2),
