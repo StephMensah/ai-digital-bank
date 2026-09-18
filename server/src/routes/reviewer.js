@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { query } from '../db/pool.js';
+import { openCustomerAccount } from '../services/onboarding.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { settleTransaction, failTransaction, loadAccount, GL } from '../core/ledger.js';
@@ -140,6 +141,17 @@ reviewerRouter.post('/cases/:id/decide',
             WHERE id=$1`,
           [c.customer_id, decision === 'approve' ? 'verified' : 'rejected']
         );
+        /* Approving a referred customer has to open their account too, or they
+           end up verified with nowhere to hold money. */
+        if (decision === 'approve') {
+          const { rows: held } = await query(
+            'SELECT id FROM accounts WHERE customer_id=$1 LIMIT 1', [c.customer_id]
+          );
+          if (!held[0]) {
+            const { rows: cust } = await query('SELECT * FROM customers WHERE id=$1', [c.customer_id]);
+            if (cust[0]) await openCustomerAccount(cust[0]);
+          }
+        }
       }
 
       await logEvent(req.params.id, req.staff.id, decision, { note });

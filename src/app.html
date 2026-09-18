@@ -718,13 +718,53 @@ async function doOpenAccount(){
     await FID.register({fullName, msisdn, email, password});
     closeSheet();
     render();
-    syncAccountsFromServer();
-    // A new customer has no PIN yet, and nothing moves without one.
+    // A new customer has no PIN and no account yet. PIN first, because nothing
+    // moves without one; the account number comes when the Ghana Card clears.
+    S.afterPin = 'verify';
     S.auth = {stage:'setpin1', purpose:'pin_change'};
     pinChangeSheet();
   } catch (err) {
     openAccountSheet(err.code === 'conflict' ? 'That number or email already has an account' : err.message);
   }
+}
+
+function verifySheet(message, kind){
+  openSheet(`<h3>Verify your identity</h3>
+    <p class="sub">Your Ghana Card, exactly as it appears on the front. Your account number
+      is issued as soon as it clears.</p>
+    ${message ? `<span class="badge ${kind || 'r'}">${message}</span>` : ''}
+    <label class="field" style="margin-top:18px"><span>Ghana Card number</span>
+      <input id="kycNo" placeholder="GHA-123456789-1" autofocus></label>
+    <label class="field" style="margin-top:12px"><span>Date of birth</span>
+      <input id="kycDob" type="date"></label>
+    <button class="btn primary wide" style="margin-top:16px" data-act="verifysubmit">Submit for verification</button>
+    <button class="btn quiet wide" style="margin-top:8px" data-act="close">Later</button>`);
+}
+
+function accountOpenSheet(account){
+  openSheet(`<div style="text-align:center;padding:6px 0">
+      <div class="av p" style="width:56px;height:56px;border-radius:18px;margin:0 auto 14px;
+        display:grid;place-items:center;font-size:22px">✓</div>
+      <h3>Your account is open</h3>
+      <p class="sub">Verified. This is your account number — it is also in the You tab.</p>
+      <div class="money" style="font-size:26px;letter-spacing:.06em;margin:16px 0 6px">${account.accountNumber}</div>
+      <div class="tiny">${account.currency || 'GHS'} · current account</div>
+      <button class="btn primary wide" style="margin-top:20px" data-act="topup">Add money</button>
+      <button class="btn quiet wide" style="margin-top:8px" data-act="close">Done</button>
+    </div>`);
+}
+
+async function doVerify(){
+  const idNumber = ($('kycNo')?.value || '').trim().toUpperCase();
+  const dateOfBirth = $('kycDob')?.value || '';
+  if (!/^GHA-\d{9}-\d$/.test(idNumber)) return verifySheet('Ghana Card numbers look like GHA-123456789-1');
+  try {
+    const out = await FID.submitGhanaCard({idNumber, dateOfBirth});
+    syncAccountsFromServer();
+    render();
+    if (out.account) return accountOpenSheet(out.account);
+    verifySheet(out.message || 'A colleague is reviewing your details.', 'o');
+  } catch (err) { verifySheet(err.message); }
 }
 
 function topUpSheet(message, kind){
@@ -844,6 +884,12 @@ async function authSubmit(){
         await FID.setPin(S.entity, S.auth.currentPin, S.auth.newPin, stepUpToken);
         E().mustChangePin = false;
         S.pendingResume = S.auth.resume; S.auth = null;
+        /* Straight from the PIN into verification during signup — the account
+           number depends on it, so leaving them on a success screen strands them. */
+        if (S.afterPin === 'verify') {
+          S.afterPin = null;
+          return verifySheet('PIN set. One more step and your account is open.', 'j');
+        }
         return openSheet(`<div style="text-align:center;padding:12px 0 4px">
             <div class="av p hex" style="width:70px;height:70px;margin:0 auto">${I('check',30,2.2)}</div>
             <h3 style="margin-top:16px">PIN set</h3>
@@ -1701,6 +1747,8 @@ document.addEventListener('click', ev => {
     case 'signin': signInSheet(); break;
     case 'openaccount': openAccountSheet(); break;
     case 'openaccountsubmit': doOpenAccount(); break;
+    case 'verify': verifySheet(); break;
+    case 'verifysubmit': doVerify(); break;
     case 'topup': topUpSheet(); break;
     case 'topupsubmit': doTopUp(); break;
     case 'signinsubmit': doSignIn(); break;
@@ -1968,7 +2016,11 @@ render();
 tickClock();
 syncAccountsFromServer();
 // arriving from the website's "Open an account" button drops straight into the flow
-if (new URLSearchParams(location.search).has('open') && !FID.signedIn) { go('you'); openAccountSheet(); }
+const intent = new URLSearchParams(location.search);
+if (!FID.signedIn && FID.live) {
+  if (intent.has('open')) { go('you'); openAccountSheet(); }
+  else if (intent.has('signin')) { go('you'); signInSheet(); }
+}
 </script>
 </body>
 </html>
