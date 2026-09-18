@@ -78,6 +78,21 @@ const FID = (() => {
      inherited: no borrowed cards, no borrowed payees. */
   let availableEntities = ['personal'];
 
+  /* The bundled entities are for a page with no API behind it — a file opened
+     from disk. On the live site they must never reach the screen, not even for
+     the instant before the gate covers them, because what they show is
+     somebody else's name and somebody else's balance. Emptied at load, filled
+     only by applyLiveProfile once a real session has fetched real data. */
+  function blankProfile(){
+    ['personal','business'].forEach(id => Object.assign(ENTITIES[id], {
+      holder: '', label: id === 'business' ? 'Business' : 'Personal', since: '',
+      accounts: [], transactions: [], beneficiaries: [], virtualCards: [],
+      card: {num:'•••• •••• •••• ••••', fullNum:'', cvv:'', exp:'', frozen:false},
+      payroll: []
+    }));
+    availableEntities = ['personal'];
+  }
+
   function applyLiveProfile(customer, accounts, transactions, extras){
     const bits = extras || {};
     const own = accounts || [];
@@ -512,7 +527,7 @@ const FID = (() => {
   return { CCY, money, money0, pct, seed, ENTITIES, LANG, FLOOR, get live(){ return apiUp; },
            signIn, signOut, register, topUp, primaryAccountId, submitGhanaCard, kycStatus,
            apiReady, get apiMissing(){ return apiMissing; }, APP_URL,
-           applyLiveProfile, get entitiesAvailable(){ return availableEntities; },
+           applyLiveProfile, blankProfile, get entitiesAvailable(){ return availableEntities; },
            nameEnquiry, savePayee, banks, walletToBank, normaliseMsisdn, localMsisdn,
            get liveGoals(){ return liveGoals; },
            get signedIn(){ return signedIn(); },
