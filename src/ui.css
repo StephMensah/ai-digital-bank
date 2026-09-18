@@ -373,3 +373,27 @@ input[type=range]{width:100%;accent-color:var(--orange)}
 .smsnote b.from{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
   color:var(--grey,#858D97);margin-bottom:3px}
 .smsnote .code{font-family:var(--mono,monospace);font-size:19px;letter-spacing:.22em;font-weight:700}
+
+/* ---------------------------------------------------------------- sign-in gate
+   Signed out, the banking surfaces show this and nothing else. Sample content
+   sits behind it only when there is no API to sign in to at all. */
+.gate{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:22px;
+  background:radial-gradient(120% 130% at 80% 0%,#1B4A6A 0%,var(--jet-2) 40%,var(--jet) 100%);
+  overflow-y:auto}
+.gate .panel{width:min(400px,100%);background:#fff;border-radius:22px;padding:30px;
+  box-shadow:0 24px 60px rgba(6,24,40,.4)}
+.gate .brandrow{display:flex;align-items:center;gap:10px;margin-bottom:22px;
+  font-family:var(--display);font-weight:700;font-size:16px;letter-spacing:-.02em;color:var(--ink)}
+.gate .brandrow .m{width:32px;height:32px;background:linear-gradient(135deg,var(--jet-2),var(--jet));
+  display:grid;place-items:center;clip-path:var(--hex);color:var(--orange-l);flex:none}
+.gate h2{font-family:var(--display);font-weight:700;font-size:24px;letter-spacing:-.03em;
+  color:var(--ink);margin-bottom:4px}
+.gate .sub{color:var(--slate);font-size:13.5px;line-height:1.55;margin-bottom:18px}
+.gate .err{background:#FDECEA;border:1px solid #F3C7C2;color:#9B2C22;border-radius:10px;
+  padding:9px 12px;font-size:12.5px;margin-bottom:14px}
+.gate .alt{margin-top:18px;padding-top:16px;border-top:1px solid var(--line);
+  font-size:13px;color:var(--slate);text-align:center}
+.gate .alt button{background:none;border:0;padding:0;font:inherit;font-weight:700;
+  color:var(--orange-d);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.gate .back{display:block;margin:16px auto 0;background:none;border:0;font:inherit;font-size:12.5px;
+  color:rgba(255,255,255,.7);cursor:pointer;text-decoration:underline;text-underline-offset:3px}

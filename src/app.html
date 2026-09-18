@@ -792,6 +792,110 @@ async function doTopUp(){
   }
 }
 
+
+/* ------------------------------------------------------------------ the gate
+   A banking surface has no business showing anybody's balances before they
+   sign in. While signed out, this covers the page completely; the bundled
+   sample content is only ever visible with no API to sign in to. */
+function gateMarkup(mode, message){
+  const login = mode !== 'open';
+  return `<div class="panel">
+    <div class="brandrow"><span class="m">${I('node',15).replace(/currentColor/g,'#fff')}</span>AI-Digital Bank</div>
+    <h2>${login ? 'Log in' : 'Open an account'}</h2>
+    <p class="sub">${login
+      ? 'Your phone number and the password you chose when you opened the account.'
+      : 'Your name, your number and a password. Verification comes next, and your account number with it.'}</p>
+    ${message ? `<div class="err">${message}</div>` : ''}
+    ${login ? `
+      <label class="field"><span>Phone number</span>
+        <input id="gMsisdn" inputmode="tel" placeholder="+233201234567" autocomplete="username"></label>
+      <label class="field" style="margin-top:12px"><span>Password</span>
+        <input id="gPass" type="password" autocomplete="current-password"></label>
+      <button class="btn primary wide" style="margin-top:18px" data-gate="login">Log in</button>
+      <div class="alt">New here? <button data-gate="mode-open">Open an account</button></div>`
+    : `
+      <label class="field"><span>Full name</span><input id="gName" placeholder="Ama Boateng"></label>
+      <label class="field" style="margin-top:12px"><span>Phone number</span>
+        <input id="gMsisdn2" inputmode="tel" placeholder="+233201234567"></label>
+      <label class="field" style="margin-top:12px"><span>Email</span><input id="gEmail" type="email"></label>
+      <label class="field" style="margin-top:12px"><span>Password</span>
+        <input id="gPass2" type="password" autocomplete="new-password"></label>
+      <p class="sub" style="margin:6px 0 0">At least 10 characters.</p>
+      <button class="btn primary wide" style="margin-top:16px" data-gate="open">Open my account</button>
+      <div class="alt">Already with us? <button data-gate="mode-login">Log in</button></div>`}
+  </div>
+  <button class="back" data-gate="home">Back to the website</button>`;
+}
+
+function showGate(mode, message){
+  let el = document.querySelector('.gate');
+  if (!el){ el = document.createElement('div'); el.className = 'gate'; document.body.appendChild(el); }
+  el.innerHTML = gateMarkup(mode, message);
+  el.querySelector('input')?.focus();
+}
+const hideGate = () => document.querySelector('.gate')?.remove();
+
+/* Signed out with a reachable API: gate. Signed in: never. No API at all
+   (opened as a file): leave the surface alone so it can still be read. */
+function applyGate(){
+  if (FID.live && !FID.signedIn) showGate(document.querySelector('.gate') ? undefined : 'login');
+  else hideGate();
+}
+
+document.addEventListener('click', ev => {
+  const b = ev.target.closest('[data-gate]');
+  if (!b) return;
+  const what = b.dataset.gate;
+  if (what === 'home') return void (location.href = 'index.html');
+  if (what === 'mode-open') return showGate('open');
+  if (what === 'mode-login') return showGate('login');
+  if (what === 'login') return gateLogin();
+  if (what === 'open') return gateOpen();
+});
+
+document.addEventListener('keydown', ev => {
+  if (ev.key === 'Enter' && document.querySelector('.gate')){
+    ev.preventDefault();
+    document.getElementById('gPass') ? gateLogin() : gateOpen();
+  }
+});
+
+async function gateLogin(){
+  const msisdn = (document.getElementById('gMsisdn')?.value || '').trim();
+  const pass = document.getElementById('gPass')?.value || '';
+  if (!/^\+233\d{9}$/.test(msisdn)) return showGate('login', 'Use a Ghanaian number, +233 then nine digits.');
+  if (!pass) return showGate('login', 'Enter your password.');
+  try {
+    await FID.signIn(msisdn, pass);
+    hideGate();
+    render();
+    syncAccountsFromServer();
+  } catch (err) {
+    showGate('login', err.code === 'invalid_credentials'
+      ? 'That phone number and password did not match.' : 'Could not log you in just now.');
+  }
+}
+
+async function gateOpen(){
+  const fullName = (document.getElementById('gName')?.value || '').trim();
+  const msisdn = (document.getElementById('gMsisdn2')?.value || '').trim();
+  const password = document.getElementById('gPass2')?.value || '';
+  if (fullName.length < 3) return showGate('open', 'Enter your full name.');
+  if (!/^\+233\d{9}$/.test(msisdn)) return showGate('open', 'Use a Ghanaian number, +233 then nine digits.');
+  if (password.length < 10) return showGate('open', 'Passwords need at least 10 characters.');
+  try {
+    await FID.register({fullName, msisdn, email: (document.getElementById('gEmail')?.value || '').trim(), password});
+    hideGate();
+    render();
+    S.afterPin = 'verify';
+    S.auth = {stage:'setpin1', purpose:'pin_change'};
+    pinChangeSheet();
+  } catch (err) {
+    showGate('open', err.code === 'conflict'
+      ? 'That number or email already has an account.' : err.message);
+  }
+}
+
 function signInSheet(message){
   openSheet(`<h3>Sign in</h3>
     <p class="sub">Your accounts, your payments, your history.</p>
@@ -1752,7 +1856,7 @@ document.addEventListener('click', ev => {
     case 'topup': topUpSheet(); break;
     case 'topupsubmit': doTopUp(); break;
     case 'signinsubmit': doSignIn(); break;
-    case 'signout': FID.signOut(); closeSheet(); render(); break;
+    case 'signout': FID.signOut(); closeSheet(); render(); applyGate(); break;
     case 'authcancel': S.auth = null; closeSheet(); render(); break;
     case 'authcontinue': { const r = S.pendingResume; S.pendingResume = null; if (r) r(); break; }
     case 'stepupcontinue': flowSendAuthorize(); break;
@@ -2016,11 +2120,9 @@ render();
 tickClock();
 syncAccountsFromServer();
 // arriving from the website's "Open an account" button drops straight into the flow
-const intent = new URLSearchParams(location.search);
-if (!FID.signedIn && FID.live) {
-  if (intent.has('open')) { go('you'); openAccountSheet(); }
-  else if (intent.has('signin')) { go('you'); signInSheet(); }
-}
+// signed out, the gate is the whole page; ?open=1 lands on the right half of it
+applyGate();
+if (FID.live && !FID.signedIn && new URLSearchParams(location.search).has('open')) showGate('open');
 </script>
 </body>
 </html>
