@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#13232B" />
+<title>AI Digital Bank</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;450;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/assets/css/adb.css" />
+<style>
+  body { background: #E3E7E1; }
+  .phone {
+    width: min(430px, 100%);
+    min-height: 100vh;
+    margin-inline: auto;
+    background: var(--cement);
+    display: flex; flex-direction: column;
+    box-shadow: 0 0 0 1px var(--line);
+  }
+  .app-head {
+    background: var(--ink); color: #fff;
+    padding: calc(0.9rem + env(safe-area-inset-top)) 1.1rem 1.6rem;
+  }
+  .app-head .greet { font-size: 0.86rem; color: rgba(255,255,255,0.66); }
+  .app-head .bal { font-family: var(--display); font-size: 2.35rem; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; }
+  .app-head .acctno { font-family: var(--mono); font-size: 0.78rem; color: rgba(255,255,255,0.55); }
+
+  .quick { display: flex; gap: 0.5rem; margin: -1.1rem 1.1rem 0; }
+  .quick button {
+    flex: 1; font: inherit; font-size: 0.84rem; font-weight: 500;
+    background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-control);
+    padding: 0.7rem 0.3rem; cursor: pointer; color: var(--ink);
+  }
+  .quick button:hover { border-color: var(--cedi); }
+
+  .screen { flex: 1; padding: 1.2rem 1.1rem calc(5.5rem + env(safe-area-inset-bottom)); }
+  .screen[hidden] { display: none; }
+
+  .tabs {
+    position: fixed; bottom: 0; width: min(430px, 100%);
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    background: var(--paper); border-top: 1px solid var(--line);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .tabs button {
+    font: inherit; font-size: 0.72rem; background: none; border: 0; cursor: pointer;
+    padding: 0.6rem 0.2rem; color: var(--ink-3); display: grid; gap: 0.15rem; justify-items: center;
+  }
+  .tabs button[aria-selected="true"] { color: var(--cedi); }
+  .tabs .glyph { font-size: 1.15rem; line-height: 1; }
+
+  .sheet-title { font-family: var(--display); font-size: 1.35rem; margin-bottom: 0.9rem; }
+  .pill-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
+  .pill { font: inherit; font-size: 0.84rem; padding: 0.35rem 0.8rem; border-radius: var(--r-pill); border: 1px solid var(--line-strong); background: transparent; cursor: pointer; }
+  .pill[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- ===== signed out ===== -->
+  <div id="gate" class="screen" style="padding-top:3rem">
+    <h1 style="font-size:2.1rem">Banking that answers on the first try.</h1>
+    <p class="muted small">Open an account with your phone number and your Ghana Card.</p>
+
+    <div id="gateError" class="banner hidden" style="margin-bottom:0.9rem"></div>
+
+    <div class="pill-row" style="margin-top:1.5rem">
+      <button class="pill" id="tabLogin" aria-pressed="true">Sign in</button>
+      <button class="pill" id="tabRegister" aria-pressed="false">Open an account</button>
+    </div>
+
+    <form id="loginForm" class="card stack">
+      <div class="field">
+        <label for="li-msisdn">Phone number</label>
+        <input id="li-msisdn" inputmode="tel" placeholder="+233201234567" autocomplete="username" />
+      </div>
+      <div class="field">
+        <label for="li-pass">Password</label>
+        <input id="li-pass" type="password" autocomplete="current-password" />
+      </div>
+      <button class="btn block" type="submit">Sign in</button>
+    </form>
+
+    <form id="registerForm" class="card stack hidden">
+      <div class="row" style="gap:0.6rem">
+        <div class="field grow"><label for="re-first">First name</label><input id="re-first" /></div>
+        <div class="field grow"><label for="re-last">Last name</label><input id="re-last" /></div>
+      </div>
+      <div class="field"><label for="re-msisdn">Phone number</label><input id="re-msisdn" inputmode="tel" placeholder="+233201234567" /></div>
+      <div class="field"><label for="re-email">Email</label><input id="re-email" type="email" /></div>
+      <div class="field">
+        <label for="re-pass">Password</label>
+        <input id="re-pass" type="password" autocomplete="new-password" />
+        <div class="field-note">At least 10 characters.</div>
+      </div>
+      <button class="btn block" type="submit">Open my account</button>
+    </form>
+  </div>
+
+  <!-- ===== signed in ===== -->
+  <div id="app" class="hidden" style="display:flex;flex-direction:column;flex:1">
+    <div class="app-head">
+      <div class="greet" id="greet">Welcome back</div>
+      <div class="bal" id="bal">—</div>
+      <div class="acctno" id="acctno"></div>
+    </div>
+
+    <div class="quick">
+      <button data-go="send">Send</button>
+      <button data-go="topup">Top up</button>
+      <button data-go="home">History</button>
+    </div>
+
+    <!-- home -->
+    <section class="screen" id="s-home">
+      <div id="homeNotice"></div>
+      <div class="card flush" style="margin-top:0.9rem">
+        <div class="card-head"><h3>Recent</h3></div>
+        <div id="feed"><div class="tx"><span class="skeleton grow"></span></div></div>
+      </div>
+    </section>
+
+    <!-- send -->
+    <section class="screen" id="s-send" hidden>
+      <div class="sheet-title">Send money</div>
+      <div class="pill-row" role="group" aria-label="Destination">
+        <button class="pill" data-method="mobile_money" aria-pressed="true">Wallet</button>
+        <button class="pill" data-method="bank" aria-pressed="false">Bank</button>
+        <button class="pill" data-method="internal" aria-pressed="false">Internal</button>
+      </div>
+
+      <div id="sendMsg" class="banner hidden" style="margin-bottom:0.9rem"></div>
+
+      <form id="sendForm" class="card stack">
+        <div class="field" data-for="mobile_money"><label for="sd-msisdn">Wallet number</label><input id="sd-msisdn" inputmode="tel" placeholder="+233241234567" /></div>
+        <div class="field hidden" data-for="bank"><label for="sd-bank">Bank</label><select id="sd-bank"><option value="">Loading…</option></select></div>
+        <div class="field hidden" data-for="bank"><label for="sd-acct">Account number</label><input id="sd-acct" inputmode="numeric" /></div>
+        <div class="field hidden" data-for="internal"><label for="sd-internal">Account number</label><input id="sd-internal" inputmode="numeric" placeholder="10 digits" /></div>
+        <div class="field-note" id="sd-name"></div>
+        <div class="field"><label for="sd-amount">Amount (GH₵)</label><input id="sd-amount" inputmode="decimal" placeholder="0.00" /></div>
+        <div class="field"><label for="sd-note">What is this for?</label><input id="sd-note" maxlength="100" /></div>
+        <button class="btn block" type="submit" id="sendBtn">Send</button>
+      </form>
+    </section>
+
+    <!-- top up -->
+    <section class="screen" id="s-topup" hidden>
+      <div class="sheet-title">Top up</div>
+      <div id="topupMsg" class="banner hidden" style="margin-bottom:0.9rem"></div>
+      <div class="card stack">
+        <div class="field"><label for="tu-amount">Amount (GH₵)</label><input id="tu-amount" inputmode="decimal" placeholder="0.00" /></div>
+        <button class="btn block" data-topup="mobile_money">From my wallet</button>
+        <button class="btn ghost block" data-topup="card">From a card</button>
+      </div>
+      <p class="small muted" style="margin-top:0.9rem">Wallet top ups send a prompt to your phone. Approve it and the money lands in seconds.</p>
+    </section>
+
+    <!-- profile -->
+    <section class="screen" id="s-you" hidden>
+      <div class="sheet-title">You</div>
+      <div class="card stack" style="--gap:0.6rem">
+        <h3>Verification</h3>
+        <div id="kycState" class="small muted">Checking…</div>
+        <form id="kycForm" class="stack hidden" style="--gap:0.7rem">
+          <div class="field">
+            <label for="kyc-card">Ghana Card number</label>
+            <input id="kyc-card" placeholder="GHA-123456789-0" />
+            <div class="field-note">The number printed on the front of your card.</div>
+          </div>
+          <div class="field"><label for="kyc-dob">Date of birth</label><input id="kyc-dob" type="date" /></div>
+          <button class="btn block" type="submit">Submit for verification</button>
+        </form>
+      </div>
+
+      <div class="card stack" style="margin-top:1rem;--gap:0.6rem">
+        <h3>Security</h3>
+        <div class="field"><label for="pin">Transaction PIN</label><input id="pin" inputmode="numeric" maxlength="4" placeholder="4 digits" /></div>
+        <button class="btn ghost block" id="pinBtn">Set PIN</button>
+      </div>
+
+      <button class="btn ghost block" id="signOut" style="margin-top:1.4rem">Sign out</button>
+    </section>
+
+    <nav class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-go="home"><span class="glyph">◎</span>Home</button>
+      <button role="tab" aria-selected="false" data-go="send"><span class="glyph">↗</span>Send</button>
+      <button role="tab" aria-selected="false" data-go="topup"><span class="glyph">＋</span>Top up</button>
+      <button role="tab" aria-selected="false" data-go="you"><span class="glyph">☺</span>You</button>
+    </nav>
+  </div>
+</div>
+
+<script src="/assets/js/adb-sdk.js"></script>
+<script>
+const adb = ADB.client();
+const { money, validate } = ADB;
+const $ = (id) => document.getElementById(id);
+const show = (el, on) => el.classList.toggle('hidden', !on);
+function notify(el, msg, kind) { el.textContent = msg; el.className = 'banner' + (kind ? ' ' + kind : ''); show(el, Boolean(msg)); }
+
+let account = null, method = 'mobile_money', enquiry = null;
+
+adb.onEvent((e) => { if (e === 'signed-out') render(); });
+
+// ---------- gate ----------
+$('tabLogin').addEventListener('click', () => swapGate(true));
+$('tabRegister').addEventListener('click', () => swapGate(false));
+function swapGate(login) {
+  $('tabLogin').setAttribute('aria-pressed', String(login));
+  $('tabRegister').setAttribute('aria-pressed', String(!login));
+  show($('loginForm'), login);
+  show($('registerForm'), !login);
+  notify($('gateError'), '');
+}
+
+$('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msisdn = $('li-msisdn').value.trim();
+  if (!validate.msisdn(msisdn)) return notify($('gateError'), 'Use a Ghanaian mobile number starting +233.');
+  try { await adb.login(msisdn, $('li-pass').value); render(); }
+  catch (err) { notify($('gateError'), err.message); }
+});
+
+$('registerForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msisdn = $('re-msisdn').value.trim();
+  if (!validate.msisdn(msisdn)) return notify($('gateError'), 'Use a Ghanaian mobile number starting +233.');
+  if ($('re-pass').value.length < 10) return notify($('gateError'), 'Passwords need at least 10 characters.');
+  try {
+    await adb.register({
+      firstName: $('re-first').value.trim(), lastName: $('re-last').value.trim(),
+      msisdn, email: $('re-email').value.trim(), password: $('re-pass').value
+    });
+    render();
+    go('you');
+  } catch (err) { notify($('gateError'), err.message); }
+});
+
+$('signOut').addEventListener('click', () => { adb.signOut(); render(); });
+
+function render() {
+  const inSession = adb.isSignedIn();
+  show($('gate'), !inSession);
+  show($('app'), inSession);
+  if (inSession) boot();
+}
+
+// ---------- navigation ----------
+function go(name) {
+  ['home', 'send', 'topup', 'you'].forEach((n) => { $('s-' + n).hidden = n !== name; });
+  document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.go === name)));
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => go(b.dataset.go)));
+
+// ---------- data ----------
+async function boot() {
+  const subject = adb.session()?.subject;
+  $('greet').textContent = subject?.firstName ? `Hello, ${subject.firstName}` : 'Welcome back';
+  try {
+    const { accounts } = await adb.accounts();
+    account = (accounts || [])[0];
+    if (!account) {
+      $('bal').textContent = money.format(0);
+      $('homeNotice').innerHTML = '<div class="banner warn">Finish verification to open your account.</div>';
+      return;
+    }
+    $('bal').textContent = money.format(account.availableMinor ?? account.balanceMinor, account.currency);
+    $('acctno').textContent = account.accountNumber;
+    loadFeed();
+    loadBanks();
+    loadKyc();
+  } catch (err) {
+    $('homeNotice').innerHTML = `<div class="banner">${err.message}</div>`;
+  }
+}
+
+async function loadFeed() {
+  try {
+    const { transactions } = await adb.transactions(account.id, { limit: 12 });
+    $('feed').innerHTML = (transactions || []).map((t) => {
+      const credit = t.direction === 'credit';
+      const state = String(t.status || '').toLowerCase();
+      return `<div class="tx">
+        <span class="tx-mark ${credit ? '' : 'out'}">${credit ? '↙' : '↗'}</span>
+        <div class="tx-body">
+          <div class="tx-title">${t.narration || t.counterpartyName || (credit ? 'Money in' : 'Money out')}</div>
+          <div class="tx-meta">${new Date(t.createdAt).toLocaleString('en-GH', { dateStyle: 'medium', timeStyle: 'short' })}</div>
+        </div>
+        ${state === 'posted' ? '' : `<span class="tag ${state}">${state}</span>`}
+        <span class="tx-amt ${credit ? 'in' : ''}">${credit ? '+' : '−'}${money.format(t.amountMinor, t.currency)}</span>
+      </div>`;
+    }).join('') || '<div class="tx small muted">Nothing yet. Top up to get going.</div>';
+  } catch (err) {
+    $('feed').innerHTML = `<div class="tx small" style="color:var(--danger)">${err.message}</div>`;
+  }
+}
+
+async function loadBanks() {
+  try {
+    const { banks } = await adb.banks();
+    $('sd-bank').innerHTML = '<option value="">Choose a bank</option>' + (banks || []).map((b) => `<option value="${b.code}">${b.name}</option>`).join('');
+  } catch { $('sd-bank').innerHTML = '<option value="">Bank list unavailable</option>'; }
+}
+
+async function loadKyc() {
+  try {
+    const { status, nextStep } = await adb.kycStatus();
+    const done = status === 'verified' || status === 'approved';
+    $('kycState').innerHTML = done
+      ? '<span class="tag">Verified</span>'
+      : `<span class="tag held">${status || 'not started'}</span> <span class="small muted">${nextStep || ''}</span>`;
+    show($('kycForm'), !done);
+  } catch { $('kycState').textContent = 'Verification is unavailable right now.'; }
+}
+
+$('kycForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const idNumber = $('kyc-card').value.trim().toUpperCase();
+  if (!validate.ghanaCard(idNumber)) {
+    $('kycState').innerHTML = '<span class="field-note bad">Ghana Card numbers look like GHA-123456789-0.</span>';
+    return;
+  }
+  try {
+    await adb.submitGhanaCard({ idNumber, dateOfBirth: $('kyc-dob').value });
+    loadKyc();
+  } catch (err) {
+    $('kycState').innerHTML = `<span class="field-note bad">${err.message}</span>`;
+  }
+});
+
+$('pinBtn').addEventListener('click', async () => {
+  const pin = $('pin').value.trim();
+  if (!/^\d{4}$/.test(pin)) return;
+  try { await adb.setPin(pin); $('pin').value = ''; $('pinBtn').textContent = 'PIN set'; }
+  catch (err) { $('pinBtn').textContent = err.message; }
+});
+
+// ---------- send ----------
+document.querySelectorAll('[data-method]').forEach((b) => b.addEventListener('click', () => {
+  method = b.dataset.method;
+  enquiry = null;
+  $('sd-name').textContent = '';
+  document.querySelectorAll('[data-method]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  document.querySelectorAll('[data-for]').forEach((f) => show(f, f.dataset.for === method));
+}));
+
+async function checkName() {
+  const note = $('sd-name');
+  note.className = 'field-note';
+  try {
+    if (method === 'bank') {
+      const accountNumber = $('sd-acct').value.trim(), bankCode = $('sd-bank').value;
+      if (!accountNumber || !bankCode) return;
+      const out = await adb.nameEnquiry({ method: 'bank', accountNumber, bankCode });
+      enquiry = out.enquiry || null;
+      note.textContent = `Sending to ${out.name}`;
+    } else if (method === 'mobile_money') {
+      const msisdn = $('sd-msisdn').value.trim();
+      if (!validate.msisdn(msisdn)) return;
+      const out = await adb.nameEnquiry({ method: 'mobile_money', msisdn });
+      note.textContent = `Sending to ${out.name}`;
+    } else {
+      const accountNumber = $('sd-internal').value.trim();
+      if (!validate.accountNumber(accountNumber)) return;
+      const out = await adb.resolveInternal(accountNumber);
+      note.textContent = `Sending to ${out.name || out.accountName}`;
+    }
+  } catch (err) { enquiry = null; note.textContent = err.message; note.className = 'field-note bad'; }
+}
+['sd-acct', 'sd-msisdn', 'sd-internal'].forEach((id) => $(id).addEventListener('blur', checkName));
+$('sd-bank').addEventListener('change', checkName);
+
+$('sendForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  notify($('sendMsg'), '');
+  const amountMinor = money.toMinor($('sd-amount').value);
+  if (!amountMinor || amountMinor < 100) return notify($('sendMsg'), 'Enter GH₵1.00 or more.');
+
+  $('sendBtn').disabled = true;
+  $('sendBtn').textContent = 'Sending…';
+  try {
+    const narration = $('sd-note').value.trim();
+    let out;
+    if (method === 'internal') {
+      out = await adb.transfer({ fromAccountId: account.id, toAccountNumber: $('sd-internal').value.trim(), amountMinor, narration });
+    } else {
+      const destination = method === 'mobile_money'
+        ? { msisdn: $('sd-msisdn').value.trim() }
+        : { accountNumber: $('sd-acct').value.trim(), bankCode: $('sd-bank').value, enquiry };
+      out = await adb.payout({ accountId: account.id, amountMinor, method, destination, narration });
+    }
+    const tx = out.transaction || out;
+    if (tx.status === 'held' || tx.status === 'in_review') {
+      notify($('sendMsg'), 'Held for a quick check. We will tell you within 30 minutes.', 'warn');
+    } else {
+      notify($('sendMsg'), 'On its way…', 'ok');
+      const settled = await adb.awaitSettlement(tx.reference);
+      notify($('sendMsg'), settled.status === 'posted' ? 'Sent.' : `Payment ${settled.status}.`, settled.status === 'posted' ? 'ok' : 'warn');
+    }
+    $('sendForm').reset();
+    boot();
+  } catch (err) {
+    notify($('sendMsg'), err.message);
+  } finally {
+    $('sendBtn').disabled = false;
+    $('sendBtn').textContent = 'Send';
+  }
+});
+
+// ---------- top up ----------
+document.querySelectorAll('[data-topup]').forEach((b) => b.addEventListener('click', async () => {
+  const amountMinor = money.toMinor($('tu-amount').value);
+  if (!amountMinor) return notify($('topupMsg'), 'Enter how much to add.');
+  try {
+    const out = await adb.deposit({ accountId: account.id, amountMinor, method: b.dataset.topup });
+    if (out.authorizationUrl) window.location.href = out.authorizationUrl;
+    else notify($('topupMsg'), 'Approve the prompt on your phone to finish.', 'ok');
+  } catch (err) { notify($('topupMsg'), err.message); }
+}));
+
+render();
+</script>
+</body>
+</html>

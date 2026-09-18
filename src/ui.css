@@ -360,3 +360,8 @@ input[type=range]{width:100%;accent-color:var(--orange)}
 }
 /* wide screens: let content breathe rather than stretch */
 @media (min-width:1600px){ .surface{padding:22px} }
+
+/* inline link inside the status line — sign in / sign out */
+.linkish{background:none;border:0;padding:0;margin-left:6px;font:inherit;font-size:inherit;
+  color:var(--accent,#0E6E63);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.linkish:hover{opacity:.75}

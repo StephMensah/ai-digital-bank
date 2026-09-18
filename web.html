@@ -369,6 +369,11 @@ input[type=range]{width:100%;accent-color:var(--orange)}
 }
 /* wide screens: let content breathe rather than stretch */
 @media (min-width:1600px){ .surface{padding:22px} }
+
+/* inline link inside the status line — sign in / sign out */
+.linkish{background:none;border:0;padding:0;margin-left:6px;font:inherit;font-size:inherit;
+  color:var(--accent,#0E6E63);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.linkish:hover{opacity:.75}
 </style>
 <style>
 /* ------------------------------------------------------------- web shell */
@@ -1077,9 +1082,42 @@ const FID = (() => {
      bare file the products still work; they just decide alone. */
   const API = (typeof location !== 'undefined' && location.protocol.startsWith('http')) ? '' : null;
   let apiUp = API !== null;
+
+  /* ---- session -------------------------------------------------------------------------
+     The Node API authorises by bearer token, not by the entity id in the request body, so
+     the id below only selects which of the signed-in customer's accounts to act on. Opened
+     as a bare file, or before anyone signs in, everything falls back to the bundled demo
+     data exactly as it did before. */
+  const STORE = 'adb.session';
+  let session = (() => {
+    try { return JSON.parse(localStorage.getItem(STORE) || 'null'); } catch { return null; }
+  })();
+  const signedIn = () => Boolean(session && session.accessToken);
+  function keepSession(next){
+    session = next;
+    try { next ? localStorage.setItem(STORE, JSON.stringify(next)) : localStorage.removeItem(STORE); }
+    catch { /* private browsing — the session simply does not outlive the tab */ }
+  }
+  const authHeaders = () =>
+    signedIn() ? {Authorization: 'Bearer ' + session.accessToken} : {};
+
+  async function signIn(msisdn, password){
+    const res = await fetch(API + '/api/v1/auth/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({msisdn, password})
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(new Error(json.message || 'Could not sign you in'),
+      {code: json.code || 'sign_in_failed'});
+    const tokens = json.tokens || json;
+    keepSession({accessToken: tokens.accessToken, refreshToken: tokens.refreshToken, subject: json.customer});
+    return json.customer;
+  }
+  const signOut = () => keepSession(null);
   function sync(rec, extra){
     if (!apiUp) return;
-    fetch(API + '/api/decisions', {method:'POST', headers:{'Content-Type':'application/json'},
+    fetch(API + '/api/decisions', {method:'POST',
+      headers:{'Content-Type':'application/json', ...authHeaders()},
       body: JSON.stringify({...rec, ...extra})}).catch(() => { apiUp = false; });
   }
 
@@ -1091,7 +1129,9 @@ const FID = (() => {
   async function apiCall(path, body){
     if (!apiUp) throw Object.assign(new Error('offline'), {code:'offline'});
     let res;
-    try { res = await fetch(API + path, {method:'POST', headers:{'Content-Type':'application/json'},
+    if (!signedIn()) throw Object.assign(new Error('sign in required'), {code:'signed_out'});
+    try { res = await fetch(API + path, {method:'POST',
+      headers:{'Content-Type':'application/json', ...authHeaders()},
       body: JSON.stringify(body || {})}); }
     catch (e) { throw Object.assign(new Error('offline'), {code:'offline'}); }
     const json = await res.json().catch(() => ({}));
@@ -1102,8 +1142,10 @@ const FID = (() => {
   async function fetchAccount(customerId){
     if (!apiUp) throw Object.assign(new Error('offline'), {code:'offline'});
     let res;
-    try { res = await fetch(API + '/api/accounts/' + customerId); }
+    if (!signedIn()) throw Object.assign(new Error('sign in required'), {code:'signed_out'});
+    try { res = await fetch(API + '/api/accounts/' + customerId, {headers: authHeaders()}); }
     catch (e) { throw Object.assign(new Error('offline'), {code:'offline'}); }
+    if (res.status === 401) { signOut(); throw Object.assign(new Error('sign in required'), {code:'signed_out'}); }
     if (!res.ok) throw Object.assign(new Error('offline'), {code:'offline'});
     return res.json();
   }
@@ -1150,6 +1192,8 @@ const FID = (() => {
   }
 
   return { CCY, money, money0, pct, seed, ENTITIES, LANG, FLOOR, get live(){ return apiUp; },
+           signIn, signOut, get signedIn(){ return signedIn(); },
+           get customer(){ return session && session.subject; },
            assessPayment, screenBeneficiary, preapprove, parse,
            forecastCashflow, verifyDocument, categorise,
            ledger, onDecision, decide, slip, columns,
@@ -1557,7 +1601,10 @@ function chrome(){
   $('bellbtn').innerHTML = I('bell',19) + '<i></i>';
   $('topav').textContent = initials(E().holder);
   $('topname').textContent = E().holder;
-  $('svc').textContent = FID.live ? '● connected' : '○ local only';
+  $('svc').innerHTML = !FID.live ? '○ local only'
+    : FID.signedIn
+      ? `● ${FID.customer?.fullName || 'signed in'} <button class="linkish" data-act="signout">Sign out</button>`
+      : `○ demo data <button class="linkish" data-act="signin">Sign in</button>`;
 }
 
 /* -------------------------------------------------------------- overview */
@@ -2171,7 +2218,11 @@ async function syncAccountsFromServer(){
     const fresh = (data.transactions || []).filter(t => !known.has(t.id)).map(fromServerTx);
     if (fresh.length) e.transactions = [...fresh, ...e.transactions].sort((a,b) => b.ts - a.ts);
     render();
-  } catch (err) { /* offline: keep bundled demo data for viewing */ }
+  } catch (err) {
+    /* offline or signed out: keep the bundled demo data on screen, and let the
+       header say which of the two it is */
+    if (err.code === 'signed_out') chrome();
+  }
 }
 
 function requireAuth(commitFn, onSuccess, purpose = 'commit'){
@@ -2206,6 +2257,34 @@ function pinChangeSheet(){
     ${pinField()}
     <div style="display:flex;gap:8px"><button class="btn primary" style="flex:1" data-act="authsubmit">Continue</button>
       <button class="btn quiet" data-act="authcancel">Cancel</button></div>`);
+}
+
+function signInSheet(message){
+  openSheet(`<h3 class="d2">Sign in</h3>
+    <p class="sub">Until you do, these screens show bundled demo data rather than your account.</p>
+    ${message ? `<span class="badge r">${message}</span>` : ''}
+    <label class="field" style="margin-top:18px"><span>Phone number</span>
+      <input id="siMsisdn" inputmode="tel" placeholder="+233201234567" autocomplete="username" autofocus></label>
+    <label class="field" style="margin-top:12px"><span>Password</span>
+      <input id="siPass" type="password" autocomplete="current-password"></label>
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <button class="btn primary" style="flex:1" data-act="signinsubmit">Sign in</button>
+      <button class="btn quiet" data-act="close">Not now</button></div>`);
+}
+
+async function doSignIn(){
+  const msisdn = ($('siMsisdn')?.value || '').trim();
+  const pass = $('siPass')?.value || '';
+  if (!/^\+233\d{9}$/.test(msisdn)) return signInSheet('Use a Ghanaian number, +233 then nine digits');
+  try {
+    await FID.signIn(msisdn, pass);
+    closeSheet();
+    render();
+    syncAccountsFromServer();
+  } catch (err) {
+    signInSheet(err.code === 'invalid_credentials' ? 'That phone number and password did not match'
+      : 'Could not sign you in just now');
+  }
 }
 
 function authPinSheet(){
@@ -2781,6 +2860,9 @@ document.addEventListener('click', ev => {
 
   switch (d.act){
     case 'close': closeSheet(); render(); break;
+    case 'signin': signInSheet(); break;
+    case 'signinsubmit': doSignIn(); break;
+    case 'signout': FID.signOut(); closeSheet(); render(); break;
     case 'authsubmit': authSubmit(); break;
     case 'authcancel': S.auth = null; closeSheet(); render(); break;
     case 'authcontinue': { const r = S.pendingResume; S.pendingResume = null; if (r) r(); break; }

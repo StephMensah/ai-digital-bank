@@ -15,3 +15,7 @@ mobile-app/android/app/src/main/assets/capacitor.config.json
 mobile-app/android/captures/
 *.apk
 *.aab
+
+# node api
+server/node_modules/
+server/.env
