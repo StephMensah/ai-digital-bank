@@ -216,9 +216,42 @@ const FID = (() => {
      bare file the products still work; they just decide alone. */
   const API = (typeof location !== 'undefined' && location.protocol.startsWith('http')) ? '' : null;
   let apiUp = API !== null;
+
+  /* ---- session -------------------------------------------------------------------------
+     The Node API authorises by bearer token, not by the entity id in the request body, so
+     the id below only selects which of the signed-in customer's accounts to act on. Opened
+     as a bare file, or before anyone signs in, everything falls back to the bundled demo
+     data exactly as it did before. */
+  const STORE = 'adb.session';
+  let session = (() => {
+    try { return JSON.parse(localStorage.getItem(STORE) || 'null'); } catch { return null; }
+  })();
+  const signedIn = () => Boolean(session && session.accessToken);
+  function keepSession(next){
+    session = next;
+    try { next ? localStorage.setItem(STORE, JSON.stringify(next)) : localStorage.removeItem(STORE); }
+    catch { /* private browsing — the session simply does not outlive the tab */ }
+  }
+  const authHeaders = () =>
+    signedIn() ? {Authorization: 'Bearer ' + session.accessToken} : {};
+
+  async function signIn(msisdn, password){
+    const res = await fetch(API + '/api/v1/auth/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({msisdn, password})
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(new Error(json.message || 'Could not sign you in'),
+      {code: json.code || 'sign_in_failed'});
+    const tokens = json.tokens || json;
+    keepSession({accessToken: tokens.accessToken, refreshToken: tokens.refreshToken, subject: json.customer});
+    return json.customer;
+  }
+  const signOut = () => keepSession(null);
   function sync(rec, extra){
     if (!apiUp) return;
-    fetch(API + '/api/decisions', {method:'POST', headers:{'Content-Type':'application/json'},
+    fetch(API + '/api/decisions', {method:'POST',
+      headers:{'Content-Type':'application/json', ...authHeaders()},
       body: JSON.stringify({...rec, ...extra})}).catch(() => { apiUp = false; });
   }
 
@@ -230,7 +263,9 @@ const FID = (() => {
   async function apiCall(path, body){
     if (!apiUp) throw Object.assign(new Error('offline'), {code:'offline'});
     let res;
-    try { res = await fetch(API + path, {method:'POST', headers:{'Content-Type':'application/json'},
+    if (!signedIn()) throw Object.assign(new Error('sign in required'), {code:'signed_out'});
+    try { res = await fetch(API + path, {method:'POST',
+      headers:{'Content-Type':'application/json', ...authHeaders()},
       body: JSON.stringify(body || {})}); }
     catch (e) { throw Object.assign(new Error('offline'), {code:'offline'}); }
     const json = await res.json().catch(() => ({}));
@@ -241,8 +276,10 @@ const FID = (() => {
   async function fetchAccount(customerId){
     if (!apiUp) throw Object.assign(new Error('offline'), {code:'offline'});
     let res;
-    try { res = await fetch(API + '/api/accounts/' + customerId); }
+    if (!signedIn()) throw Object.assign(new Error('sign in required'), {code:'signed_out'});
+    try { res = await fetch(API + '/api/accounts/' + customerId, {headers: authHeaders()}); }
     catch (e) { throw Object.assign(new Error('offline'), {code:'offline'}); }
+    if (res.status === 401) { signOut(); throw Object.assign(new Error('sign in required'), {code:'signed_out'}); }
     if (!res.ok) throw Object.assign(new Error('offline'), {code:'offline'});
     return res.json();
   }
@@ -289,6 +326,8 @@ const FID = (() => {
   }
 
   return { CCY, money, money0, pct, seed, ENTITIES, LANG, FLOOR, get live(){ return apiUp; },
+           signIn, signOut, get signedIn(){ return signedIn(); },
+           get customer(){ return session && session.subject; },
            assessPayment, screenBeneficiary, preapprove, parse,
            forecastCashflow, verifyDocument, categorise,
            ledger, onDecision, decide, slip, columns,

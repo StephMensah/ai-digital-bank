@@ -225,3 +225,36 @@ VALUES (0, 10000, 30000, 100000, 100000),
        (2, 500000, 1000000, 5000000, 2000000000),
        (3, 5000000, 20000000, 100000000, 100000000000)
 ON CONFLICT (tier) DO NOTHING;
+
+-- ---------- compatibility layer for the build.py front ends ----------
+-- Those pages expect a step-up OTP before a PIN change or a payment, and they
+-- post every browser-side decision to the shared spine.
+
+ALTER TABLE customers    ADD COLUMN IF NOT EXISTS must_change_pin boolean NOT NULL DEFAULT true;
+ALTER TABLE customers    ADD COLUMN IF NOT EXISTS pin_set_at      timestamptz;
+ALTER TABLE accounts     ADD COLUMN IF NOT EXISTS product_name    text;
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS category        text;
+
+CREATE TABLE IF NOT EXISTS otp_challenges (
+  id           uuid PRIMARY KEY,
+  customer_id  uuid NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  purpose      text NOT NULL,
+  code_hash    text NOT NULL,
+  attempts     smallint NOT NULL DEFAULT 0,
+  consumed_at  timestamptz,
+  expires_at   timestamptz NOT NULL,
+  created_at   timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS otp_customer_idx ON otp_challenges(customer_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS decision_log (
+  id          bigserial PRIMARY KEY,
+  use_case    text NOT NULL,
+  action      text,
+  confidence  numeric(4,3),
+  adverse     boolean NOT NULL DEFAULT false,
+  explanation text,
+  payload     jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS decision_log_created_idx ON decision_log(created_at DESC);
