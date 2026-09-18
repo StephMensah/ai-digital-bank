@@ -204,8 +204,12 @@ const NAV = {
 };
 
 function chrome(){
-  $('ent').innerHTML = Object.values(FID.ENTITIES).map(e =>
-    `<button data-entity="${e.id}" aria-pressed="${S.entity===e.id}">${e.id==='personal'?'Personal':'Business'}</button>`).join('');
+  // only the profiles this customer actually has
+  $('ent').innerHTML = FID.entitiesAvailable.map(id => FID.ENTITIES[id]).map(e =>
+    `<button data-entity="${e.id}" aria-pressed="${S.entity===e.id}">${
+      e.id==='personal'?'Personal':(e.label || 'Business')}</button>`).join('')
+    + (FID.entitiesAvailable.length > 1 ? ''
+       : `<button data-act="openbusiness">+ Business</button>`);
   $('nav').innerHTML = NAV[S.entity].map(([grp, items]) =>
     `<div class="navgrp">${grp}</div>` + items.map(([id,i,l]) =>
       `<button data-view="${id}" aria-current="${S.view===id?'page':'false'}">${IS(i,21)}${l}</button>`).join('')).join('');
@@ -823,12 +827,17 @@ function authError(e){
 async function syncAccountsFromServer(){
   try {
     const data = await FID.fetchAccount(S.entity);
-    const e = E();
-    data.accounts.forEach((a,i) => { if (e.accounts[i]) e.accounts[i].balance = a.balance; });
-    e.mustChangePin = data.mustChangePin;
-    const known = new Set(e.transactions.map(t => t.id));
-    const fresh = (data.transactions || []).filter(t => !known.has(t.id)).map(fromServerTx);
-    if (fresh.length) e.transactions = [...fresh, ...e.transactions].sort((a,b) => b.ts - a.ts);
+    /* Signed in: this customer's own name, accounts and history, and nothing
+       carried over from the sample profile. Signed out we never get here. */
+    const entities = FID.applyLiveProfile(FID.customer, data.accounts,
+      (data.transactions || []).map(fromServerTx),
+      {goals: data.goals, beneficiaries: data.beneficiaries});
+    // goals are the customer's own, not the bundled set
+    if (FID.liveGoals) S.goals = FID.liveGoals;
+    if (E().payroll) FID.PAYROLL.length = 0, FID.PAYROLL.push(...E().payroll);
+    E().mustChangePin = data.mustChangePin;
+    if (!entities.includes(S.entity)) S.entity = 'personal';
+    S.acct = 0;
     render();
   } catch (err) {
     /* offline or signed out: keep the bundled sample content on screen, and let the
@@ -943,6 +952,29 @@ async function doVerify(){
     if (out.account) return accountOpenSheet(out.account);
     verifySheet(out.message || 'A colleague is reviewing your details.', 'o');
   } catch (err) { verifySheet(err.message); }
+}
+
+function businessSheet(message, kind){
+  openSheet(`<h3 class="d2">Open a business account</h3>
+    <p class="sub">A separate account in your business's name, under the same login.</p>
+    ${message ? `<span class="badge ${kind || 'r'}">${message}</span>` : ''}
+    <label class="field" style="margin-top:18px"><span>Registered business name</span>
+      <input id="bizName" placeholder="Ama's Kitchen Ltd" autofocus></label>
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <button class="btn primary" style="flex:1" data-act="businesssubmit">Open it</button>
+      <button class="btn quiet" data-act="close">Cancel</button></div>`);
+}
+
+async function doOpenBusiness(){
+  const name = ($('bizName')?.value || '').trim();
+  if (name.length < 2) return businessSheet('Enter the business name');
+  try {
+    const out = await FID.openAccount(S.entity, name, 'business');
+    closeSheet();
+    await syncAccountsFromServer();
+    S.entity = 'business'; render();
+    accountOpenSheet({accountNumber: out.account?.accountNumber || out.account?.num, currency:'GHS'});
+  } catch (err) { businessSheet(err.message); }
 }
 
 function topUpSheet(message, kind){
@@ -1697,6 +1729,8 @@ document.addEventListener('click', ev => {
     case 'signin': signInSheet(); break;
     case 'openaccount': openAccountSheet(); break;
     case 'openaccountsubmit': doOpenAccount(); break;
+    case 'openbusiness': businessSheet(); break;
+    case 'businesssubmit': doOpenBusiness(); break;
     case 'verify': verifySheet(); break;
     case 'verifysubmit': doVerify(); break;
     case 'topup': topUpSheet(); break;

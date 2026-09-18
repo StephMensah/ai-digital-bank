@@ -267,3 +267,59 @@ CREATE INDEX IF NOT EXISTS decision_log_created_idx ON decision_log(created_at D
 ALTER TABLE service_health DROP CONSTRAINT IF EXISTS service_health_status_check;
 ALTER TABLE service_health ADD CONSTRAINT service_health_status_check
   CHECK (status IN ('up','degraded','down','mock'));
+
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS segment text NOT NULL DEFAULT 'personal';
+ALTER TABLE accounts DROP CONSTRAINT IF EXISTS accounts_segment_check;
+ALTER TABLE accounts ADD CONSTRAINT accounts_segment_check
+  CHECK (segment IN ('personal','business'));
+
+-- ---------- per-customer product data ----------
+-- Cards, goals, payees and payroll were bundled sample content shared by every
+-- screen. Each customer now owns their own rows.
+
+CREATE TABLE IF NOT EXISTS cards (
+  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  account_id   uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  kind         text NOT NULL DEFAULT 'physical' CHECK (kind IN ('physical','virtual')),
+  pan          text NOT NULL,
+  cvv          text NOT NULL,
+  expiry       text NOT NULL,
+  frozen       boolean NOT NULL DEFAULT false,
+  locked_to    text,
+  created_at   timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS cards_account_idx ON cards(account_id);
+
+CREATE TABLE IF NOT EXISTS goals (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_id   uuid NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  name          text NOT NULL,
+  target_minor   bigint NOT NULL,
+  saved_minor    bigint NOT NULL DEFAULT 0,
+  monthly_minor  bigint NOT NULL DEFAULT 0,
+  due           text,
+  icon          text NOT NULL DEFAULT 'shield',
+  created_at    timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS goals_customer_idx ON goals(customer_id);
+
+CREATE TABLE IF NOT EXISTS payees (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_id   uuid NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  name          text NOT NULL,
+  bank          text,
+  account_ref   text,
+  last_amount_minor bigint,
+  created_at    timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS payees_customer_idx ON payees(customer_id);
+
+CREATE TABLE IF NOT EXISTS payroll_lines (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  account_id    uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  name          text NOT NULL,
+  role          text,
+  amount_minor  bigint NOT NULL,
+  created_at    timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS payroll_account_idx ON payroll_lines(account_id);

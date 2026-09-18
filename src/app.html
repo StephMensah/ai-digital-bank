@@ -506,7 +506,10 @@ function vYou(){
     <div class="sect"><div class="surface flush">
       ${[['support','headset','Ask Digital Bank, or a person'],['branches','pin','Branches and ATMs'],
          ['statement','statement','Statements and certificates'],['security','lock','Security and devices'],
-         ['switch','exchange','Switch to '+(S.entity==='personal'?"Ama's Kitchen Ltd":'Personal')]]
+         ...(FID.entitiesAvailable.length > 1
+             ? [['switch','exchange','Switch to '+(S.entity==='personal'
+                 ? (FID.ENTITIES.business.label || 'Business') : 'Personal')]]
+             : [['openbusiness','exchange','Open a business account']])]
         .map(([k2,ic,l])=>`<button class="item" data-act="${k2}"><div class="av">${I(ic,19)}</div>
           <div class="txt"><b>${l}</b></div><span class="go">${I('chevron',17)}</span></button>`).join('')}
     </div></div></div>`;
@@ -638,12 +641,17 @@ function authError(e){
 async function syncAccountsFromServer(){
   try {
     const data = await FID.fetchAccount(S.entity);
-    const e = E();
-    data.accounts.forEach((a,i) => { if (e.accounts[i]) e.accounts[i].balance = a.balance; });
-    e.mustChangePin = data.mustChangePin;
-    const known = new Set(e.transactions.map(t => t.id));
-    const fresh = (data.transactions || []).filter(t => !known.has(t.id)).map(fromServerTx);
-    if (fresh.length) e.transactions = [...fresh, ...e.transactions].sort((a,b) => b.ts - a.ts);
+    /* Signed in: this customer's own name, accounts and history, and nothing
+       carried over from the sample profile. Signed out we never get here. */
+    const entities = FID.applyLiveProfile(FID.customer, data.accounts,
+      (data.transactions || []).map(fromServerTx),
+      {goals: data.goals, beneficiaries: data.beneficiaries});
+    // goals are the customer's own, not the bundled set
+    if (FID.liveGoals) S.goals = FID.liveGoals;
+    if (E().payroll) FID.PAYROLL.length = 0, FID.PAYROLL.push(...E().payroll);
+    E().mustChangePin = data.mustChangePin;
+    if (!entities.includes(S.entity)) S.entity = 'personal';
+    S.acct = 0;
     render();
   } catch (err) {
     /* offline or signed out: the bundled sample content stays on screen, and the
@@ -770,6 +778,29 @@ async function doVerify(){
   } catch (err) { verifySheet(err.message); }
 }
 
+function businessSheet(message, kind){
+  openSheet(`<h3>Open a business account</h3>
+    <p class="sub">A separate account in your business's name, under the same login.
+      Your personal account stays as it is.</p>
+    ${message ? `<span class="badge ${kind || 'r'}">${message}</span>` : ''}
+    <label class="field" style="margin-top:18px"><span>Registered business name</span>
+      <input id="bizName" placeholder="Ama's Kitchen Ltd" autofocus></label>
+    <button class="btn primary wide" style="margin-top:16px" data-act="businesssubmit">Open it</button>
+    <button class="btn quiet wide" style="margin-top:8px" data-act="close">Cancel</button>`);
+}
+
+async function doOpenBusiness(){
+  const name = ($('bizName')?.value || '').trim();
+  if (name.length < 2) return businessSheet('Enter the business name');
+  try {
+    const out = await FID.openAccount(S.entity, name, 'business');
+    closeSheet();
+    await syncAccountsFromServer();
+    S.entity = 'business'; S.acct = 0; render();
+    accountOpenSheet({accountNumber: out.account?.accountNumber || out.account?.num, currency:'GHS'});
+  } catch (err) { businessSheet(err.message); }
+}
+
 function topUpSheet(message, kind){
   openSheet(`<h3>Add money</h3>
     <p class="sub">We send a prompt to your wallet. Approve it and the money lands in seconds.</p>
@@ -855,6 +886,16 @@ function applyGate(){
   if (FID.live && !FID.signedIn) showGate(document.querySelector('.gate') ? undefined : 'login');
   else hideGate();
 }
+
+/* The keypad runs off pointerdown rather than click: a click arrives only after
+   the browser has ruled out a double-tap, which is what made every digit feel a
+   beat late. Everything else stays on click. */
+document.addEventListener('pointerdown', ev => {
+  const k = ev.target.closest('[data-key]');
+  if (!k) return;
+  ev.preventDefault();
+  padKey(k.dataset.key);
+}, {passive:false});
 
 document.addEventListener('click', ev => {
   const b = ev.target.closest('[data-gate]');
@@ -1766,7 +1807,9 @@ function render(){
   const e = E();
   $('bellbtn').innerHTML = I('bell',19) + '<i></i>';
   $('avatar').textContent = initials(e.holder);
-  $('whoami').textContent = S.entity==='personal' ? 'Ama' : "Ama's Kitchen";
+  // the signed-in customer, never a bundled name
+  const who = E().holder || 'Your account';
+  $('whoami').textContent = S.entity==='personal' ? who.split(' ')[0] : who;
   $('greet').textContent = S.entity==='personal' ? greeting() : 'Business account';
   $('scroll').innerHTML = (V[S.tab] || vHome)();
   const strip = $('scroll').querySelector('.acctstrip');
@@ -1817,7 +1860,7 @@ document.addEventListener('click', ev => {
       ['Compared to','anonymised peer median'],['Not used','name, location, contacts'],['Confidence','0.86']],
       'Turn off spending insights under You and we stop reading transactions for tips.');
     b.hidden = !b.hidden; el.innerHTML = b.hidden ? I('info',15) + ' Where this came from' : I('close',15) + ' Hide'; return; }
-  if (d.key){ padKey(d.key); return; }
+  if (d.key) return;  // handled on pointerdown, so a digit lands as the finger does
   if (d.padset){ S.flow.amount = d.padset;
     $('padAmt').innerHTML = `<span>GHS </span>${(+d.padset).toLocaleString('en-GB')}`; return; }
   if (d.tab){ if (d.tab === 'pay') return openPay();
@@ -2054,6 +2097,8 @@ document.addEventListener('click', ev => {
     case 'cards': S.tab='cards'; closeSheet(); render(); break;
     case 'save': case 'invest': S.tab='save'; closeSheet(); render(); break;
     case 'allservices': openPay(); break;
+    case 'openbusiness': businessSheet(); break;
+    case 'businesssubmit': doOpenBusiness(); break;
     case 'switch': S.entity = S.entity==='personal'?'business':'personal'; S.acct=0; S.tab='home';
       closeSheet(); render(); syncAccountsFromServer(); break;
     case 'addgoal': { const g = S.goals.find(x => x.id === d.g), v = +$('goalAdd').value || 0;
