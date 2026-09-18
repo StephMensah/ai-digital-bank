@@ -272,7 +272,10 @@ function txDetail(id){
 /* ------------------------------------------------------------------ home */
 function vHome(){
   const e = E();
-  const acct = e.accounts[S.acct] || e.accounts[0];
+  /* No account is a real state, not an impossible one: before verification
+     clears, and on any signed-out page. Rendering must survive it. */
+  const acct = e.accounts[S.acct] || e.accounts[0] ||
+    { name: 'No account yet', balance: 0, num: '', type: 'current' };
   const saved = S.goals.reduce((s,g)=>s+g.saved,0);
   const target = S.goals.reduce((s,g)=>s+g.target,0);
 
@@ -2401,7 +2404,11 @@ document.addEventListener('keydown', ev => {
 if (FID.live) FID.blankProfile();
 applyGate();
 
-render();
+/* Gated means signed out, and there is nothing behind the gate worth drawing.
+   Skipping it also avoids rendering a home screen that has no account in it. */
+const gated = FID.live && !FID.signedIn;
+
+if (!gated) render();
 tickClock();
 syncAccountsFromServer();
 // ?open=1 from the website lands on the account-opening half of the gate
