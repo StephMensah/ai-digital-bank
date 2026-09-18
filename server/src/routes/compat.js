@@ -66,7 +66,12 @@ compatRouter.get('/accounts/:entity', authenticate('customer'), async (req, res,
       mustChangePin: Boolean(req.customer.must_change_pin),
       accounts: accounts.map((a) => ({
         name: a.product_name || 'Current account',
-        num: '•••• ' + String(a.account_number).slice(-4),
+        // The full number, not the last four: a customer needs to be able to
+        // read their own account number off the landing page and give it out.
+        num: a.account_number,
+        accountNumber: a.account_number,
+        // Present once the account is mirrored into the core.
+        mambuRef: a.mambu_account_key || null,
         balance: asMajor(a.available_minor ?? a.balance_minor),
         type: /sav/i.test(a.product_name || '') ? 'savings' : 'current',
         currency: a.currency

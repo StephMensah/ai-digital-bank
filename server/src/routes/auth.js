@@ -27,20 +27,49 @@ authRouter.post('/register',
   async (req, res, next) => {
     try {
       const { fullName, msisdn: phone, email, password: pw, dateOfBirth } = req.body;
-      const { rows: dupe } = await query('SELECT id FROM customers WHERE msisdn=$1 OR (email IS NOT NULL AND email=$2)', [phone, email || null]);
-      if (dupe[0]) throw conflict('An account already exists for that number or email');
+      /* An abandoned signup leaves a customer with a password and nothing
+         else: no PIN, no verification, no account. Blocking that number
+         forever strands the person, so a signup that never got anywhere is
+         resumable — the new details replace the old ones and onboarding
+         starts again. The moment there is a PIN, a verification or an
+         account, the number is taken and stays taken.
 
-      const { rows } = await query(
-        `INSERT INTO customers (msisdn, email, full_name, date_of_birth, password_hash)
-         VALUES ($1,$2,$3,$4,$5)
-         RETURNING id, msisdn, email, full_name, kyc_status, kyc_tier, created_at`,
-        [phone, email || null, fullName, dateOfBirth || null, hashSecret(pw)]
+         In production this needs an OTP to the number first, or someone
+         could claim a stranger's abandoned signup. There is nothing behind
+         one to claim today, but the check belongs here before real money. */
+      const { rows: existing } = await query(
+        `SELECT c.id, c.pin_hash, c.kyc_status,
+                (SELECT count(*) FROM accounts a WHERE a.customer_id = c.id) AS accounts
+           FROM customers c
+          WHERE c.msisdn=$1 OR (c.email IS NOT NULL AND c.email=$2)`,
+        [phone, email || null]
       );
+      const prior = existing[0];
+      const incomplete = prior && !prior.pin_hash &&
+        Number(prior.accounts) === 0 && prior.kyc_status === 'pending';
+      if (prior && !incomplete) throw conflict('An account already exists for that number or email');
+
+      const { rows } = incomplete
+        ? await query(
+            `UPDATE customers
+                SET full_name=$2, email=$3, date_of_birth=$4, password_hash=$5,
+                    must_change_pin=true, updated_at=now()
+              WHERE id=$1
+              RETURNING id, msisdn, email, full_name, kyc_status, kyc_tier, created_at`,
+            [prior.id, fullName, email || null, dateOfBirth || null, hashSecret(pw)]
+          )
+        : await query(
+            `INSERT INTO customers (msisdn, email, full_name, date_of_birth, password_hash)
+             VALUES ($1,$2,$3,$4,$5)
+             RETURNING id, msisdn, email, full_name, kyc_status, kyc_tier, created_at`,
+            [phone, email || null, fullName, dateOfBirth || null, hashSecret(pw)]
+          );
       const customer = rows[0];
       /* No account yet. A customer exists, and can sign in, but the account
          number is issued once the Ghana Card check and screening clear — which
          is the order a bank actually opens accounts in. */
-      await audit({ ...auditFrom(req), actorId: customer.id, actorType: 'customer', action: 'customer.registered', entity: 'customer', entityId: customer.id });
+      await audit({ ...auditFrom(req), actorId: customer.id, actorType: 'customer', action: incomplete ? 'customer.registration_resumed' : 'customer.registered',
+        entity: 'customer', entityId: customer.id });
 
       res.status(201).json({
         customer,
