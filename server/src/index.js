@@ -66,7 +66,10 @@ app.use('/api/v1/ai', aiRouter);
 app.use('/api', compatRouter);
 
 // serve the website, web banking and app shell from the same origin
-app.use(express.static(join(here, '../../api-web'), { extensions: ['html'], maxAge: '5m' }));
+// the built front ends (index, web, app, reviewer console, control tower)
+app.use(express.static(join(here, '../../public'), { extensions: ['html'], maxAge: '5m' }));
+// the leaner API-native pages, kept reachable for testing the raw surface
+app.use('/v2', express.static(join(here, '../../api-web'), { extensions: ['html'], maxAge: '5m' }));
 app.get('/api/*', (_req, res) => res.status(404).json({ error: { code: 'not_found', message: 'Unknown endpoint' } }));
 app.use(errorHandler(logger));
 

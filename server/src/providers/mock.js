@@ -28,7 +28,14 @@ import { logger } from '../lib/logger.js';
 const LATENCY_MS = Number(process.env.MOCK_LATENCY_MS || 400);
 const SETTLE_MS = Number(process.env.MOCK_SETTLE_MS || 2000);
 
-const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+/* Real rails vary. A fixed delay makes everything downstream look more
+   predictable than it will ever be, so every wait here carries jitter. */
+const jitter = (ms, spread = 0.45) => Math.round(ms * (1 - spread + Math.random() * spread * 2));
+const pause = (ms) => new Promise((r) => setTimeout(r, jitter(ms)));
+
+/* A wallet debit waits on a human approving a prompt on their handset, so it
+   takes far longer than a disbursement the provider can push on its own. */
+const APPROVAL_MS = Number(process.env.MOCK_APPROVAL_MS || 5000);
 
 /**
  * Demo controls, by the pesewa part of the amount:
@@ -75,14 +82,19 @@ const BANKS = [
   { code: 'AIRTELTIGO', name: 'AirtelTigo Money' }
 ];
 
+/* Providers hand back their own identifier formats, and code downstream tends
+   to assume them. Hubtel returns a uuid, GIP a long numeric session id. */
 const ref = (prefix) => `${prefix}_${randomUUID().replace(/-/g, '').slice(0, 16)}`;
+const providerUuid = () => randomUUID();
+const gipSession = () =>
+  `${Date.now()}${String(Math.floor(Math.random() * 1_000_000)).padStart(6, '0')}`;
 
 /**
  * Settle later, through the same code the webhook handlers call. Imported
  * lazily because the ledger imports the provider registry, and a static import
  * here would close that loop.
  */
-function settleLater(reference, outcome) {
+function settleLater(reference, outcome, delayMs = SETTLE_MS) {
   setTimeout(async () => {
     try {
       const [{ query }, ledger] = await Promise.all([
@@ -100,7 +112,7 @@ function settleLater(reference, outcome) {
       } else {
         await ledger.settleTransaction({
           transactionId: rows[0].id,
-          providerRef: ref('MOCKSETTLE'),
+          providerRef: providerUuid(),
           glCounterparty: ledger.GL.MOMO_SETTLEMENT
         });
       }
@@ -108,10 +120,10 @@ function settleLater(reference, outcome) {
     } catch (err) {
       logger.error({ err: err.message, reference }, 'mock settlement failed');
     }
-  }, SETTLE_MS).unref?.();
+  }, jitter(delayMs)).unref?.();
 }
 
-async function act(amountMinor, reference, { settles = true } = {}) {
+async function act(amountMinor, reference, { settles = true, settleMs = SETTLE_MS } = {}) {
   await pause(LATENCY_MS);
   const outcome = scripted(amountMinor);
 
@@ -122,9 +134,9 @@ async function act(amountMinor, reference, { settles = true } = {}) {
   if (outcome === 'decline') {
     throw upstream('Mock rail: declined by the provider (insufficient funds at counterparty)');
   }
-  if (settles) settleLater(reference, outcome);
+  if (settles) settleLater(reference, outcome, settleMs);
 
-  return { providerRef: ref('MOCK'), status: 'processing', mock: true };
+  return { providerRef: providerUuid(), status: 'processing', mock: true };
 }
 
 export const mock = {
@@ -140,7 +152,8 @@ export const mock = {
   // ----- money in -----
   async chargeWallet({ amountMinor, msisdn, reference }) {
     if (!msisdn) throw badRequest('A wallet number is required');
-    return act(amountMinor, reference);
+    // The customer still has to approve the prompt on their phone.
+    return act(amountMinor, reference, { settleMs: APPROVAL_MS });
   },
 
   async requestToPay({ amountMinor, msisdn, reference }) {
@@ -150,11 +163,11 @@ export const mock = {
   async initializeCharge({ amountMinor, reference }) {
     await pause(LATENCY_MS);
     if (scripted(amountMinor) === 'decline') throw upstream('Mock rail: the card was declined');
-    settleLater(reference, 'ok');
+    settleLater(reference, 'ok', APPROVAL_MS);
     // A hosted checkout would send the customer away and bring them back; the
     // mock returns them straight to the app with the reference intact.
     return {
-      providerRef: ref('MOCKCO'),
+      providerRef: providerUuid(),
       authorizationUrl: `${config.webOrigin[0]}/app.html?deposit=${encodeURIComponent(reference)}&mock=1`,
       mock: true
     };
@@ -188,7 +201,7 @@ export const mock = {
       accountName: holderFor(accountNumber),
       accountNumber,
       bankCode,
-      sessionId: ref('MOCKSESS'),
+      sessionId: gipSession(),
       mock: true
     };
   },

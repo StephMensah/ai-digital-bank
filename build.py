@@ -4,6 +4,10 @@ so every product stays a single portable file."""
 import pathlib
 
 src = pathlib.Path("src")
+# The Node service serves this directory. Keeping it a build output rather than
+# pointing a static mount at the repo root means nothing else — sources, keys,
+# the Python engine — is ever reachable over HTTP.
+public = pathlib.Path("public"); public.mkdir(exist_ok=True)
 ui    = (src/"ui.css").read_text()
 ds    = (src/"ds.css").read_text()
 icons = (src/"icons.js").read_text()
@@ -20,9 +24,12 @@ for name, out, css, js in TARGETS:
     for token in ("__UI__", "__DS__", "__CORE__"):
         assert token not in h, f"{token} left in {name}"
     pathlib.Path(out).write_text(h)
+    (public/out).write_text(h)
     print(f"{out:26} {len(h)//1024:>3} KB")
 
 tpl = pathlib.Path("tower_template.html").read_text()
 data = pathlib.Path("control_tower_data.json").read_text()
-pathlib.Path("control-tower.html").write_text(tpl.replace("__SNAPSHOT_JSON__", data))
+tower = tpl.replace("__SNAPSHOT_JSON__", data)
+pathlib.Path("control-tower.html").write_text(tower)
+(public/"control-tower.html").write_text(tower)
 print(f"{'control-tower.html':26} rebuilt from the engine export")

@@ -28,15 +28,78 @@ a{color:inherit}
 .navcta a.ghost{font-size:13.5px;font-weight:700;color:var(--ink);text-decoration:none;padding:9px 6px}
 
 /* -------------------------------------------------------------------- hero */
-.hero{max-width:1180px;margin:0 auto;padding:64px 22px 40px;display:grid;
-      grid-template-columns:minmax(0,1fr) min(420px,42%);gap:48px;align-items:center}
-.hero h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,4.6vw,54px);line-height:1.03;
-         letter-spacing:-.04em;color:var(--ink);margin-bottom:18px}
-.hero h1 em{font-style:normal;color:var(--orange-d)}
-.hero p{color:var(--slate);font-size:17px;line-height:1.62;max-width:52ch;margin-bottom:28px}
-.hero p b{color:var(--ink);font-weight:700}
-.hero .ctarow{display:flex;gap:12px;flex-wrap:wrap}
-.hero .art{width:100%}
+.herowrap{max-width:1180px;margin:0 auto;padding:22px 22px 8px}
+.hero{background:radial-gradient(120% 140% at 85% 0%,#1B4A6A 0%,var(--jet-2) 38%,var(--jet) 100%);
+      border-radius:30px;padding:clamp(30px,5vw,60px);display:grid;
+      grid-template-columns:minmax(0,1.05fr) min(430px,45%);gap:46px;align-items:center;
+      color:#fff;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;inset:-40% -10% auto auto;width:60%;aspect-ratio:1;
+      background:radial-gradient(circle,rgba(95,228,214,.20),transparent 62%);
+      animation:drift 26s ease-in-out infinite alternate;pointer-events:none}
+@keyframes drift{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(-7%,9%,0) scale(1.14)}}
+
+.hero h1{font-family:var(--display);font-weight:700;font-size:clamp(32px,4.4vw,52px);line-height:1.04;
+         letter-spacing:-.04em;color:#fff;margin-bottom:16px;position:relative}
+.hero h1 em{font-style:normal;color:var(--orange-l)}
+.hero p.lede{color:rgba(255,255,255,.76);font-size:16.5px;line-height:1.62;max-width:46ch;
+         margin-bottom:26px;position:relative}
+.hero .ctarow{display:flex;gap:12px;flex-wrap:wrap;position:relative}
+.hero .btn.primary{background:var(--orange);border-color:var(--orange);color:#04312C}
+.hero .btn.quiet{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.28);color:#fff}
+.hero .btn.quiet:hover{background:rgba(255,255,255,.16)}
+.hero .reassure{margin-top:18px;font-size:12.5px;color:rgba(255,255,255,.55);position:relative}
+
+/* ------------------------------------------------- the live scene, moving slowly */
+.scene{position:relative;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.14);
+       border-radius:24px;padding:20px;backdrop-filter:blur(8px);
+       animation:float 14s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+
+.scene .bal{font-family:var(--display);font-weight:700;font-size:34px;letter-spacing:-.04em;
+       font-variant-numeric:tabular-nums;color:#fff}
+.scene .ball{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.5)}
+.scene .pulse{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--orange-l);
+       margin-right:7px;animation:beat 2.6s ease-in-out infinite}
+@keyframes beat{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.72)}}
+
+/* the rail a payment walks along */
+.rail{margin:20px 0 16px;position:relative;height:34px}
+.rail .line{position:absolute;top:16px;left:6px;right:6px;height:2px;
+       background:rgba(255,255,255,.16);border-radius:2px}
+.rail .node{position:absolute;top:10px;width:14px;height:14px;border-radius:50%;
+       background:var(--jet);border:2px solid rgba(255,255,255,.3)}
+.rail .node.n1{left:0} .rail .node.n2{left:calc(50% - 7px)} .rail .node.n3{right:0}
+.rail .spark{position:absolute;top:9px;left:0;width:16px;height:16px;border-radius:50%;
+       background:var(--orange-l);box-shadow:0 0 0 6px rgba(95,228,214,.18);
+       animation:walk 9s cubic-bezier(.65,0,.35,1) infinite}
+@keyframes walk{
+  0%{left:0;opacity:0} 6%{opacity:1}
+  40%{left:calc(50% - 8px)} 55%{left:calc(50% - 8px)}
+  92%{left:calc(100% - 16px);opacity:1} 100%{left:calc(100% - 16px);opacity:0}}
+.rail .legend{position:absolute;top:0;width:100%;display:flex;justify-content:space-between;
+       font-size:10.5px;color:rgba(255,255,255,.45);letter-spacing:.04em}
+.rail .legend span{transform:translateY(26px)}
+
+/* transactions arriving one at a time */
+.feedline{display:flex;align-items:center;gap:11px;padding:9px 0;
+       border-top:1px solid rgba(255,255,255,.09);opacity:0;
+       animation:arrive 12s ease-in-out infinite}
+.feedline:nth-child(1){animation-delay:0s}
+.feedline:nth-child(2){animation-delay:1.1s}
+.feedline:nth-child(3){animation-delay:2.2s}
+@keyframes arrive{0%{opacity:0;transform:translateY(7px)}8%,88%{opacity:1;transform:none}100%{opacity:0}}
+.feedline .dot{width:28px;height:28px;border-radius:9px;flex:none;display:grid;place-items:center;
+       background:rgba(95,228,214,.16);color:var(--orange-l);font-size:13px}
+.feedline .dot.out{background:rgba(255,255,255,.09);color:rgba(255,255,255,.75)}
+.feedline .who{flex:1;font-size:13px;color:rgba(255,255,255,.9)}
+.feedline .who span{display:block;font-size:11px;color:rgba(255,255,255,.45)}
+.feedline .amt{font-size:13px;font-variant-numeric:tabular-nums;color:#fff}
+.feedline .amt.in{color:var(--orange-l)}
+
+@media (prefers-reduced-motion:reduce){
+  .hero::after,.scene,.rail .spark,.scene .pulse{animation:none}
+  .feedline{animation:none;opacity:1}
+}
 
 /* ----------------------------------------------------------------- trust */
 .trust{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--haze)}
@@ -134,8 +197,8 @@ function page(){
   <div class="navlinks">
     <a href="web.html">Personal</a>
     <a href="web.html">Business</a>
-    <a href="#how">How decisions work</a>
-    <a href="reviewer-console.html">For our team</a>
+    <a href="#how">How it works</a>
+    <a href="app.html?open=1">Open an account</a>
   </div>
   <div class="navcta">
     <a class="ghost" href="web.html">Log in</a>
@@ -143,43 +206,63 @@ function page(){
   </div>
 </div></div>
 
-<div class="hero">
+<div class="herowrap"><div class="hero">
   <div>
-    <h1>Banking that <em>explains itself</em>.</h1>
-    <p>Every automated decision comes with a reason — or a <b>named person</b>, never a silent decline.</p>
+    <h1>Money that moves the <em>moment you send it</em>.</h1>
+    <p class="lede">Open an account in minutes with your Ghana Card. Send to any wallet or bank
+      in seconds, and always see where your money is.</p>
     <div class="ctarow">
-      <a class="btn primary" href="app.html">${I('airtime',18)} Open the mobile app</a>
+      <a class="btn primary" href="app.html?open=1">Open an account</a>
       <a class="btn quiet" href="web.html">Explore online banking</a>
     </div>
+    <p class="reassure">No monthly fee · No minimum balance · Cedis, held to the pesewa</p>
   </div>
-  <div class="art">${ART.welcome()}</div>
-</div>
+
+  <div class="scene" aria-label="A live view of an account">
+    <div class="ball"><i class="pulse"></i>Available balance</div>
+    <div class="bal" id="heroBal">GH₵ 1,450.00</div>
+
+    <div class="rail" aria-hidden="true">
+      <div class="line"></div>
+      <div class="node n1"></div><div class="node n2"></div><div class="node n3"></div>
+      <div class="spark"></div>
+      <div class="legend"><span>You</span><span>Checked</span><span>Landed</span></div>
+    </div>
+
+    <div class="feedline"><i class="dot">↙</i>
+      <div class="who">Salary<span>Confirmed</span></div><div class="amt in">+2,400.00</div></div>
+    <div class="feedline"><i class="dot out">↗</i>
+      <div class="who">Kwame — MTN wallet<span>Sent in 3 seconds</span></div><div class="amt">−450.00</div></div>
+    <div class="feedline"><i class="dot out">↗</i>
+      <div class="who">ECG prepaid<span>Token delivered</span></div><div class="amt">−120.00</div></div>
+  </div>
+</div></div>
 
 <div class="trust"><div class="in">
-  <div class="item"><div class="ic">${I('scales',19)}</div>
-    <div><b>44 AI use cases, one governance gate</b><span>Nothing reaches a customer without a DPIA reference and an explainer.</span></div></div>
-  <div class="item"><div class="ic">${I('user',19)}</div>
-    <div><b>A person, never a silent decline</b><span>Below the confidence floor, or against you, a named colleague takes it.</span></div></div>
+  <div class="item"><div class="ic">${I('airtime',19)}</div>
+    <div><b>Open it from your phone</b><span>Your Ghana Card and a few minutes. No branch, no forms, no queue.</span></div></div>
   <div class="item"><div class="ic">${I('chain',19)}</div>
-    <div><b>One audit trail, four surfaces</b><span>The app, online banking, the reviewer queue and the control tower read the same log.</span></div></div>
+    <div><b>Every wallet, every bank</b><span>MTN, Telecel and AirtelTigo wallets, and any Ghanaian bank account.</span></div></div>
+  <div class="item"><div class="ic">${I('user',19)}</div>
+    <div><b>You always get a reason</b><span>If a payment is held, we tell you why and a person picks it up the same day.</span></div></div>
 </div></div>
 
 <div class="section">
   <div class="hd"><span class="eyebrow">Where to go</span>
-    <h2>Two products, one account</h2>
-    <p class="lede">Everything here is live — send a payment and the balance actually moves.</p></div>
+    <h2>One account, wherever you are</h2>
+    <p class="lede">The same money, the same history, on your phone and in your browser.</p></div>
   <div class="products">
     <a class="pcard" href="app.html">
       <div class="top"><div class="ic">${IS('airtime',26)}</div><span class="who">Customer · mobile</span></div>
       <h3>The mobile app</h3>
-      <p>Five tabs, a keypad payment flow, goals funded from mobile money or an account, card
-        freeze, treasury bills, FX and a decision note behind every screen.</p>
+      <p>Send money, top up from a wallet, save towards a goal, freeze your card the moment
+        you misplace it, and buy treasury bills — all from your pocket.</p>
       <span class="go">Open the app ${I('chevron',15)}</span></a>
     <a class="pcard" href="web.html">
       <div class="top"><div class="ic">${IS('dashboard',26)}</div><span class="who">Customer · web</span></div>
       <h3>Online banking</h3>
-      <p>Personal and business banking side by side — payroll with maker-checker, invoices,
-        cash flow, treasury bills and a full statement, all in the browser.</p>
+      <p>Personal and business side by side — run payroll with a second approver, send
+        invoices, watch your cash flow and pull a full statement whenever you need one.</p>
       <span class="go">Open online banking ${I('chevron',15)}</span></a>
   </div>
 </div>
@@ -190,29 +273,31 @@ function page(){
       <h2>Three steps, every time</h2></div>
     <div class="steps">
       <div class="step"><b class="n">01</b>
-        <h4>A model decides</h4>
-        <p>With a published confidence floor.</p></div>
+        <h4>You send</h4>
+        <p>Pick a wallet number or a bank account. We show you the name before anything leaves.</p></div>
       <div class="step"><b class="n">02</b>
-        <h4>The floor is checked</h4>
-        <p>Below it, or adverse to you, nothing auto-executes.</p></div>
+        <h4>We check it</h4>
+        <p>A quick safety check on every payment. Almost always instant, and you keep your money
+          while anything unusual is looked at.</p></div>
       <div class="step"><b class="n">03</b>
-        <h4>You get a reason, or a person</h4>
-        <p>An explanation, or a named reviewer against an SLA.</p></div>
+        <h4>It lands</h4>
+        <p>Seconds later, with a receipt. If it ever doesn't, you get a reason, not silence.</p></div>
     </div>
   </div>
 </div>
 
 <div class="ctaband"><div class="box">${lattice('latc1')}
-  <div><h2>See it decide something.</h2></div>
-  <div class="ctarow"><a class="btn primary" href="app.html">Open the app</a></div>
+  <div><h2>Open an account in minutes.</h2>
+    <p>Your Ghana Card, your phone number, and you're banking.</p></div>
+  <div class="ctarow"><a class="btn primary" href="app.html?open=1">Open an account</a></div>
 </div></div>
 
 <footer>
   <div class="in">
     <div class="col brand">
       <a class="mark" href="index.html"><span class="m" style="width:28px;height:28px">${I('node',14).replace(/currentColor/g,'#fff')}</span>AI-Digital Bank</a>
-      <p>An AI-first bank prototype: the governance, the audit trail and the human line are
-        real code, not a deck.</p>
+      <p>Everyday banking for Ghana — wallets, bank transfers and savings,
+        from your phone or your browser.</p>
     </div>
     <div class="col"><b>Bank with us</b>
       <a href="app.html">Mobile app</a>
@@ -220,22 +305,44 @@ function page(){
       <a href="web.html">Business banking</a>
     </div>
     <div class="col"><b>Trust</b>
-      <a href="#how">How decisions work</a>
+      <a href="#how">How it works</a>
       <a href="web.html">Security &amp; privacy</a>
-      <a href="control-tower.html">AI Control Tower</a>
+      <a href="app.html?open=1">Open an account</a>
     </div>
-    <div class="col"><b>For our team</b>
-      <a href="reviewer-console.html">Reviewer console</a>
-      <a href="control-tower.html">Governance &amp; portfolio</a>
+    <div class="col"><b>Support</b>
+      <a href="web.html">Help centre</a>
+      <a href="web.html">Fees &amp; limits</a>
     </div>
   </div>
   <div class="legal">
-    <span>AI-Digital Bank · prototype, Ghana</span>
+    <span>AI-Digital Bank · Accra, Ghana</span>
   </div>
 </footer>`;
 }
 
 document.getElementById('page').innerHTML = page();
+
+/* The balance drifts as the scene's payments land and arrive, so the hero reads
+   as something alive rather than a screenshot. Slow on purpose. */
+(function liveBalance(){
+  const el = document.getElementById('heroBal');
+  if (!el || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const steps = [1450.00, 3850.00, 3400.00, 3280.00];
+  let i = 0, shown = steps[0];
+  const paint = v => { el.textContent = 'GH₵ ' + v.toLocaleString('en-GH',
+    {minimumFractionDigits:2, maximumFractionDigits:2}); };
+
+  setInterval(() => {
+    const target = steps[i = (i + 1) % steps.length];
+    const from = shown, started = performance.now(), ms = 900;
+    (function ease(now){
+      const t = Math.min((now - started) / ms, 1);
+      shown = from + (target - from) * (1 - Math.pow(1 - t, 3));
+      paint(shown);
+      if (t < 1) requestAnimationFrame(ease);
+    })(started);
+  }, 3000);
+})();
 </script>
 </body>
 </html>
