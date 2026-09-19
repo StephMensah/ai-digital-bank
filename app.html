@@ -1926,13 +1926,95 @@ function txDetail(id){
       <div style="margin-top:10px"><span class="badge ${t.status==='Completed'?'p':'o'}">
         ${I(t.status==='Completed'?'check':'clock',13)} ${t.status}</span></div></div>
     ${note('TRANSACTION RECORD',[['When', t.d],['Category', t.cat],['Method', t.method],
-      ['Reference', t.ref],['Balance after', hide(m0(t.balanceAfter))],['Record', t.hash]],
+      ['Reference', t.ref],
+      ...(t.balanceAfter == null ? [] : [['Balance after', hide(m0(t.balanceAfter))]]),
+      ['Record', t.hash]],
       'Kept for seven years. Quote the reference if you ever query this with us or with the merchant.')}
     <div style="display:flex;gap:8px;margin-top:16px">
-      <button class="btn quiet" style="flex:1" data-act="close">${I('download',17)} Receipt</button>
-      <button class="btn quiet" style="flex:1" data-act="dispute">${I('alert',17)} Problem</button>
+      <button class="btn quiet" style="flex:1" data-act="receipt" data-tx="${t.id}">${I('download',17)} Receipt</button>
+      <button class="btn quiet" style="flex:1" data-act="dispute" data-tx="${t.id}">${I('alert',17)} Problem</button>
       ${t.a<0?`<button class="btn primary" style="flex:1" data-act="repeat" data-tx="${t.id}">Repeat</button>`:''}
     </div>`);
+}
+
+
+/* ----------------------------------------------------------------- receipt
+   A receipt has to leave the app — that is the whole point of one. Share sheet
+   where the phone has one, a downloaded file where it does not. */
+function receiptText(t){
+  const mm = FID.merchant(t.m);
+  return [
+    'DIGITAL BANK — TRANSACTION RECEIPT',
+    '',
+    `${t.a > 0 ? 'Received' : 'Paid'}      ${m0(Math.abs(t.a))}`,
+    `${t.a > 0 ? 'From' : 'To'}          ${mm.label}`,
+    `Status        ${t.status}`,
+    `When          ${t.d}`,
+    `Category      ${t.cat}`,
+    `Method        ${t.method}`,
+    `Reference     ${t.ref}`,
+    t.balanceAfter == null ? null : `Balance after ${m0(t.balanceAfter)}`,
+    `Record        ${t.hash || ''}`,
+    '',
+    'Kept for seven years. Quote the reference if you query this.',
+    'pokzbank.org'
+  ].filter(Boolean).join('\n');
+}
+
+async function shareReceipt(txId){
+  const t = E().transactions.find(x => x.id === txId);
+  if (!t) return;
+  const text = receiptText(t);
+  const name = `receipt-${t.ref || txId}.txt`;
+  try {
+    if (navigator.share) {
+      await navigator.share({title: 'Digital Bank receipt', text});
+      return;
+    }
+  } catch { /* dismissed the share sheet: fall through to the download */ }
+  const url = URL.createObjectURL(new Blob([text], {type:'text/plain'}));
+  const a = document.createElement('a');
+  a.href = url; a.download = name; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ----------------------------------------------------------------- problem */
+function disputeSheet(txId, message){
+  const t = E().transactions.find(x => x.id === txId);
+  if (!t) return;
+  openSheet(`<h3>Report a problem</h3>
+    <p class="sub">${FID.merchant(t.m).label} · ${m0(Math.abs(t.a))} · ${t.ref}</p>
+    ${message ? `<span class="badge r">${message}</span>` : ''}
+    <div class="pill-row" style="margin-top:14px" id="dsWhy">
+      ${[['not_recognised','I do not recognise it'],['wrong_amount','Wrong amount'],
+         ['never_arrived','It never arrived'],['duplicate','Charged twice'],['other','Something else']]
+        .map(([k,l],i) => `<button class="chip" data-pick="dispute:${k}"
+          aria-pressed="${i===0}">${l}</button>`).join('')}
+    </div>
+    <label class="field" style="margin-top:12px"><span>Anything else we should know?</span>
+      <input id="dsDetail" maxlength="500" placeholder="Optional"></label>
+    <div class="sheetbtns">
+      <button class="btn quiet" data-act="close">Cancel</button>
+      <button class="btn primary" data-act="disputesubmit" data-tx="${txId}">Raise it</button>
+    </div>`);
+  S.disputeReason = 'not_recognised';
+}
+
+async function disputeSubmit(txId){
+  const t = E().transactions.find(x => x.id === txId);
+  try {
+    const res = await fetch('/api/disputes', {
+      method:'POST', headers:{'Content-Type':'application/json', ...FID.authHeaders()},
+      body: JSON.stringify({reference: t.ref, reason: S.disputeReason || 'other',
+        detail: ($('dsDetail')?.value || '').trim() || undefined})
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) return disputeSheet(txId, json.error?.message || 'We could not raise that just now');
+    openSheet(`<h3>Raised</h3>
+      <p class="sub">${json.message}</p>
+      ${json.caseNumber ? `<div class="ref" style="margin-top:10px">Case ${json.caseNumber}</div>` : ''}
+      <button class="btn primary wide" style="margin-top:16px" data-act="close">Done</button>`);
+  } catch { disputeSheet(txId, 'We could not raise that just now'); }
 }
 
 /* ------------------------------------------------------------------ home */
@@ -1953,7 +2035,18 @@ function vHome(){
       S.hideBal ? '••••••' : acct.balance.toLocaleString('en-GB',{minimumFractionDigits:2})}</span>
       <button data-act="hidebal" aria-label="${S.hideBal?'Show balance':'Hide balance'}" style="background:none;border:0;cursor:pointer;
         color:rgba(255,255,255,.6);padding:4px">${I(S.hideBal?'eyeoff':'eye',18)}</button></div>
-    <div class="delta">${I('growth',14)} ${hide(m0(6400))} in this month</div>
+    ${/* Was a constant, so an empty account still claimed GHS 6,400 in. It is
+         now this account's own money in, this calendar month, and it says
+         nothing at all when there is nothing to say. */''}
+    ${(() => {
+      const since = new Date(); since.setDate(1); since.setHours(0,0,0,0);
+      const inflow = (e.transactions || [])
+        .filter(t => t.a > 0 && new Date(t.ts) >= since)
+        .reduce((sum, t) => sum + t.a, 0);
+      return inflow > 0
+        ? `<div class="delta">${I('growth',14)} ${hide(m0(inflow))} in this month</div>`
+        : `<div class="delta muted">Nothing in yet this month</div>`;
+    })()}
     <div class="acctstrip">${e.accounts.map((x,i)=>
       `<button data-acct="${i}" aria-pressed="${i===S.acct}">${x.name} · ${
         S.hideBal ? '••••' : m0(x.balance)}</button>`).join('')}
@@ -4036,6 +4129,7 @@ function sheets(k){
         <button class="chip" data-pick="accttype">Foreign currency (USD)</button></div>
       <label class="field"><span>Name it</span><input id="acctName" placeholder="e.g. Rent, Travel fund…"></label>
       <button class="btn primary wide" style="margin-top:16px" data-act="createaccount">Open account</button>`,
+    pin: null,   // handled before the map, because it is a flow rather than a sheet
     cashflow:`<h3>Eight-week cash flow</h3>
       <div style="margin-top:14px">${FID.columns(e.cashflow || [0],{forecastFrom:4,h:120,
         labels:['w-4','w-3','w-2','now','+1','+2','+3','+4']})}</div>
@@ -4045,10 +4139,18 @@ function sheets(k){
         'A forecast is not a promise. Large one-off receipts are not predictable and are excluded.')}
       <button class="btn quiet wide" style="margin-top:16px" data-act="close">Close</button>`,
   };
-  openSheet(map[k] || `<h3>Not built yet</h3>
-    <p class="sub">This service is mapped in the engine's portfolio, but the agent behind it has not been built.
-      The control tower counts every time you land here as roadmap demand.</p>
-    <button class="btn quiet wide" style="margin-top:16px" data-act="close">Close</button>`);
+  if (k === 'pin') return startPinChange();
+
+  /* The old fallback talked about engines, agents and roadmap demand — internal
+     language on a customer's screen, for something they simply cannot do yet.
+     It now says that plainly and points at what does work. */
+  openSheet(map[k] || `<h3>Not available yet</h3>
+    <p class="sub">We have not built this one. Everything on the home screen works today —
+      sending, paying a bill, topping up, scanning to pay at a till, saving and investing.</p>
+    <div class="sheetbtns">
+      <button class="btn quiet" data-act="close">Close</button>
+      <button class="btn primary" data-act="sendmoney2">Send money</button>
+    </div>`);
 }
 
 /* =================================================================== render */
@@ -4117,6 +4219,12 @@ document.addEventListener('click', ev => {
   if (d.tx && d.act !== 'repeat'){ txDetail(d.tx); return; }
   if (d.stmtf){ S.stmtFilter = d.stmtf; render(); return; }
   if (d.goalamt){ $('goalAdd').value = d.goalamt; return; }
+  if (d.pick && String(d.pick).startsWith('dispute:')){
+    S.disputeReason = String(d.pick).split(':')[1];
+    document.querySelectorAll('#dsWhy .chip').forEach(c =>
+      c.setAttribute('aria-pressed', String(c.dataset.pick === d.pick)));
+    return;
+  }
   if (d.pick){ el.parentElement.querySelectorAll('.chip')
       .forEach(c => c.setAttribute('aria-pressed', c === el)); return; }
   if (d.note){ const b = $('note-'+d.note);
@@ -4250,9 +4358,21 @@ document.addEventListener('click', ev => {
       <label class="field" style="margin-top:16px"><span>What happened</span>
         <textarea placeholder="I was charged twice, the amount is wrong, I do not recognise this…"></textarea></label>
       <button class="btn primary wide" data-act="close">Send to a person</button>`); break;
-    case 'repeat': { const t2 = E().transactions.find(x=>x.id===d.tx);
-      const i = E().beneficiaries.findIndex(b => FID.merchant(b.name).label === FID.merchant(t2.m).label);
-      if (i >= 0) flowAmount(i); else flowWho(); break; }
+    case 'receipt': shareReceipt(d.tx); break;
+    case 'dispute': disputeSheet(d.tx); break;
+    case 'disputesubmit': disputeSubmit(d.tx); break;
+    /* Repeat used to hunt the old beneficiary list and fall back to a flow that
+       no longer matches how sending works. It now reopens the send flow on the
+       same counterparty. */
+    case 'repeat': {
+      const t2 = E().transactions.find(x => x.id === d.tx);
+      if (!t2) break;
+      sendReset();
+      SEND.method = /mobile|momo|wallet/i.test(t2.method) ? 'mobile_money'
+                  : /bank transfer|gip/i.test(t2.method) ? 'bank' : 'internal';
+      SEND.who = 'other';
+      sendDetailSheet(`Sending to ${FID.merchant(t2.m).label} again — check the number below`);
+      break; }
     case 'send': send($('chatIn').value); break;
     case 'review': flowReview(); break;
     case 'sent': flowSent(); break;

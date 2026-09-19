@@ -261,3 +261,39 @@ is "another customer cannot charge it" "$(curl -s -X POST -H "Authorization: Bea
 
 echo
 echo "final: passed $pass, failed $fail"
+
+echo "── on-us transfer lands instantly on both sides"
+S1=$(curl -s -H "Authorization: Bearer $T1" "$B/api/v1/accounts" | P '["accounts"][0]["balance_minor"]')
+R1=$(curl -s -H "Authorization: Bearer $T2" "$B/api/v1/accounts" | P '["accounts"][0]["balance_minor"]')
+TR=$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -H "Idempotency-Key: $(IDK)" \
+  -d "{\"fromAccountId\":\"$AID1\",\"toAccountNumber\":\"$N2\",\"amountMinor\":7500,\"narration\":\"Rent\",\"pin\":\"1111\"}" \
+  "$B/api/v1/payments/transfers")
+is "posted straight away" "$(echo "$TR" | P '["posted"]')" "True"
+S2=$(curl -s -H "Authorization: Bearer $T1" "$B/api/v1/accounts" | P '["accounts"][0]["balance_minor"]')
+R2=$(curl -s -H "Authorization: Bearer $T2" "$B/api/v1/accounts" | P '["accounts"][0]["balance_minor"]')
+is "sender debited now"   "$((S1-S2))" "7500"
+is "recipient credited now" "$((R2-R1))" "7500"
+is "recipient sees it in their history" "$(curl -s -H "Authorization: Bearer $T2" "$B/api/accounts/personal" | python3 -c "
+import sys,json;d=json.load(sys.stdin)
+print(len([t for t in d['transactions'] if t['amount']==75.0]))" 2>/dev/null)" "1"
+is "wrong PIN refused"    "$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -H "Idempotency-Key: $(IDK)" -d "{\"fromAccountId\":\"$AID1\",\"toAccountNumber\":\"$N2\",\"amountMinor\":100,\"pin\":\"9999\"}" "$B/api/v1/payments/transfers" | P '["error"]["code"]')" "invalid_pin"
+is "unknown account refused" "$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -H "Idempotency-Key: $(IDK)" -d "{\"fromAccountId\":\"$AID1\",\"toAccountNumber\":\"9999999999\",\"amountMinor\":100,\"pin\":\"1111\"}" "$B/api/v1/payments/transfers" | P '["error"]["code"]')" "not_found"
+is "cannot send to yourself" "$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -H "Idempotency-Key: $(IDK)" -d "{\"fromAccountId\":\"$AID1\",\"toAccountNumber\":\"$N1\",\"amountMinor\":100,\"pin\":\"1111\"}" "$B/api/v1/payments/transfers" | P '["error"]["code"]')" "bad_request"
+
+echo
+echo "final: passed $pass, failed $fail"
+
+echo "── reporting a problem with a transaction"
+REF=$(curl -s -H "Authorization: Bearer $T1" "$B/api/accounts/personal" | P '["transactions"][0]["ref"]')
+DP=$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' \
+  -d "{\"reference\":\"$REF\",\"reason\":\"not_recognised\",\"detail\":\"I did not make this\"}" "$B/api/disputes")
+[ -n "$(echo "$DP" | P '["caseId"]')" ] && ok "case opened: $(echo "$DP" | P '["caseNumber"]')" || bad "dispute raised" "$DP"
+is "raising it twice reuses the case" "$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -d "{\"reference\":\"$REF\",\"reason\":\"other\"}" "$B/api/disputes" | P '["alreadyOpen"]')" "True"
+is "someone else's transaction refused" "$(curl -s -X POST -H "Authorization: Bearer $T2" -H 'Content-Type: application/json' -d "{\"reference\":\"$REF\",\"reason\":\"other\"}" "$B/api/disputes" | P '["error"]["code"]')" "unknown_transaction"
+TS=$(curl -s -X POST -H 'Content-Type: application/json' -d '{"email":"ops@pokz.com","password":"TestPass12345"}' "$B/api/v1/auth/staff/login" | P '["tokens"]["accessToken"]')
+is "case reaches the reviewer queue" "$(curl -s -H "Authorization: Bearer $TS" "$B/api/v1/reviewer/cases?status=open" | python3 -c "
+import sys,json
+print('yes' if any(c['case_type']=='dispute' for c in json.load(sys.stdin).get('cases',[])) else 'no')" 2>/dev/null)" "yes"
+
+echo
+echo "final: passed $pass, failed $fail"

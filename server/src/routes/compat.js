@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { query } from '../db/pool.js';
 import { config } from '../config.js';
 import { validate } from '../middleware/validate.js';
+import { audit, auditFrom } from '../middleware/audit.js';
 import { authenticate } from '../middleware/auth.js';
 import { verifySecret, hashSecret, newReference, uuid } from '../lib/crypto.js';
 import { openTransaction, settleTransaction, loadAccount, GL } from '../core/ledger.js';
@@ -328,6 +329,64 @@ compatRouter.post('/transactions',
           balance_after_minor: balanceMinor
         }),
         balance: asMajor(balanceMinor)
+      });
+    } catch (err) { next(err); }
+  });
+
+/* ---------------------------------------------------------------- disputes */
+
+/**
+ * Raising a problem with a transaction. This opens a real review case against
+ * the customer's own transaction, which is what "Problem" has to mean: a
+ * button that only shows a confirmation and files nothing is worse than no
+ * button, because the customer believes someone is looking.
+ */
+compatRouter.post('/disputes',
+  authenticate('customer'),
+  validate(z.object({
+    reference: z.string().min(4).max(40),
+    reason: z.enum(['not_recognised', 'wrong_amount', 'never_arrived', 'duplicate', 'other']),
+    detail: z.string().max(500).optional()
+  })),
+  async (req, res, next) => {
+    try {
+      const { rows } = await query(
+        `SELECT t.* FROM transactions t JOIN accounts a ON a.id = t.account_id
+          WHERE t.reference=$1 AND a.customer_id=$2`,
+        [req.body.reference, req.customer.id]
+      );
+      const t = rows[0];
+      if (!t) return fail(res, 'unknown_transaction', 404);
+
+      const { rows: existing } = await query(
+        "SELECT id FROM review_cases WHERE transaction_id=$1 AND status <> 'closed'", [t.id]
+      );
+      if (existing[0]) {
+        return res.json({ caseId: existing[0].id, alreadyOpen: true,
+          message: 'We are already looking at this one.' });
+      }
+
+      const WHY = {
+        not_recognised: 'Customer does not recognise this transaction',
+        wrong_amount: 'Customer says the amount is wrong',
+        never_arrived: 'Customer says the money never arrived',
+        duplicate: 'Customer says they were charged twice',
+        other: 'Customer raised a problem'
+      };
+
+      const { rows: created } = await query(
+        `INSERT INTO review_cases (case_type, transaction_id, customer_id, priority, summary, sla_due_at)
+         VALUES ('dispute',$1,$2,$3,$4, now() + interval '24 hours')
+         RETURNING id, case_number`,
+        [t.id, req.customer.id,
+         req.body.reason === 'not_recognised' ? 'high' : 'medium',
+         `${WHY[req.body.reason]}${req.body.detail ? ': ' + req.body.detail : ''}`]
+      );
+
+      await audit({ ...auditFrom(req), action: 'dispute.raised', entity: 'transaction', entityId: t.id });
+      res.status(201).json({
+        caseId: created[0].id, caseNumber: created[0].case_number,
+        message: 'Raised. A colleague picks this up within 24 hours and you will hear from us either way.'
       });
     } catch (err) { next(err); }
   });
