@@ -1256,10 +1256,31 @@ async function sendGo(save){
     if (E().mustChangePin) {
       return startPinChange(() => sendGo(false));
     }
+    if (SEND.method === 'internal') {
+      /* On-us goes to the transfer endpoint so the recipient is credited too.
+         The compat route only ever debited the sender. */
+      return requireAuth(
+        async (pin) => {
+          const accountId = await FID.primaryAccountId();
+          return FID.transferInternal({
+            fromAccountId: accountId, toAccountNumber: r.accountNumber,
+            amountMinor: Math.round(amount * 100), narration: note, pin
+          });
+        },
+        (out) => {
+          syncAccountsFromServer();
+          openSheet(`<h3>Sent</h3>
+            <p class="sub">${m0(amount)} to ${r.name}. It is in their account now.</p>
+            <div class="ref" style="margin-top:10px">${out?.reference || ''}</div>
+            <button class="btn primary wide" style="margin-top:16px" data-act="close">Done</button>`);
+        },
+        'commit'
+      );
+    }
+
     requireAuthForPayment(
       {account: S.acct || 0, merchant: r.name, amount: -amount, category: 'Transfer',
-       method: SEND.method === 'internal' ? 'Digital Bank'
-             : SEND.method === 'bank' ? 'Bank transfer' : 'Mobile money'},
+       method: SEND.method === 'bank' ? 'Bank transfer' : 'Mobile money'},
       () => { syncAccountsFromServer(); }
     );
   } catch (err) {
@@ -1545,10 +1566,17 @@ async function doSignIn(){
 }
 
 function authPinSheet(){
+  /* Four digits used to submit on the fourth keypress with no way to stop, and
+     the only button was Cancel. Continue sits beside it now, and Back returns
+     to the amount so a wrong figure can be fixed without starting over. */
   openSheet(`<h3>Enter your PIN</h3><p class="sub">Confirms it is you before anything moves.</p>
     ${authDots(4)}
     ${keypad()}
-    <button class="btn quiet wide" style="margin-top:10px" data-act="authcancel">Cancel</button>`);
+    <div class="sheetbtns">
+      <button class="btn quiet" data-act="authcancel">Cancel</button>
+      <button class="btn primary" data-act="authcontinuepin">Continue</button>
+    </div>
+    ${SEND.resolved ? '<button class="btn quiet wide" style="margin-top:8px" data-act="authback">Back</button>' : ''}`);
 }
 
 function otpSheet(){
@@ -1558,7 +1586,11 @@ function otpSheet(){
       Your verification code is <span class="code">${S.auth.challenge.demoCode || '——————'}</span></div>
     ${authDots(6)}
     ${keypad()}
-    <button class="btn quiet wide" style="margin-top:10px" data-act="authcancel">Cancel</button>`);
+    <div class="sheetbtns">
+      <button class="btn quiet" data-act="authcancel">Cancel</button>
+      <button class="btn primary" data-act="authconfirmotp">Confirm</button>
+    </div>
+    <button class="btn quiet wide" style="margin-top:8px" data-act="authbackpin">Back</button>`);
 }
 
 function authPadKey(k){
@@ -1570,7 +1602,10 @@ function authPadKey(k){
   S.auth.value = v;
   const dots = $('authDots');
   if (dots) dots.innerHTML = '•'.repeat(v.length) + '·'.repeat(maxLen - v.length);
-  if (v.length === maxLen) authSubmit();
+  /* Submitting on the last keypress removed the moment where someone checks
+     what they typed. Continue does it now. */
+  const go = document.querySelector('[data-act="authcontinuepin"],[data-act="authconfirmotp"]');
+  if (go) go.disabled = v.length !== maxLen;
 }
 
 async function authSubmit(){

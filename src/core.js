@@ -426,6 +426,20 @@ const FID = (() => {
     fetch(API + '/api/v1/payments/banks', {headers: authHeaders()})
       .then(r => r.ok ? r.json() : {banks:[]}).then(j => j.banks || []).catch(() => []);
 
+  /** On-us: both accounts are ours, so it posts immediately, both sides. */
+  async function transferInternal({fromAccountId, toAccountNumber, amountMinor, narration, pin}){
+    const res = await fetch(API + '/api/v1/payments/transfers', {
+      method:'POST',
+      headers:{'Content-Type':'application/json',
+        'Idempotency-Key':'onus-' + Date.now() + '-' + Math.random().toString(36).slice(2), ...authHeaders()},
+      body: JSON.stringify({fromAccountId, toAccountNumber, amountMinor, narration, pin})
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(new Error(json.error?.message || 'That transfer did not go through'),
+      {code: json.error?.code || 'transfer_failed', status: res.status});
+    return json;
+  }
+
   async function walletToBank({accountId, amountMinor, msisdn, destination, narration}){
     const res = await fetch(API + '/api/v1/payments/wallet-to-bank', {
       method:'POST',
@@ -528,7 +542,7 @@ const FID = (() => {
            signIn, signOut, register, topUp, primaryAccountId, submitGhanaCard, kycStatus,
            apiReady, get apiMissing(){ return apiMissing; }, APP_URL,
            applyLiveProfile, blankProfile, get entitiesAvailable(){ return availableEntities; },
-           nameEnquiry, savePayee, banks, walletToBank, normaliseMsisdn, localMsisdn, authHeaders,
+           nameEnquiry, savePayee, banks, walletToBank, transferInternal, normaliseMsisdn, localMsisdn, authHeaders,
            get liveGoals(){ return liveGoals; },
            get signedIn(){ return signedIn(); },
            get customer(){ return session && session.subject; },
