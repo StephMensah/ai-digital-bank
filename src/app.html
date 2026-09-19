@@ -1332,13 +1332,35 @@ async function doOpenBusiness(){
 }
 
 function topUpSheet(message, kind){
+  const cards = S.linkedCards || [];
   openSheet(`<h3>Add money</h3>
-    <p class="sub">We send a prompt to your wallet. Approve it and the money lands in seconds.</p>
+    <p class="sub">From your wallet, or from a card you have linked.</p>
     ${message ? `<span class="badge ${kind || 'r'}">${message}</span>` : ''}
     <label class="field" style="margin-top:18px"><span>Amount (GH₵)</span>
       <input id="tuAmount" inputmode="decimal" placeholder="50.00" autofocus></label>
-    <button class="btn primary wide" style="margin-top:16px" data-act="topupsubmit">Add money</button>
+    <button class="btn primary wide" style="margin-top:16px" data-act="topupsubmit">From my wallet</button>
+    ${cards.map(c => `<button class="btn ghost wide" style="margin-top:8px"
+        data-act="topupcard" data-card="${c.id}">From ${c.scheme.toUpperCase()} •••• ${c.last4}</button>`).join('')}
+    ${cards.length ? '' : `<button class="btn ghost wide" style="margin-top:8px" data-act="linkcard">Link a card first</button>`}
     <button class="btn quiet wide" style="margin-top:8px" data-act="close">Close</button>`);
+}
+
+async function topUpFromCard(cardId){
+  const amount = Number(($('tuAmount')?.value || '').replace(/[^0-9.]/g, ''));
+  if (!amount || amount < 1) return topUpSheet('Enter GH₵1.00 or more');
+  try {
+    const accountId = await FID.primaryAccountId();
+    const res = await fetch(`/api/v1/cards/linked/${cardId}/charge`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json',
+        'Idempotency-Key':'crd-' + Date.now() + '-' + Math.random().toString(36).slice(2), ...FID.authHeaders()},
+      body: JSON.stringify({accountId, amountMinor: Math.round(amount * 100)})
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) return topUpSheet(json.error?.message || 'That card could not be charged');
+    topUpSheet(`${json.message} (${json.card})`, 'j');
+    setTimeout(() => { syncAccountsFromServer(); render(); }, 4000);
+  } catch { topUpSheet('That card could not be charged just now'); }
 }
 
 async function doTopUp(){
@@ -2458,6 +2480,7 @@ document.addEventListener('click', ev => {
     case 'verifysubmit': doVerify(); break;
     case 'topup': topUpSheet(); break;
     case 'topupsubmit': doTopUp(); break;
+    case 'topupcard': topUpFromCard(el.dataset.card); break;
     case 'signinsubmit': doSignIn(); break;
     case 'signout': FID.signOut(); FID.blankProfile(); closeSheet(); render(); applyGate(); break;
     case 'authcancel': S.auth = null; closeSheet(); render(); break;
@@ -2637,7 +2660,10 @@ document.addEventListener('click', ev => {
     case 'support': flowSupport(); break;
     case 'payroll': flowPayroll(); break;
     case 'cards': S.tab='cards'; closeSheet(); render(); break;
-    case 'save': case 'invest': S.tab='save'; closeSheet(); render(); break;
+    case 'save': S.tab='save'; closeSheet(); render(); break;
+    /* Invest had been routed to Save since before the two were split, so the
+       digital assets were built and then unreachable. */
+    case 'invest': S.tab='invest'; closeSheet(); render(); loadInvest(); break;
     case 'allservices': openPay(); break;
     case 'send-internal': SEND.method='internal'; sendWhoSheet(); break;
     case 'send-bank': SEND.method='bank'; sendDetailSheet(); break;

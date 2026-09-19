@@ -245,3 +245,19 @@ is "static code paid at the typed amount" "$(echo "$SP" | P '["amountMinor"]')" 
 
 echo
 echo "final: passed $pass, failed $fail"
+
+echo "── a linked card that actually works"
+CID=$(curl -s -H "Authorization: Bearer $T1" "$B/api/v1/cards/linked" | P '["cards"][0]["id"]')
+B4=$(curl -s -H "Authorization: Bearer $T1" "$B/api/v1/accounts" | P '["accounts"][0]["balance_minor"]')
+CH=$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -H "Idempotency-Key: $(IDK)" \
+  -d "{\"accountId\":\"$AID1\",\"amountMinor\":25000}" "$B/api/v1/cards/linked/$CID/charge")
+is "charge accepted"      "$(echo "$CH" | P '["transaction"]["status"]')" "processing"
+ok "  $(echo "$CH" | P '["message"]') · $(echo "$CH" | P '["card"]')"
+sleep 5
+AF=$(curl -s -H "Authorization: Bearer $T1" "$B/api/v1/accounts" | P '["accounts"][0]["balance_minor"]')
+is "card money landed" "$((AF-B4))" "25000"
+is "unknown card refused" "$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -H "Idempotency-Key: $(IDK)" -d "{\"accountId\":\"$AID1\",\"amountMinor\":1000}" "$B/api/v1/cards/linked/00000000-0000-0000-0000-000000000000/charge" | P '["error"]["code"]')" "not_found"
+is "another customer cannot charge it" "$(curl -s -X POST -H "Authorization: Bearer $T2" -H 'Content-Type: application/json' -H "Idempotency-Key: $(IDK)" -d "{\"accountId\":\"$AID1\",\"amountMinor\":1000}" "$B/api/v1/cards/linked/$CID/charge" | P '["error"]["code"]')" "not_found"
+
+echo
+echo "final: passed $pass, failed $fail"
