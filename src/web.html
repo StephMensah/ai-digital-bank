@@ -1091,13 +1091,23 @@ async function sendGo(save){
     }
   }
 
-  /* The existing payment gate runs from here: PIN, then a one-time code, then
-     the screening the rest of the product already applies. */
-  requireAuthForPayment(
-    {account: S.acct, merchant: r.name, amount: -amount, category: 'Transfer',
-     method: SEND.method === 'internal' ? 'Digital Bank' : SEND.method === 'bank' ? 'Bank transfer' : 'Mobile money'},
-    () => { syncAccountsFromServer(); }
-  );
+  /* The payment gate runs from here: PIN, then a one-time code, then the
+     screening the rest of the product applies. Anything that throws on the way
+     in used to leave this sheet sitting there with no PIN prompt and no
+     explanation, which is exactly what it looked like from outside. */
+  try {
+    if (E().mustChangePin) {
+      return startPinChange(() => sendGo(false));
+    }
+    requireAuthForPayment(
+      {account: S.acct || 0, merchant: r.name, amount: -amount, category: 'Transfer',
+       method: SEND.method === 'internal' ? 'Digital Bank'
+             : SEND.method === 'bank' ? 'Bank transfer' : 'Mobile money'},
+      () => { syncAccountsFromServer(); }
+    );
+  } catch (err) {
+    sendConfirmSheet(err.message || 'We could not start that payment');
+  }
 }
 
 /* ---- wallet to bank: money that never touches the card ------------------------------
@@ -2159,6 +2169,21 @@ document.addEventListener('keydown', ev => {
 /* Order matters here. Blank the sample content and raise the gate BEFORE the
    first render, or a reload paints somebody else's account for the moment it
    takes the gate to appear — which is exactly what it looked like. */
+/* Nothing was reporting client-side failures, so a thrown error looked like a
+   button that did nothing. Anything uncaught now says so. */
+window.addEventListener('error', (e) => {
+  const box = document.createElement('div');
+  box.id = 'adb-error-toast';
+  box.textContent = 'Something broke on this screen: ' + (e.message || 'unknown error');
+  box.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;padding:10px 14px;'
+    + 'border-radius:10px;background:#7A1F1A;color:#fff;font-size:12.5px;line-height:1.4';
+  box.onclick = () => box.remove();
+  document.body.appendChild(box);
+  setTimeout(() => box.remove(), 8000);
+});
+window.addEventListener('unhandledrejection', (e) =>
+  window.dispatchEvent(new ErrorEvent('error', {message: String(e.reason?.message || e.reason)})));
+
 if (FID.live) FID.blankProfile();
 applyGate();
 

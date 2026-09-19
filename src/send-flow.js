@@ -135,13 +135,23 @@ async function sendGo(save){
     }
   }
 
-  /* The existing payment gate runs from here: PIN, then a one-time code, then
-     the screening the rest of the product already applies. */
-  requireAuthForPayment(
-    {account: S.acct, merchant: r.name, amount: -amount, category: 'Transfer',
-     method: SEND.method === 'internal' ? 'Digital Bank' : SEND.method === 'bank' ? 'Bank transfer' : 'Mobile money'},
-    () => { syncAccountsFromServer(); }
-  );
+  /* The payment gate runs from here: PIN, then a one-time code, then the
+     screening the rest of the product applies. Anything that throws on the way
+     in used to leave this sheet sitting there with no PIN prompt and no
+     explanation, which is exactly what it looked like from outside. */
+  try {
+    if (E().mustChangePin) {
+      return startPinChange(() => sendGo(false));
+    }
+    requireAuthForPayment(
+      {account: S.acct || 0, merchant: r.name, amount: -amount, category: 'Transfer',
+       method: SEND.method === 'internal' ? 'Digital Bank'
+             : SEND.method === 'bank' ? 'Bank transfer' : 'Mobile money'},
+      () => { syncAccountsFromServer(); }
+    );
+  } catch (err) {
+    sendConfirmSheet(err.message || 'We could not start that payment');
+  }
 }
 
 /* ---- wallet to bank: money that never touches the card ------------------------------
