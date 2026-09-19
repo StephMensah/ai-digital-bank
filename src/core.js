@@ -528,7 +528,7 @@ const FID = (() => {
            signIn, signOut, register, topUp, primaryAccountId, submitGhanaCard, kycStatus,
            apiReady, get apiMissing(){ return apiMissing; }, APP_URL,
            applyLiveProfile, blankProfile, get entitiesAvailable(){ return availableEntities; },
-           nameEnquiry, savePayee, banks, walletToBank, normaliseMsisdn, localMsisdn,
+           nameEnquiry, savePayee, banks, walletToBank, normaliseMsisdn, localMsisdn, authHeaders,
            get liveGoals(){ return liveGoals; },
            get signedIn(){ return signedIn(); },
            get customer(){ return session && session.subject; },
