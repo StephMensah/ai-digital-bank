@@ -1949,7 +1949,7 @@ function vHome(){
          section already puts its overflow link. */
       [['sendmoney2','transfer','Send'],['bills','receipt','Pay bills'],['airtime','airtime','Airtime'],
        ['cards','card','Cards'],['save','piggy','Save'],['invest','growth','Invest'],
-       ['fx','exchange','Exchange'],['wallettobank','transfer','Wallet to bank']]
+       ['scanpay','node','Scan to pay'],['wallettobank','transfer','Wallet to bank']]
       .map(([k,ic,l])=>`<button data-act="${k}"><span class="ic">${IS(ic,27)}</span><span>${l}</span></button>`).join('')}
     </div></div>
   </div>
@@ -2229,6 +2229,122 @@ async function assetGo(symbol, mode){
     await Promise.all([loadInvest(), syncAccountsFromServer()]);
     render();
   } catch (err) { assetSheet(symbol, mode, err.message); }
+}
+
+
+/* ------------------------------------------------------------ scan to pay
+   GhQR is the way a customer pays at a till in Ghana: the merchant displays
+   one code and anyone's bank, wallet or card app can pay it. We scan with the
+   camera where the browser has a barcode detector, and take a pasted code
+   where it does not — a code read off a printed sticker by hand is still a
+   valid code, and refusing it would strand anyone on an older phone. */
+async function scanSheet(message){
+  const canScan = 'BarcodeDetector' in window;
+  openSheet(`<h3>Scan to pay</h3>
+    <p class="sub">Point at the merchant's GhQR sticker. One code works at any till,
+      whichever bank set it up.</p>
+    ${message ? `<span class="badge r">${message}</span>` : ''}
+    ${canScan ? `<video id="qrCam" playsinline muted
+        style="width:100%;border-radius:14px;margin-top:14px;background:#000;aspect-ratio:1"></video>`
+      : `<p class="tiny" style="margin-top:12px">This phone cannot open the camera from the browser,
+          so type the code printed under the sticker.</p>`}
+    <label class="field" style="margin-top:12px"><span>Or paste the code</span>
+      <input id="qrPayload" placeholder="00020101..."></label>
+    <button class="btn primary wide" style="margin-top:14px" data-act="qrdecode">Continue</button>
+    <button class="btn quiet wide" style="margin-top:8px" data-act="qrclose">Cancel</button>`);
+  if (canScan) startQrCamera();
+}
+
+let qrStream = null;
+async function startQrCamera(){
+  try {
+    const video = $('qrCam');
+    qrStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    video.srcObject = qrStream;
+    await video.play();
+    const detector = new BarcodeDetector({formats:['qr_code']});
+    const tick = async () => {
+      if (!qrStream || !document.getElementById('qrCam')) return;
+      try {
+        const [found] = await detector.detect(video);
+        if (found?.rawValue){ stopQrCamera(); return qrDecode(found.rawValue); }
+      } catch { /* a frame that will not decode is not an error worth showing */ }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  } catch {
+    // camera refused: the paste field is still there and still works
+  }
+}
+function stopQrCamera(){
+  qrStream?.getTracks().forEach(t => t.stop());
+  qrStream = null;
+}
+
+async function qrDecode(raw){
+  const payload = (raw || $('qrPayload')?.value || '').trim();
+  if (!payload) return scanSheet('Scan the code or paste it');
+  try {
+    const res = await fetch('/api/v1/qr/decode', {
+      method:'POST', headers:{'Content-Type':'application/json', ...FID.authHeaders()},
+      body: JSON.stringify({payload})
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) return scanSheet(json.error?.message || 'That code did not scan');
+    qrConfirmSheet(payload, json);
+  } catch { scanSheet('We could not read that code just now'); }
+}
+
+function qrConfirmSheet(payload, q, message){
+  openSheet(`<h3>${q.merchant.name}</h3>
+    <p class="sub">${[q.merchant.city, q.merchant.terminalId && ('Till ' + q.merchant.terminalId)]
+      .filter(Boolean).join(' · ')}</p>
+    ${message ? `<span class="badge r">${message}</span>` : ''}
+    ${q.needsAmount
+      ? `<label class="field" style="margin-top:16px"><span>Amount (GH₵)</span>
+           <input id="qrAmt" inputmode="decimal" placeholder="0.00" autofocus></label>`
+      : `<div class="money" style="font-size:30px;margin:16px 0 4px">${m0(q.amountMinor/100)}</div>
+         <div class="tiny">Set by the till — this amount cannot be changed</div>`}
+    <label class="field" style="margin-top:12px"><span>Your PIN</span>
+      <input id="qrPin" inputmode="numeric" maxlength="4" type="password"></label>
+    <button class="btn primary wide" style="margin-top:16px"
+      data-act="qrpay" data-payload="${encodeURIComponent(payload)}">Pay</button>
+    <button class="btn quiet wide" style="margin-top:8px" data-act="qrclose">Cancel</button>`);
+}
+
+async function qrPay(payloadEncoded){
+  const payload = decodeURIComponent(payloadEncoded);
+  const pin = ($('qrPin')?.value || '').trim();
+  const typed = Number(($('qrAmt')?.value || '').replace(/[^0-9.]/g, ''));
+  if (!/^\d{4}$/.test(pin)) return qrDecode(payload);
+  try {
+    const accountId = await FID.primaryAccountId();
+    const body = {accountId, payload, pin};
+    if (typed) body.amountMinor = Math.round(typed * 100);
+    const res = await fetch('/api/v1/qr/pay', {
+      method:'POST',
+      headers:{'Content-Type':'application/json',
+        'Idempotency-Key':'qr-' + Date.now() + '-' + Math.random().toString(36).slice(2), ...FID.authHeaders()},
+      body: JSON.stringify(body)
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok){
+      const q = await fetch('/api/v1/qr/decode', {method:'POST',
+        headers:{'Content-Type':'application/json', ...FID.authHeaders()}, body: JSON.stringify({payload})})
+        .then(r => r.json()).catch(() => null);
+      return q ? qrConfirmSheet(payload, q, json.error?.message || 'That payment did not go through')
+               : scanSheet(json.error?.message || 'That payment did not go through');
+    }
+    openSheet(`<div style="text-align:center;padding:10px 0">
+      <div class="av p" style="width:56px;height:56px;border-radius:18px;margin:0 auto 14px;
+        display:grid;place-items:center;font-size:22px">✓</div>
+      <h3>${json.held ? 'Held for a check' : 'Paid'}</h3>
+      <p class="sub">${json.held ? json.message
+        : `${m0(json.amountMinor/100)} to ${json.merchant}. The merchant has it already.`}</p>
+      <div class="ref" style="margin-top:10px">${json.reference}</div>
+      <button class="btn primary wide" style="margin-top:18px" data-act="qrclose">Done</button></div>`);
+    syncAccountsFromServer();
+  } catch { qrDecode(payload); }
 }
 
 function vCards(){
@@ -4187,6 +4303,10 @@ document.addEventListener('click', ev => {
     case 'assetredeem': assetSheet((S.portfolio?.holdings||[{}])[0].symbol || 'BTC', 'redeem'); break;
     case 'assetfinance': assetSheet((S.portfolio?.holdings||[{}])[0].symbol || 'BTC', 'finance'); break;
     case 'assetgo': assetGo(el.dataset.symbol, el.dataset.mode); break;
+    case 'scanpay': scanSheet(); break;
+    case 'qrdecode': qrDecode(); break;
+    case 'qrpay': qrPay(el.dataset.payload); break;
+    case 'qrclose': stopQrCamera(); closeSheet(); render(); break;
     case 'linkcard': linkCardSheet(); break;
     case 'linkcardsubmit': doLinkCard(); break;
     case 'openbusiness': businessSheet(); break;

@@ -219,3 +219,29 @@ is "tiers published"    "$(curl -s -H "Authorization: Bearer $T1" "$B/api/v1/car
 
 echo
 echo "final: passed $pass, failed $fail"
+
+echo "── GhQR scan to pay"
+SQ=$(curl -s -H "Authorization: Bearer $T1" "$B/api/v1/qr/sample?amount=4550&name=Melcom%20Osu")
+PAY=$(echo "$SQ" | P '["payload"]')
+DEC=$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -d "{\"payload\":\"$PAY\"}" "$B/api/v1/qr/decode")
+is "dynamic code decodes"     "$(echo "$DEC" | P '["merchant"]["name"]')" "Melcom Osu"
+is "amount comes from the till" "$(echo "$DEC" | P '["amountMinor"]')" "4550"
+is "no amount asked for"      "$(echo "$DEC" | P '["needsAmount"]')" "False"
+is "tampered code refused"    "$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -d "{\"payload\":\"${PAY%????}0000\"}" "$B/api/v1/qr/decode" | P '["error"]["code"]')" "bad_qr"
+
+BEFORE=$(curl -s -H "Authorization: Bearer $T1" "$B/api/v1/accounts" | P '["accounts"][0]["balance_minor"]')
+PD=$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -H "Idempotency-Key: $(IDK)" \
+  -d "{\"accountId\":\"$AID1\",\"payload\":\"$PAY\",\"pin\":\"1111\",\"amountMinor\":100}" "$B/api/v1/qr/pay")
+is "paid at the till" "$(echo "$PD" | P '["paid"]')" "True"
+AFTER=$(curl -s -H "Authorization: Bearer $T1" "$B/api/v1/accounts" | P '["accounts"][0]["balance_minor"]')
+is "the till's amount was charged, not the client's" "$((BEFORE-AFTER))" "4550"
+is "wrong PIN refused" "$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -H "Idempotency-Key: $(IDK)" -d "{\"accountId\":\"$AID1\",\"payload\":\"$PAY\",\"pin\":\"9999\"}" "$B/api/v1/qr/pay" | P '["error"]["code"]')" "invalid_pin"
+
+SS=$(curl -s -H "Authorization: Bearer $T1" "$B/api/v1/qr/sample?name=Kofi%20Store" | P '["payload"]')
+is "static code asks for an amount" "$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -d "{\"payload\":\"$SS\"}" "$B/api/v1/qr/decode" | P '["needsAmount"]')" "True"
+SP=$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -H "Idempotency-Key: $(IDK)" \
+  -d "{\"accountId\":\"$AID1\",\"payload\":\"$SS\",\"pin\":\"1111\",\"amountMinor\":2500}" "$B/api/v1/qr/pay")
+is "static code paid at the typed amount" "$(echo "$SP" | P '["amountMinor"]')" "2500"
+
+echo
+echo "final: passed $pass, failed $fail"
