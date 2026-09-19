@@ -183,7 +183,7 @@ investRouter.post('/buy', requireIdempotencyKey, validate(orderBody), async (req
     });
 
     await audit({ ...auditFrom(req), action: 'invest.bought', entity: 'asset', entityId: symbol });
-    res.status(201).json({ symbol, units: bought, priceMinor: price, spentMinor: spendMinor, feeMinor: fee, reference });
+    res.status(201).json({ symbol, units: bought, priceMinor: price, spentMinor: spendMinor, feeMinor: fee, reference: transaction.reference });
   } catch (err) { next(err); }
 });
 

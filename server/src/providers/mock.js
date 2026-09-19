@@ -173,6 +173,14 @@ export const mock = {
     };
   },
 
+  /** A card already tokenised by the acquirer — no checkout page involved. */
+  async chargeToken({ amountMinor, reference }) {
+    await pause(LATENCY_MS);
+    if (scripted(amountMinor) === 'decline') throw upstream('Mock rail: the card was declined');
+    settleLater(reference, 'ok');
+    return { providerRef: providerUuid(), status: 'processing', mock: true };
+  },
+
   // ----- money out -----
   payout: ({ amountMinor, reference }) => act(amountMinor, reference),
   transfer: ({ amountMinor, reference }) => act(amountMinor, reference),

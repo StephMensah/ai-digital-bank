@@ -6,6 +6,10 @@ import { validate } from '../middleware/validate.js';
 import { audit, auditFrom } from '../middleware/audit.js';
 import { badRequest, notFound } from '../lib/errors.js';
 import { randomUUID } from 'node:crypto';
+import { requireIdempotencyKey } from '../middleware/idempotency.js';
+import { newReference } from '../lib/crypto.js';
+import { railFor } from '../providers/index.js';
+import { loadAccount, openTransaction } from '../core/ledger.js';
 
 /**
  * Cards.
@@ -82,6 +86,72 @@ const schemeOf = (pan) => {
 };
 
 cardsRouter.get('/tiers', (_req, res) => res.json({ tiers: TIERS }));
+
+/**
+ * Charge a linked card to fund the account.
+ *
+ * A card linked and never usable is decoration, so this is the point of
+ * linking one. The token is what the rail charges — the PAN was never stored
+ * and is not needed here.
+ *
+ * The money lands the way every other deposit does: a pending transaction the
+ * rail settles, not an instant credit. A card can be declined, reversed, or
+ * charged back weeks later, and crediting first would mean lending money to
+ * anyone with an expired card.
+ */
+cardsRouter.post('/linked/:id/charge', requireIdempotencyKey,
+  validate(z.object({
+    accountId: z.string().uuid(),
+    amountMinor: z.number().int().min(100, 'Charge GH₵1.00 or more')
+  })),
+  async (req, res, next) => {
+    try {
+      const { rows } = await query(
+        "SELECT * FROM linked_cards WHERE id=$1 AND customer_id=$2 AND status='active'",
+        [req.params.id, req.customer.id]
+      );
+      const card = rows[0];
+      if (!card) throw notFound('No such card');
+
+      const [mm, yy] = String(card.expiry).split('/').map(Number);
+      if (new Date(2000 + yy, mm, 1) <= new Date()) {
+        await query("UPDATE linked_cards SET status='expired' WHERE id=$1", [card.id]);
+        throw badRequest('That card has expired — link a new one');
+      }
+
+      const account = await loadAccount(req.body.accountId, req.customer.id);
+      const rail = railFor('card');
+      const reference = newReference('CRD');
+
+      const { transaction } = await openTransaction({
+        account, direction: 'credit', kind: 'deposit', amountMinor: req.body.amountMinor,
+        channel: 'card', provider: rail.name,
+        counterparty: { name: `${card.scheme.toUpperCase()} •••• ${card.last4}`, token: card.provider_token },
+        metadata: { narration: `Top up from ${card.scheme} ending ${card.last4}`, linkedCardId: card.id },
+        idempotencyKey: req.get('Idempotency-Key'), reference, status: 'processing'
+      });
+
+      /* A tokenised charge, not a hosted checkout: the customer already gave
+         us the card, so sending them to a payment page to type it again would
+         be theatre. The mock rail settles on its own clock. */
+      /* The ledger issues the reference — openTransaction does not take one.
+         Quoting our own here meant the rail settled against a reference no
+         transaction carried, so the money never arrived. */
+      const charged = await (rail.chargeToken
+        ? rail.chargeToken({ token: card.provider_token, amountMinor: req.body.amountMinor, reference: transaction.reference })
+        : rail.initializeCharge({ amountMinor: req.body.amountMinor, reference: transaction.reference, description: 'Top up' }));
+
+      await query('UPDATE transactions SET provider_ref=$2 WHERE id=$1',
+        [transaction.id, charged.providerRef || null]);
+
+      await audit({ ...auditFrom(req), action: 'card.charged', entity: 'transaction', entityId: transaction.id });
+      res.status(202).json({
+        transaction, reference: transaction.reference,
+        card: `${card.scheme.toUpperCase()} •••• ${card.last4}`,
+        message: 'Charging the card. Your balance updates when it settles.'
+      });
+    } catch (err) { next(err); }
+  });
 
 cardsRouter.get('/linked', async (req, res, next) => {
   try {
