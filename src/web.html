@@ -344,16 +344,337 @@ function vBills(){
 }
 
 /* ------------------------------------------------------------------ cards */
+/* ---------------------------------------------------------------- card tiers
+   Written as what you get when something goes wrong abroad, because that is
+   what a card tier is actually for. */
+const TIER_BENEFITS = {
+  classic: ['Free instant freeze', 'Two free ATM withdrawals a month'],
+  platinum: ['Four airport lounge visits a year, Kotoka included',
+             'Travel medical cover to $250,000', 'Purchase protection for 90 days',
+             'No ATM fee anywhere in Ghana'],
+  infinite: ['Unlimited lounge access worldwide, with a guest',
+             'Travel medical cover to $1,000,000', 'Concierge, 24 hours',
+             'FX at interbank plus 0.75%', 'A dedicated line — a person, first ring']
+};
+
+function tierBenefits(tier){
+  const next = tier === 'classic' ? 'platinum' : tier === 'platinum' ? 'infinite' : null;
+  return `<div class="surface" style="margin-top:14px">
+    <div class="hd" style="margin:0 0 8px"><h3 style="font-size:14px">${
+      tier.charAt(0).toUpperCase() + tier.slice(1)} benefits</h3>${
+      next ? `<button data-act="upgradecard" data-tier="${next}">Upgrade to ${next}</button>` : ''}</div>
+    <ul class="tierlist">${TIER_BENEFITS[tier].map(b => `<li>${I('check',14)} ${b}</li>`).join('')}</ul>
+  </div>`;
+}
+
+function linkedCardsBlock(){
+  const cards = S.linkedCards || [];
+  return `<div class="hd" style="margin-top:26px"><h3>Cards from other banks</h3>
+      <button data-act="linkcard">Link a card</button></div>
+    <div class="surface flush">${cards.length ? cards.map(c => `
+      <div class="item static"><div class="av p">${IS('card',20)}</div>
+        <div class="txt"><b>${c.scheme.toUpperCase()} •••• ${c.last4}</b>
+          <span>${c.issuer || 'Linked card'} · expires ${c.expiry}${c.isDefault ? ' · default' : ''}</span></div>
+        <button class="btn quiet sm" data-unlink="${c.id}">Remove</button></div>`).join('')
+      : `<div class="item static"><div class="txt"><b>No other cards linked</b>
+          <span>Link a Visa or Mastercard from another bank to top up from it.</span></div></div>`}</div>`;
+}
+
+async function loadLinkedCards(){
+  try {
+    const res = await fetch('/api/v1/cards/linked', {headers: FID.authHeaders ? FID.authHeaders() : {}});
+    if (!res.ok) return;
+    S.linkedCards = (await res.json()).cards || [];
+    if (S.view === 'cards') render();
+  } catch { /* the rest of the screen is still useful without it */ }
+}
+
+function linkCardSheet(message){
+  openSheet(`<h3>Link a card</h3>
+    <p class="sub">A Visa or Mastercard from another bank, to top up from.
+      We keep the last four digits and a token from the payment network — never the full number.</p>
+    ${message ? `<span class="badge r">${message}</span>` : ''}
+    <label class="field" style="margin-top:16px"><span>Card number</span>
+      <input id="lcPan" inputmode="numeric" placeholder="4000 0000 0000 0000" autofocus></label>
+    <div style="display:flex;gap:10px;margin-top:12px">
+      <label class="field" style="flex:1"><span>Expiry</span>
+        <input id="lcExp" placeholder="09/28"></label>
+      <label class="field" style="flex:1.4"><span>Name on card</span>
+        <input id="lcName"></label></div>
+    <label class="field" style="margin-top:12px"><span>Issuing bank (optional)</span>
+      <input id="lcIssuer" placeholder="GCB Bank"></label>
+    <button class="btn primary wide" style="margin-top:16px" data-act="linkcardsubmit">Link it</button>
+    <button class="btn quiet wide" style="margin-top:8px" data-act="close">Cancel</button>`);
+}
+
+async function doLinkCard(){
+  const body = {
+    pan: ($('lcPan')?.value || '').trim(),
+    expiry: ($('lcExp')?.value || '').trim(),
+    holderName: ($('lcName')?.value || '').trim(),
+    issuer: ($('lcIssuer')?.value || '').trim() || undefined
+  };
+  if (!body.pan || !body.expiry || body.holderName.length < 2) return linkCardSheet('Fill in the card, expiry and name');
+  try {
+    const res = await fetch('/api/v1/cards/linked', {
+      method:'POST', headers:{'Content-Type':'application/json', ...(FID.authHeaders ? FID.authHeaders() : {})},
+      body: JSON.stringify(body)
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) return linkCardSheet(json.error?.message || 'We could not link that card');
+    closeSheet();
+    await loadLinkedCards();
+    render();
+  } catch { linkCardSheet('We could not link that card just now'); }
+}
+
+
+/* ------------------------------------------------------------------ invest
+   Saving and investing make different promises: saving is money you expect
+   back in full, investing is money that can go down. The screen should not
+   blur the two, which is why treasury bills and digital assets live here and
+   goals live under Save. */
+function vInvest(){
+  const p = S.portfolio;
+  const gain = p ? p.gainMinor : 0;
+  return `<div class="sect">
+    <div class="surface" style="background:var(--sand);border-color:var(--orange-t2)">
+      <div class="arthead"><div>
+        <h3 class="d2" style="margin-bottom:6px">Invest</h3>
+        <p class="sub">Treasury bills, and digital assets you can buy, turn back into cedis, or borrow
+          against without selling. Value can fall as well as rise.</p></div>
+        <div style="width:150px">${ART.goal()}</div></div></div>
+
+    ${p ? `<div class="surface" style="margin-top:14px">
+      <div class="tiny">Portfolio value</div>
+      <div class="money" style="font-size:26px">${m0(p.valueMinor/100)}</div>
+      <div class="tiny">${gain >= 0 ? '↗' : '↘'} ${m0(Math.abs(gain)/100)} ${
+        gain >= 0 ? 'up' : 'down'} on what you paid${
+        p.borrowedMinor ? ` · ${m0(p.borrowedMinor/100)} borrowed against holdings` : ''}</div>
+    </div>` : ''}
+
+    <div class="hd" style="margin-top:26px"><h3>Treasury bills</h3><span class="badge j">Government of Ghana</span></div>
+    <div class="surface flush">${FID.TBILLS.map(t=>`
+      <button class="item" data-tenor="${t.tenor}"><div class="av p">${IS('invest',22)}</div>
+        <div class="txt"><b>${t.label} bill</b><span>Auction settles Friday · minimum ${m0(1000)}</span></div>
+        <div class="amt in">${(t.rate*100).toFixed(2)}%<small>per year</small></div></button>`).join('')}
+    </div>
+
+    <div class="hd" style="margin-top:26px"><h3>Digital assets</h3><span class="badge j">Value can fall</span></div>
+    <div class="surface flush">${(S.assets || []).map(a => `
+      <button class="item" data-asset="${a.symbol}">
+        <div class="av p">${IS('growth',22)}</div>
+        <div class="txt"><b>${a.name}</b><span>${a.symbol} · ${m0(a.priceMinor/100)} each</span></div>
+        <div class="amt ${a.changePct >= 0 ? 'in' : ''}">${a.changePct >= 0 ? '+' : ''}${a.changePct}%<small>24h</small></div>
+      </button>`).join('') || '<div class="item static"><div class="txt"><b>Loading prices…</b></div></div>'}</div>
+
+    ${p && p.holdings.length ? `
+    <div class="hd" style="margin-top:26px"><h3>What you hold</h3></div>
+    <div class="surface flush">${p.holdings.map(h => `
+      <div class="item static"><div class="av">${h.symbol.slice(0,2)}</div>
+        <div class="txt"><b>${h.units} ${h.symbol}</b>
+          <span>${m0(h.valueMinor/100)}${h.pledgedUnits ? ` · ${h.pledgedUnits} pledged` : ''}</span></div>
+        <div class="amt ${h.gainMinor >= 0 ? 'in' : ''}">${h.gainMinor >= 0 ? '+' : '−'}${
+          m0(Math.abs(h.gainMinor)/100)}</div></div>`).join('')}</div>
+    <div class="chiprow" style="margin-top:12px">
+      <button class="chip" data-act="assetredeem">Redeem to cash</button>
+      <button class="chip" data-act="assetfinance">Borrow against holdings</button>
+    </div>` : ''}
+
+    ${p && p.loans.length ? `
+    <div class="hd" style="margin-top:26px"><h3>Advances</h3></div>
+    <div class="surface flush">${p.loans.map(l => `
+      <div class="item static"><div class="av p">${IS('growth',20)}</div>
+        <div class="txt"><b>${m0(l.outstandingMinor/100)} against ${l.symbol}</b>
+          <span>${l.pledgedUnits} ${l.symbol} pledged · ${(l.rateBps/100).toFixed(1)}% a year</span></div>
+        <button class="btn quiet sm" data-repay="${l.id}">Repay</button></div>`).join('')}</div>` : ''}
+  </div>`;
+}
+
+async function loadInvest(){
+  try {
+    const h = FID.authHeaders();
+    const [assets, portfolio] = await Promise.all([
+      fetch('/api/v1/invest/assets', {headers:h}).then(r => r.ok ? r.json() : null),
+      fetch('/api/v1/invest/portfolio', {headers:h}).then(r => r.ok ? r.json() : null)
+    ]);
+    if (assets) S.assets = assets.assets;
+    if (portfolio) S.portfolio = portfolio;
+    if (S.view === 'invest') render();
+  } catch { /* prices are not worth breaking the tab over */ }
+}
+
+function assetSheet(symbol, mode, message){
+  const a = (S.assets || []).find(x => x.symbol === symbol) || {symbol, name: symbol, priceMinor: 0};
+  const held = (S.portfolio?.holdings || []).find(h => h.symbol === symbol);
+  const verb = mode === 'redeem' ? 'Redeem' : mode === 'finance' ? 'Borrow against' : mode === 'repay' ? 'Repay' : 'Buy';
+  openSheet(`<h3>${verb} ${a.name || symbol}</h3>
+    <p class="sub">${m0(a.priceMinor/100)} each right now.${
+      held ? ` You hold ${held.units} ${symbol}${held.pledgedUnits ? `, ${held.pledgedUnits} of it pledged` : ''}.` : ''}${
+      mode === 'finance' ? ' Borrowing pledges units rather than selling them, so you keep the upside.' : ''}</p>
+    ${message ? `<span class="badge r">${message}</span>` : ''}
+    <label class="field" style="margin-top:16px"><span>Amount in cedis</span>
+      <input id="asAmt" inputmode="decimal" placeholder="0.00" autofocus></label>
+    <button class="btn primary wide" style="margin-top:16px"
+      data-act="assetgo" data-symbol="${symbol}" data-mode="${mode || 'buy'}">${verb}</button>
+    <button class="btn quiet wide" style="margin-top:8px" data-act="close">Cancel</button>`);
+}
+
+async function assetGo(symbol, mode){
+  const amount = Number(($('asAmt')?.value || '').replace(/[^0-9.]/g, ''));
+  if (!amount || amount < 1) return assetSheet(symbol, mode, 'Enter GH₵1.00 or more');
+  const path = mode === 'redeem' ? 'redeem' : mode === 'finance' ? 'finance' : mode === 'repay' ? 'repay' : 'buy';
+  try {
+    const accountId = await FID.primaryAccountId();
+    const body = {accountId, symbol, amountMinor: Math.round(amount * 100)};
+    if (mode === 'repay') body.loanId = (S.portfolio?.loans || []).find(l => l.symbol === symbol)?.id;
+    const res = await fetch('/api/v1/invest/' + path, {
+      method:'POST',
+      headers:{'Content-Type':'application/json',
+        'Idempotency-Key':'inv-' + Date.now() + '-' + Math.random().toString(36).slice(2), ...FID.authHeaders()},
+      body: JSON.stringify(body)
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) return assetSheet(symbol, mode, json.error?.message || 'That did not go through');
+    closeSheet();
+    await Promise.all([loadInvest(), syncAccountsFromServer()]);
+    render();
+  } catch (err) { assetSheet(symbol, mode, err.message); }
+}
+
+
+/* ------------------------------------------------------------ scan to pay
+   GhQR is the way a customer pays at a till in Ghana: the merchant displays
+   one code and anyone's bank, wallet or card app can pay it. We scan with the
+   camera where the browser has a barcode detector, and take a pasted code
+   where it does not — a code read off a printed sticker by hand is still a
+   valid code, and refusing it would strand anyone on an older phone. */
+async function scanSheet(message){
+  const canScan = 'BarcodeDetector' in window;
+  openSheet(`<h3>Scan to pay</h3>
+    <p class="sub">Point at the merchant's GhQR sticker. One code works at any till,
+      whichever bank set it up.</p>
+    ${message ? `<span class="badge r">${message}</span>` : ''}
+    ${canScan ? `<video id="qrCam" playsinline muted
+        style="width:100%;border-radius:14px;margin-top:14px;background:#000;aspect-ratio:1"></video>`
+      : `<p class="tiny" style="margin-top:12px">This phone cannot open the camera from the browser,
+          so type the code printed under the sticker.</p>`}
+    <label class="field" style="margin-top:12px"><span>Or paste the code</span>
+      <input id="qrPayload" placeholder="00020101..."></label>
+    <button class="btn primary wide" style="margin-top:14px" data-act="qrdecode">Continue</button>
+    <button class="btn quiet wide" style="margin-top:8px" data-act="qrclose">Cancel</button>`);
+  if (canScan) startQrCamera();
+}
+
+let qrStream = null;
+async function startQrCamera(){
+  try {
+    const video = $('qrCam');
+    qrStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    video.srcObject = qrStream;
+    await video.play();
+    const detector = new BarcodeDetector({formats:['qr_code']});
+    const tick = async () => {
+      if (!qrStream || !document.getElementById('qrCam')) return;
+      try {
+        const [found] = await detector.detect(video);
+        if (found?.rawValue){ stopQrCamera(); return qrDecode(found.rawValue); }
+      } catch { /* a frame that will not decode is not an error worth showing */ }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  } catch {
+    // camera refused: the paste field is still there and still works
+  }
+}
+function stopQrCamera(){
+  qrStream?.getTracks().forEach(t => t.stop());
+  qrStream = null;
+}
+
+async function qrDecode(raw){
+  const payload = (raw || $('qrPayload')?.value || '').trim();
+  if (!payload) return scanSheet('Scan the code or paste it');
+  try {
+    const res = await fetch('/api/v1/qr/decode', {
+      method:'POST', headers:{'Content-Type':'application/json', ...FID.authHeaders()},
+      body: JSON.stringify({payload})
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) return scanSheet(json.error?.message || 'That code did not scan');
+    qrConfirmSheet(payload, json);
+  } catch { scanSheet('We could not read that code just now'); }
+}
+
+function qrConfirmSheet(payload, q, message){
+  openSheet(`<h3>${q.merchant.name}</h3>
+    <p class="sub">${[q.merchant.city, q.merchant.terminalId && ('Till ' + q.merchant.terminalId)]
+      .filter(Boolean).join(' · ')}</p>
+    ${message ? `<span class="badge r">${message}</span>` : ''}
+    ${q.needsAmount
+      ? `<label class="field" style="margin-top:16px"><span>Amount (GH₵)</span>
+           <input id="qrAmt" inputmode="decimal" placeholder="0.00" autofocus></label>`
+      : `<div class="money" style="font-size:30px;margin:16px 0 4px">${m0(q.amountMinor/100)}</div>
+         <div class="tiny">Set by the till — this amount cannot be changed</div>`}
+    <label class="field" style="margin-top:12px"><span>Your PIN</span>
+      <input id="qrPin" inputmode="numeric" maxlength="4" type="password"></label>
+    <button class="btn primary wide" style="margin-top:16px"
+      data-act="qrpay" data-payload="${encodeURIComponent(payload)}">Pay</button>
+    <button class="btn quiet wide" style="margin-top:8px" data-act="qrclose">Cancel</button>`);
+}
+
+async function qrPay(payloadEncoded){
+  const payload = decodeURIComponent(payloadEncoded);
+  const pin = ($('qrPin')?.value || '').trim();
+  const typed = Number(($('qrAmt')?.value || '').replace(/[^0-9.]/g, ''));
+  if (!/^\d{4}$/.test(pin)) return qrDecode(payload);
+  try {
+    const accountId = await FID.primaryAccountId();
+    const body = {accountId, payload, pin};
+    if (typed) body.amountMinor = Math.round(typed * 100);
+    const res = await fetch('/api/v1/qr/pay', {
+      method:'POST',
+      headers:{'Content-Type':'application/json',
+        'Idempotency-Key':'qr-' + Date.now() + '-' + Math.random().toString(36).slice(2), ...FID.authHeaders()},
+      body: JSON.stringify(body)
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok){
+      const q = await fetch('/api/v1/qr/decode', {method:'POST',
+        headers:{'Content-Type':'application/json', ...FID.authHeaders()}, body: JSON.stringify({payload})})
+        .then(r => r.json()).catch(() => null);
+      return q ? qrConfirmSheet(payload, q, json.error?.message || 'That payment did not go through')
+               : scanSheet(json.error?.message || 'That payment did not go through');
+    }
+    openSheet(`<div style="text-align:center;padding:10px 0">
+      <div class="av p" style="width:56px;height:56px;border-radius:18px;margin:0 auto 14px;
+        display:grid;place-items:center;font-size:22px">✓</div>
+      <h3>${json.held ? 'Held for a check' : 'Paid'}</h3>
+      <p class="sub">${json.held ? json.message
+        : `${m0(json.amountMinor/100)} to ${json.merchant}. The merchant has it already.`}</p>
+      <div class="ref" style="margin-top:10px">${json.reference}</div>
+      <button class="btn primary wide" style="margin-top:18px" data-act="qrclose">Done</button></div>`);
+    syncAccountsFromServer();
+  } catch { qrDecode(payload); }
+}
+
+
 function vCards(){
   const e = E();
-  const vci = e.virtualCards.length - 1, vc = e.virtualCards[vci];
+  const cards = e.virtualCards || [];
+  const vci = cards.length - 1, vc = cards[vci];
   return `<div class="phead"><h2>Cards</h2><p>Freeze, set limits, or spin up a virtual card for one merchant.</p></div>
     <div class="grid g2">
       <div>
-        <div class="plastic ${S.frozen.physical?'frozen':''}" style="max-width:380px">${lattice('c1')}
-          <div class="brand"><span>AI-DIGITAL BANK</span>${I('node',18)}</div><div class="chipimg"></div>
+        <div class="plastic tier-${(e.card.tier||'classic')} ${S.frozen.physical?'frozen':''}"
+          style="max-width:380px">${lattice('c1')}
+          <div class="brand"><span>DIGITAL BANK</span><span class="tiername">${
+            (e.card.tier||'classic').toUpperCase()}</span></div><div class="chipimg"></div>
           <div class="pan">${e.card.num}</div>
-          <div class="foot"><span>${e.holder.toUpperCase()}</span><span>${e.card.exp} · VISA</span></div></div>
+          <div class="foot"><span>${(e.holder||'').toUpperCase()}</span><span>${e.card.exp} · ${
+            e.card.scheme || 'VISA'}</span></div></div>
+        ${tierBenefits(e.card.tier || 'classic')}
+        ${linkedCardsBlock()}
         <div class="chiprow" style="margin-top:14px">
           <button class="chip" data-which="physical">${I('freeze',16)} ${S.frozen.physical?'Unfreeze':'Freeze'}</button>
           <button class="chip" data-sheet="limits">Limits</button>
@@ -361,14 +682,21 @@ function vCards(){
           <button class="chip" data-sheet="replace">Replace</button></div>
       </div>
       <div>
+        ${vc ? `
         <div class="plastic virtual ${vc.frozen?'frozen':''}" style="max-width:380px">${lattice('c2')}
-          <div class="brand"><span>AI-DIGITAL BANK</span>${I('node',18)}</div><div class="chipimg"></div>
+          <div class="brand"><span>DIGITAL BANK</span>${I('node',18)}</div><div class="chipimg"></div>
           <div class="pan">${vc.num}</div>
-          <div class="foot"><span>LOCKED · ${vc.locked.toUpperCase()}</span><span>${vc.exp}</span></div></div>
+          <div class="foot"><span>${vc.locked ? 'LOCKED · ' + vc.locked.toUpperCase() : 'VIRTUAL'}</span>
+            <span>${vc.exp}</span></div></div>
         <div class="chiprow" style="margin-top:14px">
           <button class="chip" data-vfreeze="${vci}">${I('freeze',16)} ${vc.frozen?'Unfreeze':'Freeze'}</button>
           <button class="chip" data-reveal="${vci}">Show details</button>
-          <button class="chip" data-act="newvirtual">+ New virtual card</button></div>
+          <button class="chip" data-act="newvirtual">+ New virtual card</button></div>`
+        : `<div class="surface" style="max-width:380px">
+            <b>No virtual card yet</b>
+            <p class="sub" style="margin:4px 0 12px">Lock one to a single merchant, so a subscription
+              cannot charge anything else.</p>
+            <button class="btn primary" data-act="newvirtual">Create a virtual card</button></div>`}
       </div></div>
     <div class="sectitle">On these cards</div>
     <div class="surface"><div class="tblwrap"><table class="tbl"><thead><tr><th>Merchant</th><th>Date</th><th>Category</th><th>Amount</th></tr></thead>
@@ -1565,7 +1893,7 @@ function flowRevealCard(i){
 function cardRevealed(vc){
   openSheet(`<h3 class="d2">Card details</h3>
     <div class="plastic virtual" style="max-width:380px">${lattice('reveal')}
-      <div class="brand"><span>AI-DIGITAL BANK</span>${I('node',18)}</div><div class="chipimg"></div>
+      <div class="brand"><span>DIGITAL BANK</span>${I('node',18)}</div><div class="chipimg"></div>
       <div class="pan">${vc.fullNum}</div>
       <div class="foot"><span>CVV ${vc.cvv}</span><span>${vc.exp}</span></div></div>
     <p class="tiny" style="margin-top:12px;text-align:center">Hides again in 20 seconds.</p>
@@ -1817,7 +2145,7 @@ function send(text){
 }
 
 /* =================================================================== render */
-const V = {overview:vOverview, transfers:vTransfers, bills:vBills, cards:vCards, save:vSave,
+const V = {overview:vOverview, transfers:vTransfers, bills:vBills, cards:vCards, save:vSave, invest:vInvest,
            borrow:vBorrow, fx:vFx, payroll:vPayroll, invoices:vInvoices, approvals:vApprovals,
            cashflow:vCashflow, statements:vStatements, support:vSupport, privacy:vPrivacy};
 
@@ -1843,7 +2171,7 @@ document.addEventListener('click', ev => {
     + '[data-fx],[data-tenor],[data-months],[data-goal],[data-consent],[data-note],[data-lang],[data-quick],'
     + '[data-which],[data-pick],[data-payset],[data-upload],[data-review],[data-tx],[data-stmtf],'
     + '[data-goalamt],[data-src],[data-vfreeze],[data-reveal],[data-branchf],[data-device],[data-req],'
-    + '[data-approve]');
+    + '[data-approve],[data-asset],[data-repay],[data-unlink],[data-card]');
   if (!el) return;
   const d = el.dataset;
 
@@ -1950,6 +2278,16 @@ document.addEventListener('click', ev => {
     case 'sendmoney2': sendPickSheet(); break;
     case 'wallettobank': walletToBankSheet(); break;
     case 'w2b-go': walletToBankGo(); break;
+    case 'scanpay': scanSheet(); break;
+    case 'qrdecode': qrDecode(); break;
+    case 'qrpay': qrPay(el.dataset.payload); break;
+    case 'qrclose': stopQrCamera(); closeSheet(); render(); break;
+    case 'linkcard': linkCardSheet(); break;
+    case 'linkcardsubmit': doLinkCard(); break;
+    case 'assetredeem': assetSheet((S.portfolio?.holdings||[{}])[0].symbol || 'BTC', 'redeem'); break;
+    case 'assetfinance': assetSheet((S.portfolio?.holdings||[{}])[0].symbol || 'BTC', 'finance'); break;
+    case 'assetgo': assetGo(el.dataset.symbol, el.dataset.mode); break;
+    case 'topupcard': topUpFromCard(el.dataset.card); break;
     case 'openbusiness': businessSheet(); break;
     case 'businesssubmit': doOpenBusiness(); break;
     case 'verify': verifySheet(); break;
@@ -2191,7 +2529,7 @@ applyGate();
    Skipping it also avoids rendering a home screen that has no account in it. */
 const gated = FID.live && !FID.signedIn;
 
-if (!gated) render();
+if (!gated) { render(); loadInvest(); loadLinkedCards(); }
 syncAccountsFromServer();
 // ?open=1 from the website lands on the account-opening half of the gate
 if (FID.live && !FID.signedIn && new URLSearchParams(location.search).has('open')) showGate('open');
