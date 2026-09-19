@@ -350,9 +350,9 @@ function vSave(){
   return `<div class="sect">
     <div class="surface" style="background:var(--sand);border-color:var(--orange-t2)">
       <div class="arthead"><div>
-        <h3 class="d2" style="margin-bottom:6px">Save & invest</h3>
-        <p class="sub">Goals, fixed deposits and Government of Ghana treasury bills — all in one place,
-          with the tax shown before you commit.</p></div>
+        <h3 class="d2" style="margin-bottom:6px">Save</h3>
+        <p class="sub">Money you are putting aside and expect back in full — goals you fund at your own
+          pace, and fixed deposits with the rate agreed up front.</p></div>
         <div style="width:150px">${ART.goal()}</div></div></div>
 
     <div class="hd"><h3>Your goals</h3><button data-act="newgoal">New goal</button></div>
@@ -367,12 +367,6 @@ function vSave(){
         <button class="btn quiet sm" data-goal="${g.id}">Add</button>
       </div>`;}).join('')}
 
-    <div class="hd" style="margin-top:26px"><h3>Treasury bills</h3><span class="badge j">Government of Ghana</span></div>
-    <div class="surface flush">${FID.TBILLS.map(t=>`
-      <button class="item" data-tenor="${t.tenor}"><div class="av p">${IS('invest',22)}</div>
-        <div class="txt"><b>${t.label} bill</b><span>Auction settles Friday · minimum ${m0(1000)}</span></div>
-        <div class="amt in">${(t.rate*100).toFixed(2)}%<small>per year</small></div></button>`).join('')}
-    </div>
 
     <div class="hd" style="margin-top:26px"><h3>Fixed deposit</h3></div>
     <div class="surface flush">${FID.DEPOSITS.map(d=>`
@@ -391,6 +385,205 @@ function vSave(){
 }
 
 /* ----------------------------------------------------------------- cards */
+
+/* ---------------------------------------------------------------- card tiers
+   Written as what you get when something goes wrong abroad, because that is
+   what a card tier is actually for. */
+const TIER_BENEFITS = {
+  classic: ['Free instant freeze', 'Two free ATM withdrawals a month'],
+  platinum: ['Four airport lounge visits a year, Kotoka included',
+             'Travel medical cover to $250,000', 'Purchase protection for 90 days',
+             'No ATM fee anywhere in Ghana'],
+  infinite: ['Unlimited lounge access worldwide, with a guest',
+             'Travel medical cover to $1,000,000', 'Concierge, 24 hours',
+             'FX at interbank plus 0.75%', 'A dedicated line — a person, first ring']
+};
+
+function tierBenefits(tier){
+  const next = tier === 'classic' ? 'platinum' : tier === 'platinum' ? 'infinite' : null;
+  return `<div class="surface" style="margin-top:14px">
+    <div class="hd" style="margin:0 0 8px"><h3 style="font-size:14px">${
+      tier.charAt(0).toUpperCase() + tier.slice(1)} benefits</h3>${
+      next ? `<button data-act="upgradecard" data-tier="${next}">Upgrade to ${next}</button>` : ''}</div>
+    <ul class="tierlist">${TIER_BENEFITS[tier].map(b => `<li>${I('check',14)} ${b}</li>`).join('')}</ul>
+  </div>`;
+}
+
+function linkedCardsBlock(){
+  const cards = S.linkedCards || [];
+  return `<div class="hd" style="margin-top:26px"><h3>Cards from other banks</h3>
+      <button data-act="linkcard">Link a card</button></div>
+    <div class="surface flush">${cards.length ? cards.map(c => `
+      <div class="item static"><div class="av p">${IS('card',20)}</div>
+        <div class="txt"><b>${c.scheme.toUpperCase()} •••• ${c.last4}</b>
+          <span>${c.issuer || 'Linked card'} · expires ${c.expiry}${c.isDefault ? ' · default' : ''}</span></div>
+        <button class="btn quiet sm" data-unlink="${c.id}">Remove</button></div>`).join('')
+      : `<div class="item static"><div class="txt"><b>No other cards linked</b>
+          <span>Link a Visa or Mastercard from another bank to top up from it.</span></div></div>`}</div>`;
+}
+
+async function loadLinkedCards(){
+  try {
+    const res = await fetch('/api/v1/cards/linked', {headers: FID.authHeaders ? FID.authHeaders() : {}});
+    if (!res.ok) return;
+    S.linkedCards = (await res.json()).cards || [];
+    if (S.tab === 'cards') render();
+  } catch { /* the rest of the screen is still useful without it */ }
+}
+
+function linkCardSheet(message){
+  openSheet(`<h3>Link a card</h3>
+    <p class="sub">A Visa or Mastercard from another bank, to top up from.
+      We keep the last four digits and a token from the payment network — never the full number.</p>
+    ${message ? `<span class="badge r">${message}</span>` : ''}
+    <label class="field" style="margin-top:16px"><span>Card number</span>
+      <input id="lcPan" inputmode="numeric" placeholder="4000 0000 0000 0000" autofocus></label>
+    <div style="display:flex;gap:10px;margin-top:12px">
+      <label class="field" style="flex:1"><span>Expiry</span>
+        <input id="lcExp" placeholder="09/28"></label>
+      <label class="field" style="flex:1.4"><span>Name on card</span>
+        <input id="lcName"></label></div>
+    <label class="field" style="margin-top:12px"><span>Issuing bank (optional)</span>
+      <input id="lcIssuer" placeholder="GCB Bank"></label>
+    <button class="btn primary wide" style="margin-top:16px" data-act="linkcardsubmit">Link it</button>
+    <button class="btn quiet wide" style="margin-top:8px" data-act="close">Cancel</button>`);
+}
+
+async function doLinkCard(){
+  const body = {
+    pan: ($('lcPan')?.value || '').trim(),
+    expiry: ($('lcExp')?.value || '').trim(),
+    holderName: ($('lcName')?.value || '').trim(),
+    issuer: ($('lcIssuer')?.value || '').trim() || undefined
+  };
+  if (!body.pan || !body.expiry || body.holderName.length < 2) return linkCardSheet('Fill in the card, expiry and name');
+  try {
+    const res = await fetch('/api/v1/cards/linked', {
+      method:'POST', headers:{'Content-Type':'application/json', ...(FID.authHeaders ? FID.authHeaders() : {})},
+      body: JSON.stringify(body)
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) return linkCardSheet(json.error?.message || 'We could not link that card');
+    closeSheet();
+    await loadLinkedCards();
+    render();
+  } catch { linkCardSheet('We could not link that card just now'); }
+}
+
+
+/* ------------------------------------------------------------------ invest
+   Saving and investing make different promises: saving is money you expect
+   back in full, investing is money that can go down. The screen should not
+   blur the two, which is why treasury bills and digital assets live here and
+   goals live under Save. */
+function vInvest(){
+  const p = S.portfolio;
+  const gain = p ? p.gainMinor : 0;
+  return `<div class="sect">
+    <div class="surface" style="background:var(--sand);border-color:var(--orange-t2)">
+      <div class="arthead"><div>
+        <h3 class="d2" style="margin-bottom:6px">Invest</h3>
+        <p class="sub">Treasury bills, and digital assets you can buy, turn back into cedis, or borrow
+          against without selling. Value can fall as well as rise.</p></div>
+        <div style="width:150px">${ART.goal()}</div></div></div>
+
+    ${p ? `<div class="surface" style="margin-top:14px">
+      <div class="tiny">Portfolio value</div>
+      <div class="money" style="font-size:26px">${hide(m0(p.valueMinor/100))}</div>
+      <div class="tiny">${gain >= 0 ? '↗' : '↘'} ${hide(m0(Math.abs(gain)/100))} ${
+        gain >= 0 ? 'up' : 'down'} on what you paid${
+        p.borrowedMinor ? ` · ${m0(p.borrowedMinor/100)} borrowed against holdings` : ''}</div>
+    </div>` : ''}
+
+    <div class="hd" style="margin-top:26px"><h3>Treasury bills</h3><span class="badge j">Government of Ghana</span></div>
+    <div class="surface flush">${FID.TBILLS.map(t=>`
+      <button class="item" data-tenor="${t.tenor}"><div class="av p">${IS('invest',22)}</div>
+        <div class="txt"><b>${t.label} bill</b><span>Auction settles Friday · minimum ${m0(1000)}</span></div>
+        <div class="amt in">${(t.rate*100).toFixed(2)}%<small>per year</small></div></button>`).join('')}
+    </div>
+
+    <div class="hd" style="margin-top:26px"><h3>Digital assets</h3><span class="badge j">Value can fall</span></div>
+    <div class="surface flush">${(S.assets || []).map(a => `
+      <button class="item" data-asset="${a.symbol}">
+        <div class="av p">${IS('growth',22)}</div>
+        <div class="txt"><b>${a.name}</b><span>${a.symbol} · ${m0(a.priceMinor/100)} each</span></div>
+        <div class="amt ${a.changePct >= 0 ? 'in' : ''}">${a.changePct >= 0 ? '+' : ''}${a.changePct}%<small>24h</small></div>
+      </button>`).join('') || '<div class="item static"><div class="txt"><b>Loading prices…</b></div></div>'}</div>
+
+    ${p && p.holdings.length ? `
+    <div class="hd" style="margin-top:26px"><h3>What you hold</h3></div>
+    <div class="surface flush">${p.holdings.map(h => `
+      <div class="item static"><div class="av">${h.symbol.slice(0,2)}</div>
+        <div class="txt"><b>${h.units} ${h.symbol}</b>
+          <span>${hide(m0(h.valueMinor/100))}${h.pledgedUnits ? ` · ${h.pledgedUnits} pledged` : ''}</span></div>
+        <div class="amt ${h.gainMinor >= 0 ? 'in' : ''}">${h.gainMinor >= 0 ? '+' : '−'}${
+          m0(Math.abs(h.gainMinor)/100)}</div></div>`).join('')}</div>
+    <div class="chiprow" style="margin-top:12px">
+      <button class="chip" data-act="assetredeem">Redeem to cash</button>
+      <button class="chip" data-act="assetfinance">Borrow against holdings</button>
+    </div>` : ''}
+
+    ${p && p.loans.length ? `
+    <div class="hd" style="margin-top:26px"><h3>Advances</h3></div>
+    <div class="surface flush">${p.loans.map(l => `
+      <div class="item static"><div class="av p">${IS('growth',20)}</div>
+        <div class="txt"><b>${m0(l.outstandingMinor/100)} against ${l.symbol}</b>
+          <span>${l.pledgedUnits} ${l.symbol} pledged · ${(l.rateBps/100).toFixed(1)}% a year</span></div>
+        <button class="btn quiet sm" data-repay="${l.id}">Repay</button></div>`).join('')}</div>` : ''}
+  </div>`;
+}
+
+async function loadInvest(){
+  try {
+    const h = FID.authHeaders();
+    const [assets, portfolio] = await Promise.all([
+      fetch('/api/v1/invest/assets', {headers:h}).then(r => r.ok ? r.json() : null),
+      fetch('/api/v1/invest/portfolio', {headers:h}).then(r => r.ok ? r.json() : null)
+    ]);
+    if (assets) S.assets = assets.assets;
+    if (portfolio) S.portfolio = portfolio;
+    if (S.tab === 'invest') render();
+  } catch { /* prices are not worth breaking the tab over */ }
+}
+
+function assetSheet(symbol, mode, message){
+  const a = (S.assets || []).find(x => x.symbol === symbol) || {symbol, name: symbol, priceMinor: 0};
+  const held = (S.portfolio?.holdings || []).find(h => h.symbol === symbol);
+  const verb = mode === 'redeem' ? 'Redeem' : mode === 'finance' ? 'Borrow against' : mode === 'repay' ? 'Repay' : 'Buy';
+  openSheet(`<h3>${verb} ${a.name || symbol}</h3>
+    <p class="sub">${m0(a.priceMinor/100)} each right now.${
+      held ? ` You hold ${held.units} ${symbol}${held.pledgedUnits ? `, ${held.pledgedUnits} of it pledged` : ''}.` : ''}${
+      mode === 'finance' ? ' Borrowing pledges units rather than selling them, so you keep the upside.' : ''}</p>
+    ${message ? `<span class="badge r">${message}</span>` : ''}
+    <label class="field" style="margin-top:16px"><span>Amount in cedis</span>
+      <input id="asAmt" inputmode="decimal" placeholder="0.00" autofocus></label>
+    <button class="btn primary wide" style="margin-top:16px"
+      data-act="assetgo" data-symbol="${symbol}" data-mode="${mode || 'buy'}">${verb}</button>
+    <button class="btn quiet wide" style="margin-top:8px" data-act="close">Cancel</button>`);
+}
+
+async function assetGo(symbol, mode){
+  const amount = Number(($('asAmt')?.value || '').replace(/[^0-9.]/g, ''));
+  if (!amount || amount < 1) return assetSheet(symbol, mode, 'Enter GH₵1.00 or more');
+  const path = mode === 'redeem' ? 'redeem' : mode === 'finance' ? 'finance' : mode === 'repay' ? 'repay' : 'buy';
+  try {
+    const accountId = await FID.primaryAccountId();
+    const body = {accountId, symbol, amountMinor: Math.round(amount * 100)};
+    if (mode === 'repay') body.loanId = (S.portfolio?.loans || []).find(l => l.symbol === symbol)?.id;
+    const res = await fetch('/api/v1/invest/' + path, {
+      method:'POST',
+      headers:{'Content-Type':'application/json',
+        'Idempotency-Key':'inv-' + Date.now() + '-' + Math.random().toString(36).slice(2), ...FID.authHeaders()},
+      body: JSON.stringify(body)
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) return assetSheet(symbol, mode, json.error?.message || 'That did not go through');
+    closeSheet();
+    await Promise.all([loadInvest(), syncAccountsFromServer()]);
+    render();
+  } catch (err) { assetSheet(symbol, mode, err.message); }
+}
+
 function vCards(){
   const e = E();
   return `<div class="sect">
@@ -400,10 +593,13 @@ function vCards(){
         <p class="sub">Freeze either card instantly, set a limit per channel, or spin up a virtual card
           locked to one merchant.</p></div>
         <div style="width:140px">${ART.cards()}</div></div></div>
-    <div class="plastic ${S.frozen.physical?'frozen':''}">${lattice('c1')}
-      <div class="brand"><span>AI-DIGITAL BANK</span>${I('node',18)}</div><div class="chipimg"></div>
+    <div class="plastic tier-${(e.card.tier||'classic')} ${S.frozen.physical?'frozen':''}">${lattice('c1')}
+      <div class="brand"><span>DIGITAL BANK</span><span class="tiername">${
+        (e.card.tier||'classic').toUpperCase()}</span></div><div class="chipimg"></div>
       <div class="pan">${e.card.num}</div>
-      <div class="foot"><span>${e.holder.toUpperCase()}</span><span>${e.card.exp} · VISA</span></div></div>
+      <div class="foot"><span>${(e.holder||'').toUpperCase()}</span><span>${e.card.exp} · ${
+        e.card.scheme || 'VISA'}</span></div></div>
+    ${tierBenefits(e.card.tier || 'classic')}
     <div class="chiprow" style="margin-top:14px">
       <button class="chip" data-which="physical">${I('freeze',16)} ${S.frozen.physical?'Unfreeze card':'Freeze card'}</button>
       <button class="chip" data-sheet="limits">Spending limits</button>
@@ -421,10 +617,21 @@ function vCards(){
     <button class="chip" style="margin-top:14px" data-act="newvirtual">+ New virtual card</button>
 
     <div class="hd" style="margin-top:26px"><h3>On this card</h3></div>
-    <div class="surface flush">${e.transactions.filter(t=>t.a<0).map(t=>`
+    ${/* Card spending only. This used to list every outgoing transaction, so a
+         screen headed "On this card" was mostly mobile money — which is not
+         card spending and never touched the card. */''}
+    <div class="surface flush">${(() => {
+      const onCard = e.transactions.filter(t => t.a < 0 && /card|pos|atm|online/i.test(t.method || ''));
+      if (!onCard.length) return `<div class="item static"><div class="txt">
+        <b>Nothing on the card yet</b><span>Card spending appears here — wallet and bank transfers live on the home screen.</span>
+      </div></div>`;
+      return onCard.map(t=>`
       <div class="item static"><div class="av">${initials(t.m)}</div>
         <div class="txt"><b>${t.m}</b><span>${t.d} · ${FID.categorise(t.m)}</span></div>
-        <div class="amt">−${hide(m0(Math.abs(t.a)))}</div></div>`).join('')}</div>
+        <div class="amt">−${hide(m0(Math.abs(t.a)))}</div></div>`).join('');
+    })()}</div>
+
+    ${linkedCardsBlock()}
 
     <div class="surface" style="margin-top:14px;background:var(--jade-t);box-shadow:none">
       <b style="font-size:14px">Freezing is instant and reversible</b>
@@ -659,6 +866,7 @@ async function syncAccountsFromServer(){
     if (E().payroll) FID.PAYROLL.length = 0, FID.PAYROLL.push(...E().payroll);
     E().mustChangePin = data.mustChangePin;
     if (!entities.includes(S.entity)) S.entity = 'personal';
+    loadInvest(); loadLinkedCards();
     S.acct = 0;
     render();
   } catch (err) {
@@ -780,6 +988,7 @@ async function doVerify(){
   try {
     const out = await FID.submitGhanaCard({idNumber, dateOfBirth});
     syncAccountsFromServer();
+if (!gated) { loadInvest(); loadLinkedCards(); }
     render();
     if (out.account) return accountOpenSheet(out.account);
     verifySheet(out.message || 'A colleague is reviewing your details.', 'o');
@@ -1994,7 +2203,7 @@ function sheets(k){
 }
 
 /* =================================================================== render */
-const V = {home:vHome, save:vSave, cards:vCards, you:vYou, statement:vStatement};
+const V = {home:vHome, save:vSave, invest:vInvest, cards:vCards, you:vYou, statement:vStatement};
 const TABS = [['home','bank','Home'],['save','piggy','Save'],['pay','plus','Pay'],
               ['cards','card','Cards'],['you','user','You']];
 
@@ -2051,7 +2260,8 @@ document.addEventListener('click', ev => {
     + '[data-billpay],[data-billamt],[data-fx],[data-tenor],[data-months],[data-goal],[data-consent],'
     + '[data-note],[data-key],[data-padset],[data-lang],[data-quick],[data-which],[data-pick],'
     + '[data-tx],[data-stmtf],[data-goalamt],[data-src],[data-vfreeze],[data-reveal],[data-branchf],'
-    + '[data-device],[data-req],[data-invupload],[data-chqupload]');
+    + '[data-device],[data-req],[data-invupload],[data-chqupload],'
+    + '[data-asset],[data-repay],[data-unlink]');
   if (!el) return;
   const d = el.dataset;
 
@@ -2065,6 +2275,17 @@ document.addEventListener('click', ev => {
       ['Compared to','anonymised peer median'],['Not used','name, location, contacts'],['Confidence','0.86']],
       'Turn off spending insights under You and we stop reading transactions for tips.');
     b.hidden = !b.hidden; el.innerHTML = b.hidden ? I('info',15) + ' Where this came from' : I('close',15) + ' Hide'; return; }
+  if (d.asset){ assetSheet(d.asset, 'buy'); return; }
+  if (d.repay){
+    const loan = (S.portfolio?.loans || []).find(l => l.id === d.repay);
+    if (loan) assetSheet(loan.symbol, 'repay');
+    return;
+  }
+  if (d.unlink){
+    fetch('/api/v1/cards/linked/' + d.unlink, {method:'DELETE', headers: FID.authHeaders ? FID.authHeaders() : {}})
+      .then(() => loadLinkedCards());
+    return;
+  }
   if (d.key) return;  // handled on pointerdown, so a digit lands as the finger does
   if (d.padset){ S.flow.amount = d.padset;
     $('padAmt').innerHTML = `<span>GHS </span>${(+d.padset).toLocaleString('en-GB')}`; return; }
@@ -2316,6 +2537,11 @@ document.addEventListener('click', ev => {
     case 'sendmoney2': sendPickSheet(); break;
     case 'wallettobank': walletToBankSheet(); break;
     case 'w2b-go': walletToBankGo(); break;
+    case 'assetredeem': assetSheet((S.portfolio?.holdings||[{}])[0].symbol || 'BTC', 'redeem'); break;
+    case 'assetfinance': assetSheet((S.portfolio?.holdings||[{}])[0].symbol || 'BTC', 'finance'); break;
+    case 'assetgo': assetGo(el.dataset.symbol, el.dataset.mode); break;
+    case 'linkcard': linkCardSheet(); break;
+    case 'linkcardsubmit': doLinkCard(); break;
     case 'openbusiness': businessSheet(); break;
     case 'businesssubmit': doOpenBusiness(); break;
     case 'switch': S.entity = S.entity==='personal'?'business':'personal'; S.acct=0; S.tab='home';

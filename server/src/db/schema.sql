@@ -331,3 +331,72 @@ ALTER TABLE payees ADD COLUMN IF NOT EXISTS method text NOT NULL DEFAULT 'bank';
 ALTER TABLE payees ADD COLUMN IF NOT EXISTS bank_code text;
 CREATE UNIQUE INDEX IF NOT EXISTS payees_unique_destination
   ON payees(customer_id, method, account_ref);
+
+-- ---------- investments, digital assets and linked cards ----------
+
+-- Cards issued by other banks that a customer links for funding. We hold the
+-- last four and a provider token, never a PAN: storing card numbers would put
+-- this service in PCI scope for no benefit the customer can see.
+CREATE TABLE IF NOT EXISTS linked_cards (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_id   uuid NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  scheme        text NOT NULL CHECK (scheme IN ('visa','mastercard')),
+  last4         text NOT NULL CHECK (last4 ~ '^[0-9]{4}$'),
+  expiry        text NOT NULL,
+  holder_name   text,
+  issuer        text,
+  provider_token text NOT NULL,
+  is_default    boolean NOT NULL DEFAULT false,
+  status        text NOT NULL DEFAULT 'active' CHECK (status IN ('active','expired','removed')),
+  created_at    timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS linked_cards_customer_idx ON linked_cards(customer_id, status);
+
+-- The bank's own card, and the tier it sits at.
+ALTER TABLE cards ADD COLUMN IF NOT EXISTS tier text NOT NULL DEFAULT 'classic'
+  CHECK (tier IN ('classic','platinum','infinite'));
+ALTER TABLE cards ADD COLUMN IF NOT EXISTS scheme text NOT NULL DEFAULT 'visa';
+
+-- Digital asset holdings, in the asset's own smallest unit (satoshi-style),
+-- kept as numeric because 8 decimal places do not fit an integer cedi model.
+CREATE TABLE IF NOT EXISTS asset_holdings (
+  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_id  uuid NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  symbol       text NOT NULL,
+  units        numeric(24,8) NOT NULL DEFAULT 0,
+  cost_minor   bigint NOT NULL DEFAULT 0,
+  pledged_units numeric(24,8) NOT NULL DEFAULT 0,
+  updated_at   timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (customer_id, symbol)
+);
+
+CREATE TABLE IF NOT EXISTS asset_orders (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_id   uuid NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  account_id    uuid REFERENCES accounts(id) ON DELETE SET NULL,
+  side          text NOT NULL CHECK (side IN ('buy','redeem')),
+  symbol        text NOT NULL,
+  units         numeric(24,8) NOT NULL,
+  price_minor   bigint NOT NULL,
+  amount_minor  bigint NOT NULL,
+  fee_minor     bigint NOT NULL DEFAULT 0,
+  reference     text UNIQUE NOT NULL,
+  status        text NOT NULL DEFAULT 'filled',
+  created_at    timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS asset_orders_customer_idx ON asset_orders(customer_id, created_at DESC);
+
+-- Borrowing against a holding rather than selling it.
+CREATE TABLE IF NOT EXISTS asset_loans (
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_id    uuid NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  symbol         text NOT NULL,
+  pledged_units  numeric(24,8) NOT NULL,
+  principal_minor bigint NOT NULL,
+  outstanding_minor bigint NOT NULL,
+  rate_bps       int NOT NULL,
+  ltv_bps        int NOT NULL,
+  status         text NOT NULL DEFAULT 'active' CHECK (status IN ('active','repaid','liquidated')),
+  created_at     timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS asset_loans_customer_idx ON asset_loans(customer_id, status);

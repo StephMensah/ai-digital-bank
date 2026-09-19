@@ -182,3 +182,40 @@ case "$MB" in ????????????????????????????????) ok "core key is a 32-char encode
 
 echo
 echo "final: passed $pass, failed $fail"
+
+echo "── investing: buy, redeem, borrow"
+AID1=$(curl -s -H "Authorization: Bearer $T1" "$B/api/v1/accounts" | P '["accounts"][0]["id"]')
+curl -s -o /dev/null -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -H "Idempotency-Key: $(IDK)" \
+  -d "{\"accountId\":\"$AID1\",\"amountMinor\":200000,\"method\":\"mobile_money\",\"msisdn\":\"$M1\"}" "$B/api/v1/payments/deposits"
+sleep 6
+ok "  funded for investing"
+is "asset list available" "$(curl -s -H "Authorization: Bearer $T1" "$B/api/v1/invest/assets" | P '["assets"].__len__()')" "5"
+BUY=$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -H "Idempotency-Key: $(IDK)" \
+  -d "{\"accountId\":\"$AID1\",\"symbol\":\"BTC\",\"amountMinor\":100000}" "$B/api/v1/invest/buy")
+[ -n "$(echo "$BUY" | P '["units"]')" ] && ok "bought $(echo "$BUY" | P '["units"]') BTC for GH₵1000 (fee $(echo "$BUY" | P '["feeMinor"]')p)" || bad "buy" "$BUY"
+is "holding shows up" "$(curl -s -H "Authorization: Bearer $T1" "$B/api/v1/invest/portfolio" | P '["holdings"].__len__()')" "1"
+FIN=$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -H "Idempotency-Key: $(IDK)" \
+  -d "{\"accountId\":\"$AID1\",\"symbol\":\"BTC\",\"amountMinor\":30000}" "$B/api/v1/invest/finance")
+[ -n "$(echo "$FIN" | P '["pledgedUnits"]')" ] && ok "borrowed GH₵300 against $(echo "$FIN" | P '["pledgedUnits"]') BTC" || bad "finance" "$FIN"
+is "over-LTV refused" "$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -H "Idempotency-Key: $(IDK)" -d "{\"accountId\":\"$AID1\",\"symbol\":\"BTC\",\"amountMinor\":9000000}" "$B/api/v1/invest/finance" | P '["error"]["code"]')" "bad_request"
+PLEDGED=$(curl -s -H "Authorization: Bearer $T1" "$B/api/v1/invest/portfolio" | P '["holdings"][0]["pledgedUnits"]')
+[ "$PLEDGED" != "0" ] && ok "pledged units held back: $PLEDGED" || bad "pledge recorded" "$PLEDGED"
+UNITS=$(curl -s -H "Authorization: Bearer $T1" "$B/api/v1/invest/portfolio" | P '["holdings"][0]["units"]')
+is "cannot redeem pledged units" "$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -H "Idempotency-Key: $(IDK)" -d "{\"accountId\":\"$AID1\",\"symbol\":\"BTC\",\"units\":$UNITS}" "$B/api/v1/invest/redeem" | P '["error"]["code"]')" "bad_request"
+RD=$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -H "Idempotency-Key: $(IDK)" \
+  -d "{\"accountId\":\"$AID1\",\"symbol\":\"BTC\",\"amountMinor\":20000}" "$B/api/v1/invest/redeem")
+[ -n "$(echo "$RD" | P '["receivedMinor"]')" ] && ok "redeemed to cash: $(echo "$RD" | P '["receivedMinor"]')p" || bad "redeem" "$RD"
+
+echo "── linked cards"
+LC=$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' \
+  -d '{"pan":"4111111111111111","expiry":"09/29","holderName":"Ama Boateng","issuer":"GCB Bank"}' "$B/api/v1/cards/linked")
+is "visa linked"        "$(echo "$LC" | P '["card"]["scheme"]')" "visa"
+is "only last four kept" "$(echo "$LC" | P '["card"]["last4"]')" "1111"
+is "bad number refused" "$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -d '{"pan":"4111111111111112","expiry":"09/29","holderName":"Ama Boateng"}' "$B/api/v1/cards/linked" | P '["error"]["code"]')" "bad_request"
+is "expired card refused" "$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -d '{"pan":"5555555555554444","expiry":"01/20","holderName":"Ama Boateng"}' "$B/api/v1/cards/linked" | P '["error"]["code"]')" "bad_request"
+MC=$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -d '{"pan":"5555555555554444","expiry":"11/30","holderName":"Ama Boateng"}' "$B/api/v1/cards/linked")
+is "mastercard linked"  "$(echo "$MC" | P '["card"]["scheme"]')" "mastercard"
+is "tiers published"    "$(curl -s -H "Authorization: Bearer $T1" "$B/api/v1/cards/tiers" | P '["tiers"]["infinite"]["name"]')" "Infinite"
+
+echo
+echo "final: passed $pass, failed $fail"

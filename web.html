@@ -418,6 +418,16 @@ input[type=range]{width:100%;accent-color:var(--orange)}
    a reload used to show the sample account for the instant before it appeared. */
 html:has(.gate) body > *:not(.gate){visibility:hidden}
 html:has(.gate), html:has(.gate) body{overflow:hidden}
+
+/* ---- card tiers. The face should say what the card is without a label. */
+.plastic .tiername{font-size:9px;letter-spacing:.22em;opacity:.75}
+.plastic.tier-platinum{background:linear-gradient(135deg,#3C4650 0%,#20262C 55%,#4A555F 100%)}
+.plastic.tier-infinite{background:linear-gradient(135deg,#171A1D 0%,#0B0C0E 45%,#2B2F34 100%);
+  box-shadow:0 14px 34px rgba(0,0,0,.42)}
+.plastic.tier-infinite .tiername{color:var(--orange-l);opacity:1}
+.tierlist{list-style:none;margin:0;padding:0;font-size:12.5px;color:var(--slate)}
+.tierlist li{display:flex;gap:8px;align-items:flex-start;padding:4px 0}
+.tierlist li svg{flex:none;margin-top:2px;color:var(--orange-d)}
 </style>
 <style>
 /* ------------------------------------------------------------- web shell */
@@ -1438,7 +1448,7 @@ const FID = (() => {
            signIn, signOut, register, topUp, primaryAccountId, submitGhanaCard, kycStatus,
            apiReady, get apiMissing(){ return apiMissing; }, APP_URL,
            applyLiveProfile, blankProfile, get entitiesAvailable(){ return availableEntities; },
-           nameEnquiry, savePayee, banks, walletToBank, normaliseMsisdn, localMsisdn,
+           nameEnquiry, savePayee, banks, walletToBank, normaliseMsisdn, localMsisdn, authHeaders,
            get liveGoals(){ return liveGoals; },
            get signedIn(){ return signedIn(); },
            get customer(){ return session && session.subject; },

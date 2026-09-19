@@ -67,7 +67,8 @@ compatRouter.get('/accounts/:entity', authenticate('customer'), async (req, res,
     const asCard = (c) => c && ({
       num: '•••• •••• •••• ' + c.pan.slice(-4),
       fullNum: c.pan, cvv: c.cvv, exp: c.expiry,
-      frozen: c.frozen, locked: c.locked_to || undefined
+      frozen: c.frozen, locked: c.locked_to || undefined,
+      tier: c.tier || 'classic', scheme: (c.scheme || 'visa').toUpperCase()
     });
 
     res.json({
