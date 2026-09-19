@@ -25,8 +25,10 @@ import { logger } from '../lib/logger.js';
  * as mock rather than up, so nobody mistakes a sandbox run for a live one.
  */
 
-const LATENCY_MS = Number(process.env.MOCK_LATENCY_MS || 400);
-const SETTLE_MS = Number(process.env.MOCK_SETTLE_MS || 2000);
+const LATENCY_MS = Number(process.env.MOCK_LATENCY_MS || 250);
+/* Long enough to be honest that a rail is asynchronous, short enough that a
+   demo does not look broken. Real rails will replace these. */
+const SETTLE_MS = Number(process.env.MOCK_SETTLE_MS || 1200);
 
 /* Real rails vary. A fixed delay makes everything downstream look more
    predictable than it will ever be, so every wait here carries jitter. */
@@ -35,7 +37,7 @@ const pause = (ms) => new Promise((r) => setTimeout(r, jitter(ms)));
 
 /* A wallet debit waits on a human approving a prompt on their handset, so it
    takes far longer than a disbursement the provider can push on its own. */
-const APPROVAL_MS = Number(process.env.MOCK_APPROVAL_MS || 5000);
+const APPROVAL_MS = Number(process.env.MOCK_APPROVAL_MS || 2500);
 
 /**
  * Demo controls, by the pesewa part of the amount:

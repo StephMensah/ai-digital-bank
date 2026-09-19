@@ -143,10 +143,31 @@ async function sendGo(save){
     if (E().mustChangePin) {
       return startPinChange(() => sendGo(false));
     }
+    if (SEND.method === 'internal') {
+      /* On-us goes to the transfer endpoint so the recipient is credited too.
+         The compat route only ever debited the sender. */
+      return requireAuth(
+        async (pin) => {
+          const accountId = await FID.primaryAccountId();
+          return FID.transferInternal({
+            fromAccountId: accountId, toAccountNumber: r.accountNumber,
+            amountMinor: Math.round(amount * 100), narration: note, pin
+          });
+        },
+        (out) => {
+          syncAccountsFromServer();
+          openSheet(`<h3>Sent</h3>
+            <p class="sub">${m0(amount)} to ${r.name}. It is in their account now.</p>
+            <div class="ref" style="margin-top:10px">${out?.reference || ''}</div>
+            <button class="btn primary wide" style="margin-top:16px" data-act="close">Done</button>`);
+        },
+        'commit'
+      );
+    }
+
     requireAuthForPayment(
       {account: S.acct || 0, merchant: r.name, amount: -amount, category: 'Transfer',
-       method: SEND.method === 'internal' ? 'Digital Bank'
-             : SEND.method === 'bank' ? 'Bank transfer' : 'Mobile money'},
+       method: SEND.method === 'bank' ? 'Bank transfer' : 'Mobile money'},
       () => { syncAccountsFromServer(); }
     );
   } catch (err) {

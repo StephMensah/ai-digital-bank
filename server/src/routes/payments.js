@@ -348,6 +348,103 @@ paymentsRouter.post('/wallet-to-bank',
     } catch (err) { next(err); }
   });
 
+/**
+ * On-us transfer: both accounts are ours, so nothing leaves the bank and there
+ * is no rail to wait for. The recipient sees it immediately, which is the whole
+ * point of paying someone at the same bank.
+ *
+ * Until now the send flow posted these through the compat endpoint, which
+ * debited the sender and credited nobody. The money left one account and
+ * arrived nowhere.
+ *
+ * The two legs cannot be one database transaction — the ledger owns its own and
+ * takes no outer client — so the debit settles first and the credit follows,
+ * with the debit reversed if the credit fails. A sender who paid and a
+ * recipient who never received is the failure worth engineering against; the
+ * reverse cannot happen in this order.
+ */
+paymentsRouter.post('/transfers',
+  payLimiter, requireIdempotencyKey,
+  validate(z.object({
+    fromAccountId: z.string().uuid(),
+    toAccountNumber: z.string().min(6).max(20),
+    amountMinor,
+    narration: z.string().max(100).optional(),
+    pin: z.string().regex(/^\d{4}$/)
+  })),
+  async (req, res, next) => {
+    try {
+      const customer = req.customer;
+      if (customer.must_change_pin) throw badRequest('Set your PIN before moving money');
+      const { verifySecret } = await import('../lib/crypto.js');
+      if (!verifySecret(req.body.pin, customer.pin_hash)) {
+        return res.status(403).json({ error: { code: 'invalid_pin', message: 'That PIN is not right.' } });
+      }
+
+      const from = await loadAccount(req.body.fromAccountId, customer.id);
+
+      const { rows: found } = await query(
+        `SELECT a.*, c.full_name FROM accounts a JOIN customers c ON c.id = a.customer_id
+          WHERE a.account_number=$1 AND a.status='active'`,
+        [String(req.body.toAccountNumber).trim()]
+      );
+      const to = found[0];
+      if (!to) throw notFound('No Digital Bank account with that number');
+      if (to.id === from.id) throw badRequest('That is the account you are sending from');
+      if (req.body.amountMinor > Number(from.available_minor)) {
+        throw badRequest('There is not enough in the account for that');
+      }
+
+      const risk = await scoreTransaction({
+        customer, account: from,
+        intent: { amountMinor: req.body.amountMinor, kind: 'transfer', channel: 'internal', method: 'internal' }
+      });
+
+      const narration = req.body.narration || `Transfer to ${to.full_name}`;
+      const { transaction: debit } = await openTransaction({
+        account: from, direction: 'debit', kind: 'transfer', amountMinor: req.body.amountMinor,
+        channel: 'internal', provider: 'internal',
+        counterparty: { name: to.full_name, accountNumber: to.account_number },
+        metadata: { narration, onUs: true },
+        idempotencyKey: req.get('Idempotency-Key'), risk, status: 'processing'
+      });
+
+      if (debit.status === 'held') {
+        return res.status(202).json({ transaction: debit, held: true,
+          message: 'Held for a quick check. The money is still yours and we will confirm shortly.' });
+      }
+
+      await settleTransaction({ transactionId: debit.id, glCounterparty: GL.CUSTOMER_DEPOSITS });
+
+      try {
+        const credited = await loadAccount(to.id, to.customer_id);
+        const { transaction: credit } = await openTransaction({
+          account: credited, direction: 'credit', kind: 'transfer', amountMinor: req.body.amountMinor,
+          channel: 'internal', provider: 'internal',
+          counterparty: { name: customer.full_name, accountNumber: from.account_number },
+          metadata: { narration, onUs: true, pairedWith: debit.reference },
+          idempotencyKey: `${req.get('Idempotency-Key')}-CR`, status: 'processing'
+        });
+        await settleTransaction({ transactionId: credit.id, glCounterparty: GL.CUSTOMER_DEPOSITS });
+      } catch (err) {
+        await failTransaction({ transactionId: debit.id, reason: 'Reversed: the recipient could not be credited' })
+          .catch(() => {});
+        throw err;
+      }
+
+      const { rows: after } = await query('SELECT available_minor FROM accounts WHERE id=$1', [from.id]);
+      await audit({ ...auditFrom(req), action: 'payment.on_us', entity: 'transaction', entityId: debit.id });
+
+      res.status(201).json({
+        posted: true,
+        reference: debit.reference,
+        to: { name: to.full_name, accountNumber: to.account_number },
+        amountMinor: req.body.amountMinor,
+        balanceMinor: Number(after[0].available_minor)
+      });
+    } catch (err) { next(err); }
+  });
+
 export async function dispatchPayout({ transaction, method, destination, narration, account }) {
   try {
     let result;

@@ -428,6 +428,11 @@ html:has(.gate), html:has(.gate) body{overflow:hidden}
 .tierlist{list-style:none;margin:0;padding:0;font-size:12.5px;color:var(--slate)}
 .tierlist li{display:flex;gap:8px;align-items:flex-start;padding:4px 0}
 .tierlist li svg{flex:none;margin-top:2px;color:var(--orange-d)}
+
+/* Cancel and Continue side by side, as a confirmation step should read. */
+.sheetbtns{display:flex;gap:8px;margin-top:12px}
+.sheetbtns .btn{flex:1}
+.sheetbtns .btn:disabled{opacity:.45}
 </style>
 <style>
 /* ------------------------------------------------------------- web shell */
@@ -1346,6 +1351,20 @@ const FID = (() => {
     fetch(API + '/api/v1/payments/banks', {headers: authHeaders()})
       .then(r => r.ok ? r.json() : {banks:[]}).then(j => j.banks || []).catch(() => []);
 
+  /** On-us: both accounts are ours, so it posts immediately, both sides. */
+  async function transferInternal({fromAccountId, toAccountNumber, amountMinor, narration, pin}){
+    const res = await fetch(API + '/api/v1/payments/transfers', {
+      method:'POST',
+      headers:{'Content-Type':'application/json',
+        'Idempotency-Key':'onus-' + Date.now() + '-' + Math.random().toString(36).slice(2), ...authHeaders()},
+      body: JSON.stringify({fromAccountId, toAccountNumber, amountMinor, narration, pin})
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(new Error(json.error?.message || 'That transfer did not go through'),
+      {code: json.error?.code || 'transfer_failed', status: res.status});
+    return json;
+  }
+
   async function walletToBank({accountId, amountMinor, msisdn, destination, narration}){
     const res = await fetch(API + '/api/v1/payments/wallet-to-bank', {
       method:'POST',
@@ -1448,7 +1467,7 @@ const FID = (() => {
            signIn, signOut, register, topUp, primaryAccountId, submitGhanaCard, kycStatus,
            apiReady, get apiMissing(){ return apiMissing; }, APP_URL,
            applyLiveProfile, blankProfile, get entitiesAvailable(){ return availableEntities; },
-           nameEnquiry, savePayee, banks, walletToBank, normaliseMsisdn, localMsisdn, authHeaders,
+           nameEnquiry, savePayee, banks, walletToBank, transferInternal, normaliseMsisdn, localMsisdn, authHeaders,
            get liveGoals(){ return liveGoals; },
            get signedIn(){ return signedIn(); },
            get customer(){ return session && session.subject; },
@@ -3074,10 +3093,31 @@ async function sendGo(save){
     if (E().mustChangePin) {
       return startPinChange(() => sendGo(false));
     }
+    if (SEND.method === 'internal') {
+      /* On-us goes to the transfer endpoint so the recipient is credited too.
+         The compat route only ever debited the sender. */
+      return requireAuth(
+        async (pin) => {
+          const accountId = await FID.primaryAccountId();
+          return FID.transferInternal({
+            fromAccountId: accountId, toAccountNumber: r.accountNumber,
+            amountMinor: Math.round(amount * 100), narration: note, pin
+          });
+        },
+        (out) => {
+          syncAccountsFromServer();
+          openSheet(`<h3>Sent</h3>
+            <p class="sub">${m0(amount)} to ${r.name}. It is in their account now.</p>
+            <div class="ref" style="margin-top:10px">${out?.reference || ''}</div>
+            <button class="btn primary wide" style="margin-top:16px" data-act="close">Done</button>`);
+        },
+        'commit'
+      );
+    }
+
     requireAuthForPayment(
       {account: S.acct || 0, merchant: r.name, amount: -amount, category: 'Transfer',
-       method: SEND.method === 'internal' ? 'Digital Bank'
-             : SEND.method === 'bank' ? 'Bank transfer' : 'Mobile money'},
+       method: SEND.method === 'bank' ? 'Bank transfer' : 'Mobile money'},
       () => { syncAccountsFromServer(); }
     );
   } catch (err) {

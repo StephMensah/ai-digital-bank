@@ -418,3 +418,8 @@ html:has(.gate), html:has(.gate) body{overflow:hidden}
 .tierlist{list-style:none;margin:0;padding:0;font-size:12.5px;color:var(--slate)}
 .tierlist li{display:flex;gap:8px;align-items:flex-start;padding:4px 0}
 .tierlist li svg{flex:none;margin-top:2px;color:var(--orange-d)}
+
+/* Cancel and Continue side by side, as a confirmation step should read. */
+.sheetbtns{display:flex;gap:8px;margin-top:12px}
+.sheetbtns .btn{flex:1}
+.sheetbtns .btn:disabled{opacity:.45}
