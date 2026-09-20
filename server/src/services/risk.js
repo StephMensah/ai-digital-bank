@@ -14,7 +14,11 @@ export async function scoreTransaction({ customer, account, intent }) {
 
   if (isConfigured.python()) {
     try {
-      const res = await request(`${config.python.url}/score/transaction`, {
+      /* /score/transaction never existed on the decision service — the path is
+         /api/score/transaction, and every call has been 404ing silently since
+         this was written, so the fraud agent was never once consulted and every
+         payment was scored by the fallback rules. */
+      const res = await request(`${config.python.url}/api/score/transaction`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -25,11 +29,19 @@ export async function scoreTransaction({ customer, account, intent }) {
         retries: 1,
         label: 'risk model'
       });
-      if (res.ok && typeof res.body?.score === 'number') {
+      if (res.ok && res.body?.available === false) {
+        // The engine answered and said it cannot score. That is not the same as
+        // being unreachable, and it should be visible rather than swallowed.
+        logger.warn({ reason: res.body.reason }, 'decision engine declined to score');
+      } else if (res.ok && typeof res.body?.score === 'number') {
         return decide({
           score: res.body.score,
           reasons: res.body.reasons || [],
           model: res.body.model_version || 'python',
+          /* The engine publishes a confidence floor per use case. Below it, the
+             governance rule is that nothing decides alone — so a low-confidence
+             answer goes to a person even when the score itself looks calm. */
+          forceReview: Boolean(res.body.below_floor || res.body.adverse),
           features
         });
       }
@@ -93,17 +105,23 @@ function fallbackRules(f) {
   return { score: Math.min(score, 100), reasons };
 }
 
-function decide({ score, reasons, model, features }) {
+function decide({ score, reasons, model, features, forceReview = false }) {
   let action = 'allow';
   if (score >= config.risk.decline) action = 'decline';
   else if (score >= config.risk.review) action = 'review';
+  /* Below the model's published confidence floor, or adverse to the customer,
+     nothing decides alone — that is the governance rule the engine exists to
+     enforce, and a calm-looking score does not override it. */
+  if (forceReview && action === 'allow') action = 'review';
   return { score: Number(score.toFixed(2)), reasons, action, model, features };
 }
 
 /** Optional hand-off to Python automations (statement parsing, reconciliation, insights). */
 export async function runAutomation(name, payload) {
   if (!isConfigured.python()) return { queued: false, reason: 'python service not configured' };
-  const res = await request(`${config.python.url}/automations/${name}`, {
+  /* Same path bug as the scorer: the decision service serves everything under
+     /api, and these were pointed one level up. */
+  const res = await request(`${config.python.url}/api/automations/${name}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
