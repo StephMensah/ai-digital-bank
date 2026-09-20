@@ -65,10 +65,26 @@ export async function scoreTransaction({ customer, account, intent }) {
         });
       }
     } catch (err) {
-      logger.warn({ err: err.message }, 'risk model unavailable, using fallback rules');
+      logger.warn({ err: err.message }, 'external model unavailable, scoring in-process');
     }
   }
-  return decide({ ...fallbackRules(features), model: 'rules_v1', features });
+
+  /* Whatever happened above, the in-process agent decides rather than the crude
+     rules. Pointing PYTHON_SERVICE_URL at a service that is gone should degrade
+     to the agent we have, not to the weakest scorer in the codebase — and that
+     is exactly the trap left behind by deleting the decision service while the
+     variable is still set. */
+  const local = scoreLocally({
+    amountMinor: intent.amountMinor,
+    foreign: features.foreign ?? false,
+    hour: new Date().getHours(),
+    newBeneficiary: features.new_beneficiary ?? features.newBeneficiary ?? false,
+    velocity: features.tx_last_hour ?? 0
+  });
+  return decide({
+    score: local.score, reasons: local.reasons, model: local.model_version,
+    forceReview: local.below_floor || local.adverse, features
+  });
 }
 
 async function buildFeatures({ customer, account, intent }) {
@@ -105,24 +121,8 @@ async function buildFeatures({ customer, account, intent }) {
   };
 }
 
-function fallbackRules(f) {
-  let score = 0;
-  const reasons = [];
-  const add = (points, reason) => { score += points; reasons.push(reason); };
-
-  if (f.kyc_status !== 'verified') add(25, 'Customer is not KYC verified');
-  if (f.account_age_days < 3) add(20, 'Account opened in the last 3 days');
-  if (f.counterparty_new && f.amount_minor > 50_000) add(15, 'Large payment to a new counterparty');
-  if (f.avg_amount_90d_minor > 0 && f.amount_minor > f.avg_amount_90d_minor * 8) {
-    add(25, 'Amount is far above this customer\u2019s normal');
-  }
-  if (f.tx_last_hour >= 6) add(20, 'Unusual burst of payments in the last hour');
-  if (f.failed_last_day >= 3) add(15, 'Repeated failed attempts today');
-  if (f.hour_of_day >= 1 && f.hour_of_day <= 4) add(8, 'Payment outside normal active hours');
-  if (f.amount_minor > f.balance_minor) add(10, 'Amount exceeds current balance');
-
-  return { score: Math.min(score, 100), reasons };
-}
+/* fallbackRules() removed: the in-process agent is the floor now, and a second
+   weaker scorer sitting unused is a thing someone reaches for by mistake. */
 
 function decide({ score, reasons, model, features, forceReview = false }) {
   let action = 'allow';
