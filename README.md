@@ -244,7 +244,14 @@ in the page.
 The Node service (`server/`) is the product: it serves the front ends from
 `public/` and holds the ledger, the rails and the staff consoles.
 
-The Python service (`decision_api.py`) is the decision engine only. It no
+The Python service (`decision_api.py`) is no longer in any request path. Fraud
+scoring runs in the Node service (`server/src/services/fraud-agent.js`), which
+carries the same confidence floor and adverse-action rule the engine published.
+Set `PYTHON_SERVICE_URL` to put a real model in front of it; leave it unset and
+nothing needs a second service to be awake.
+
+The Python service remains useful offline for portfolio simulation and the
+control tower export, and It no
 longer serves HTML — every non-`/api` request is redirected to `BANKING_URL`,
 so a customer can never land on a copy of the pages with no banking API behind
 them. The Node service reaches it over `PYTHON_SERVICE_URL`.

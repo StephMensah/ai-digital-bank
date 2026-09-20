@@ -2,6 +2,7 @@ import { config, isConfigured } from '../config.js';
 import { request } from '../lib/http.js';
 import { query } from '../db/pool.js';
 import { logger } from '../lib/logger.js';
+import { scoreLocally, USE_CASE } from './fraud-agent.js';
 
 /**
  * The Python service owns the models and automations. This module is the bank's
@@ -11,6 +12,24 @@ import { logger } from '../lib/logger.js';
  */
 export async function scoreTransaction({ customer, account, intent }) {
   const features = await buildFeatures({ customer, account, intent });
+
+  /* Scoring runs in-process. The decision service was a second thing to deploy
+     and keep warm, and its cold start exceeded the scoring timeout — so the
+     model it hosted was never the one deciding. PYTHON_SERVICE_URL still wins
+     when set, for a real model later. */
+  if (!isConfigured.python()) {
+    const local = scoreLocally({
+      amountMinor: intent.amountMinor,
+      foreign: features.foreign ?? false,
+      hour: new Date().getHours(),
+      newBeneficiary: features.new_beneficiary ?? features.newBeneficiary ?? false,
+      velocity: features.tx_last_hour ?? 0
+    });
+    return decide({
+      score: local.score, reasons: local.reasons, model: local.model_version,
+      forceReview: local.below_floor || local.adverse, features
+    });
+  }
 
   if (isConfigured.python()) {
     try {

@@ -151,6 +151,22 @@ footer{margin-top:60px;border-top:1px solid var(--hair);padding-top:16px;font-si
   .hide-s{display:none}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+.livewrap{max-width:1180px;margin:0 auto;padding:18px 22px 4px}
+.livehead{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.livegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.livecard{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px}
+.livecard b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
+.livecard span{font-size:11.5px;color:var(--muted)}
+.livecard.alarm b{color:var(--alert)} .livecard.watch b{color:#D9A63F}
+.livewide{grid-column:1/-1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);
+  border-radius:12px;padding:12px 14px}
+.livewide h4{margin:0 0 8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.railrow{display:flex;align-items:center;gap:9px;padding:5px 0;font-size:13px;border-top:1px solid rgba(255,255,255,.07)}
+.railrow:first-of-type{border-top:0}
+.railrow span{margin-left:auto;color:var(--muted);font-size:11.5px}
+.led{width:9px;height:9px;border-radius:50%;background:#35B3A1;flex:none}
+.led.degraded,.led.mock{background:#D9A63F} .led.down{background:var(--alert)}
 </style>
 </head>
 <body>
@@ -252,8 +268,92 @@ footer{margin-top:60px;border-top:1px solid var(--hair);padding-top:16px;font-si
   <div id="drawerBody"></div>
 </aside>
 
+<section class="livewrap">
+  <h3 class="livehead">Live right now</h3>
+  <div id="livenow" class="livegrid"><div class="livecard"><b>…</b><span>reading the ledger</span></div></div>
+</section>
+
 <script type="application/json" id="snapshot">__SNAPSHOT_JSON__</script>
 <script>
+const CONSOLE_NAME = 'Control tower';
+/* ------------------------------------------------------------------ staff gate
+   These two consoles were open: no login, and calls straight to the API. The
+   server refused them, so the pages showed nothing and looked broken rather
+   than locked. A queue of customers' held payments and a view of every rail
+   should be behind a login even when the API is already refusing. */
+
+const STAFF_STORE = 'adb.staff';
+let staff = (() => { try { return JSON.parse(localStorage.getItem(STAFF_STORE) || 'null'); } catch { return null; } })();
+const staffedIn = () => Boolean(staff && staff.accessToken);
+const staffHeaders = () => (staffedIn() ? { Authorization: 'Bearer ' + staff.accessToken } : {});
+
+function keepStaff(next) {
+  staff = next;
+  try { next ? localStorage.setItem(STAFF_STORE, JSON.stringify(next)) : localStorage.removeItem(STAFF_STORE); }
+  catch { /* private window: the session lasts the tab */ }
+}
+
+function staffGate(message) {
+  let el = document.querySelector('.sgate');
+  if (!el) { el = document.createElement('div'); el.className = 'sgate'; document.body.appendChild(el); }
+  el.innerHTML = `<form class="spanel" id="sgForm">
+      <div class="sbrand">Digital Bank</div>
+      <h2>${CONSOLE_NAME}</h2>
+      <p>Staff access. Sign in with your work account.</p>
+      ${message ? `<div class="serr">${message}</div>` : ''}
+      <label>Work email<input id="sgEmail" type="email" autocomplete="username" autofocus></label>
+      <label>Password<input id="sgPass" type="password" autocomplete="current-password"></label>
+      <button class="sbtn" type="submit">Sign in</button>
+    </form>`;
+  el.querySelector('#sgForm').addEventListener('submit', (ev) => { ev.preventDefault(); staffSignIn(); });
+  document.documentElement.classList.add('gated');
+}
+
+function closeStaffGate() {
+  document.querySelector('.sgate')?.remove();
+  document.documentElement.classList.remove('gated');
+}
+
+async function staffSignIn() {
+  const email = (document.getElementById('sgEmail')?.value || '').trim();
+  const password = document.getElementById('sgPass')?.value || '';
+  if (!email || !password) return staffGate('Enter your email and password.');
+  try {
+    const res = await fetch('/api/v1/auth/staff/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return staffGate(res.status === 401
+        ? 'That email and password do not match.'
+        : (json.error?.message || 'Could not sign you in just now.'));
+    }
+    const tokens = json.tokens || json;
+    keepStaff({ accessToken: tokens.accessToken, subject: json.staff || json.user });
+    closeStaffGate();
+    boot();
+  } catch {
+    staffGate('Could not reach the service just now.');
+  }
+}
+
+function staffSignOut() {
+  keepStaff(null);
+  staffGate();
+}
+
+/** A 401 mid-session means the token expired; ask again rather than blank out. */
+function onStaffUnauthorised() {
+  keepStaff(null);
+  staffGate('Your session expired. Sign in again.');
+}
+
+
+/* The simulated portfolio stays — it is what the engine models and there is no
+   live equivalent. What was missing is the operational half: the rails, the
+   queue and the ledger as they are right now. That is fetched below and put at
+   the top, so nothing on this page implies a simulation is production. */
 const D = JSON.parse(document.getElementById('snapshot').textContent);
 const CCY = D.meta.currency;
 const fmt = n => n.toLocaleString('en-GB');
@@ -417,6 +517,56 @@ function closeDrawer(){ drawer.classList.remove('on'); scrim.classList.remove('o
 scrim.onclick = closeDrawer;
 document.getElementById('closeBtn').onclick = closeDrawer;
 addEventListener('keydown', e=>{ if(e.key==='Escape') closeDrawer(); });
+
+
+/* ------------------------------------------------------------------ live now */
+async function loadLive(){
+  if (!staffedIn()) { staffGate(); return; }
+  try {
+    const [ov, hl, rc] = await Promise.all([
+      fetch('/api/v1/tower/overview', {headers: staffHeaders(), cache:'no-store'}),
+      fetch('/api/v1/tower/health', {headers: staffHeaders(), cache:'no-store'}),
+      fetch('/api/v1/tower/reconciliation', {headers: staffHeaders(), cache:'no-store'})
+    ]);
+    if ([ov, hl, rc].some(r => r.status === 401)) return onStaffUnauthorised();
+    if (!ov.ok) throw new Error('overview ' + ov.status);
+
+    const o = await ov.json();
+    const health = hl.ok ? (await hl.json()).components || [] : [];
+    const recon = rc.ok ? await rc.json() : {clean: true, breaks: []};
+    paintLive(o, health, recon);
+  } catch (err) {
+    document.getElementById('livenow').innerHTML =
+      `<div class="livecard"><b>Live figures unavailable</b><span>${err.message}</span></div>`;
+  }
+}
+
+function paintLive(o, health, recon){
+  const v = o.volumes || {}, q = o.queues || {};
+  const card = (label, value, tone) =>
+    `<div class="livecard ${tone || ''}"><b>${value}</b><span>${label}</span></div>`;
+
+  const rails = health.length
+    ? health.map(h => `<div class="railrow"><i class="led ${h.status}"></i>${h.component}
+        <span>${h.detail || h.status}${h.latencyMs != null ? ' · ' + h.latencyMs + 'ms' : ''}</span></div>`).join('')
+    : '<div class="railrow"><span>No probe has run yet.</span></div>';
+
+  document.getElementById('livenow').innerHTML =
+    card('payments in the last hour', v.tx_last_hour ?? 0) +
+    card('settled in 24 hours', 'GHS ' + Math.round(Number(v.value_last_day_minor || 0)/100).toLocaleString('en-GB')) +
+    card('stuck over 15 minutes', v.stuck ?? 0, Number(v.stuck) ? 'alarm' : '') +
+    card('held for review', v.held ?? 0, Number(v.held) ? 'watch' : '') +
+    card('core postings queued', q.outbox_queued ?? 0, Number(q.outbox_queued) > 25 ? 'watch' : '') +
+    card('dead postings', q.outbox_dead ?? 0, Number(q.outbox_dead) ? 'alarm' : '') +
+    `<div class="livewide"><h4>Rails</h4>${rails}</div>` +
+    `<div class="livewide"><h4>Reconciliation</h4>${recon.clean
+      ? '<div class="railrow"><i class="led up"></i>Every account balance matches its ledger.</div>'
+      : (recon.breaks || []).map(b => `<div class="railrow"><i class="led down"></i>${b.account_number}
+          <span>variance GHS ${(Number(b.variance_minor)/100).toFixed(2)}</span></div>`).join('')}</div>`;
+}
+
+function boot(){ loadLive(); setInterval(loadLive, 30000); }
+boot();
 
 document.getElementById('foot').innerHTML =
   `Generated by aibank_engine.py — export --days ${D.meta.days} --phase ${D.meta.phaseCutoff} --seed ${D.meta.seed}<br>
