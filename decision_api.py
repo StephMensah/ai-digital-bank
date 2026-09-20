@@ -139,6 +139,55 @@ def _verify_pin(pin: str, pin_hash: str, salt_hex: str) -> bool:
 # domain once it is pointed at the Node service.
 BANKING_URL = os.environ.get("BANKING_URL", "https://pokzbank.org")
 
+def score_transaction(body):
+    """Score one payment with the fraud agent, in the shape the Node service reads.
+
+    Returns the agent's own verdict, confidence and reason rather than a bare
+    number: a decline a customer cannot be given a reason for is the thing the
+    whole governance layer exists to prevent.
+    """
+    try:
+        import random
+        from aibank_engine import FraudAgent, Event, USE_CASES
+    except Exception as exc:  # engine not importable: say so, do not guess
+        return {"available": False, "reason": f"engine unavailable: {exc}"}
+
+    amount_minor = int(body.get("amountMinor") or 0)
+    payload = {
+        "amount": amount_minor / 100.0,
+        "foreign": bool(body.get("foreign", False)),
+        "hour": int(body.get("hour", datetime.now().hour)),
+    }
+
+    try:
+        # An agent is constructed against its use case, which is what carries the
+        # confidence floor, the DPIA reference and whether it may decide alone.
+        agent = FraudAgent(USE_CASES["retail.fraud_detection"], random.Random(
+            body.get("reference") and hash(body["reference"]) or None))
+        event = Event(id=body.get("reference", "tx"), type="card_transaction",
+                      ts=datetime.now(timezone.utc), payload=payload)
+        action, confidence, reason, adverse = agent.infer(event)
+    except Exception as exc:
+        return {"available": False, "reason": f"scoring failed: {exc}"}
+
+    # The engine speaks confidence in its own decision; the ledger wants risk.
+    risk = round((1.0 - confidence) * 100) if action == "APPROVE" else round(confidence * 100)
+
+    return {
+        "available": True,
+        "score": max(0, min(100, risk)),
+        "action": action,
+        "confidence": round(confidence, 4),
+        "below_floor": confidence < FraudAgent.confidence_floor,
+        "adverse": adverse,
+        "reasons": [{"label": reason, "weight": round(confidence, 2)}],
+        "model_version": FraudAgent.endpoint,
+        "use_case": "retail.fraud_detection",
+        "dpia": USE_CASES["retail.fraud_detection"].dpia_ref
+            if hasattr(USE_CASES["retail.fraud_detection"], "dpia_ref") else None,
+    }
+
+
 class Store:
     """Everything the three products share, behind one lock. self.cases/audit/resolved are
     the working copy every read is served from; when a database is configured, writes also
@@ -596,6 +645,13 @@ class Handler(SimpleHTTPRequestHandler):
 
         if p.path == "/api/decisions":
             return self._send(STORE.record(body), 201)
+
+        # Transaction scoring. The Node service has been calling
+        # /score/transaction since it was written — a path that never existed
+        # here, so every payment silently fell back to the rules engine and the
+        # fraud agent in aibank_engine.py was never once consulted.
+        if p.path == "/api/score/transaction":
+            return self._send(score_transaction(body), 200)
 
         if p.path.startswith("/api/cases/") and p.path.endswith("/resolve"):
             ref = p.path.split("/")[3]
