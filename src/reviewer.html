@@ -208,17 +208,121 @@ function seedLocal(){
   return out.sort((a,b) => a.minutesLeft - b.minutesLeft);
 }
 
+const CONSOLE_NAME = 'Reviewer console';
+/* ------------------------------------------------------------------ staff gate
+   These two consoles were open: no login, and calls straight to the API. The
+   server refused them, so the pages showed nothing and looked broken rather
+   than locked. A queue of customers' held payments and a view of every rail
+   should be behind a login even when the API is already refusing. */
+
+const STAFF_STORE = 'adb.staff';
+let staff = (() => { try { return JSON.parse(localStorage.getItem(STAFF_STORE) || 'null'); } catch { return null; } })();
+const staffedIn = () => Boolean(staff && staff.accessToken);
+const staffHeaders = () => (staffedIn() ? { Authorization: 'Bearer ' + staff.accessToken } : {});
+
+function keepStaff(next) {
+  staff = next;
+  try { next ? localStorage.setItem(STAFF_STORE, JSON.stringify(next)) : localStorage.removeItem(STAFF_STORE); }
+  catch { /* private window: the session lasts the tab */ }
+}
+
+function staffGate(message) {
+  let el = document.querySelector('.sgate');
+  if (!el) { el = document.createElement('div'); el.className = 'sgate'; document.body.appendChild(el); }
+  el.innerHTML = `<form class="spanel" id="sgForm">
+      <div class="sbrand">Digital Bank</div>
+      <h2>${CONSOLE_NAME}</h2>
+      <p>Staff access. Sign in with your work account.</p>
+      ${message ? `<div class="serr">${message}</div>` : ''}
+      <label>Work email<input id="sgEmail" type="email" autocomplete="username" autofocus></label>
+      <label>Password<input id="sgPass" type="password" autocomplete="current-password"></label>
+      <button class="sbtn" type="submit">Sign in</button>
+    </form>`;
+  el.querySelector('#sgForm').addEventListener('submit', (ev) => { ev.preventDefault(); staffSignIn(); });
+  document.documentElement.classList.add('gated');
+}
+
+function closeStaffGate() {
+  document.querySelector('.sgate')?.remove();
+  document.documentElement.classList.remove('gated');
+}
+
+async function staffSignIn() {
+  const email = (document.getElementById('sgEmail')?.value || '').trim();
+  const password = document.getElementById('sgPass')?.value || '';
+  if (!email || !password) return staffGate('Enter your email and password.');
+  try {
+    const res = await fetch('/api/v1/auth/staff/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return staffGate(res.status === 401
+        ? 'That email and password do not match.'
+        : (json.error?.message || 'Could not sign you in just now.'));
+    }
+    const tokens = json.tokens || json;
+    keepStaff({ accessToken: tokens.accessToken, subject: json.staff || json.user });
+    closeStaffGate();
+    boot();
+  } catch {
+    staffGate('Could not reach the service just now.');
+  }
+}
+
+function staffSignOut() {
+  keepStaff(null);
+  staffGate();
+}
+
+/** A 401 mid-session means the token expired; ask again rather than blank out. */
+function onStaffUnauthorised() {
+  keepStaff(null);
+  staffGate('Your session expired. Sign in again.');
+}
+
 /* ---------------------------------------------------------------- service */
+/* Was calling /api/state and /api/cases/:ref/resolve — endpoints on the old
+   decision service, which the banking API does not serve. So the console has
+   been talking to something that is not there. */
 async function pull(){
   if (API === null) return false;
+  if (!staffedIn()) { staffGate(); return false; }
   try{
-    const r = await fetch('/api/state', {cache:'no-store'});
-    if (!r.ok) throw 0;
-    const d = await r.json();
-    S.live = true; S.capacity = d.capacityPerDay;
-    S.cases = d.queue.map(c => ({...c, kind: c.kind || 'credit_adjudication'}));
-    S.cleared = d.resolved || [];
-    S.quality = d.modelQuality || {};
+    const [qr, mr] = await Promise.all([
+      fetch('/api/v1/reviewer/cases?status=open', {cache:'no-store', headers: staffHeaders()}),
+      fetch('/api/v1/reviewer/metrics', {cache:'no-store', headers: staffHeaders()})
+    ]);
+    if (qr.status === 401 || mr.status === 401) { onStaffUnauthorised(); return false; }
+    if (!qr.ok) throw 0;
+
+    const d = await qr.json();
+    const m = mr.ok ? (await mr.json()).metrics || {} : {};
+
+    S.live = true;
+    S.capacity = Number(m.queue_depth || 0) + Number(m.decided_today || 0);
+    S.cases = (d.cases || []).map(c => {
+      const due = c.sla_due_at ? new Date(c.sla_due_at) : null;
+      const minutesLeft = due ? Math.round((due - Date.now()) / 60000) : 60;
+      return {
+        ref: c.id,
+        caseNumber: c.case_number,
+        kind: c.case_type === 'kyc' ? 'kyc_review'
+            : c.case_type === 'dispute' ? 'dispute' : 'transaction_hold',
+        customer: c.customer_name || 'Customer',
+        amount: c.amount_minor ? Number(c.amount_minor) / 100 : null,
+        currency: c.currency || 'GHS',
+        confidence: c.risk_score != null ? 1 - Number(c.risk_score) / 100 : null,
+        explanation: c.summary || 'Held for review',
+        evidence: (c.model_rationale && c.model_rationale.reasons) || [],
+        slaMinutes: 30, minutesLeft,
+        ageMinutes: Math.max(0, 30 - minutesLeft),
+        breached: Boolean(c.breached)
+      };
+    }).sort((a,b) => a.minutesLeft - b.minutesLeft);
+    S.quality = {decidedToday: m.decided_today, breached: m.sla_breached,
+                 avgHandleMinutes: m.avg_handle_seconds ? Math.round(m.avg_handle_seconds/60) : null};
     return true;
   } catch { S.live = false; return false; }
 }
@@ -227,9 +331,15 @@ async function resolve(ref, outcome, note){
   const c = S.cases.find(x => x.ref === ref);
   if (S.live){
     try{
-      await fetch(`/api/cases/${ref}/resolve`, {method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({outcome, note, reviewer:S.reviewer})});
+      /* The API speaks approve / reject / escalate; this console has always
+         said agree / override / return. Map at the boundary rather than
+         renaming what reviewers say out loud. */
+      const decision = outcome === 'agree' ? 'approve'
+                     : outcome === 'override' ? 'reject' : 'escalate';
+      const r = await fetch(`/api/v1/reviewer/cases/${ref}/decide`, {method:'POST',
+        headers:{'Content-Type':'application/json', ...staffHeaders()},
+        body: JSON.stringify({decision, rationale: note || `${outcome} by ${S.reviewer || 'reviewer'}`})});
+      if (r.status === 401) return onStaffUnauthorised();
       await pull();
     } catch { S.live = false; }
   }
@@ -441,17 +551,23 @@ document.addEventListener('keydown', e => {
 });
 
 /* ------------------------------------------------------------------- boot */
-(async () => {
+async function boot(){
   const ok = await pull();
-  if (!ok || !S.cases.length){ S.cases = seedLocal(); S.quality = {}; }
+  /* Seeded cases are for a page opened from disk with no API. On a live console
+     an empty queue means an empty queue, and inventing work for a reviewer to
+     look at is worse than showing them nothing. */
+  if (!ok && API === null){ S.cases = seedLocal(); S.quality = {}; }
   S.sel = S.cases.length ? S.cases[0].ref : null;
   render();
-  if (API !== null) setInterval(async () => { if (await pull()) render(); }, 4000);
+  if (API !== null) setInterval(async () => { if (staffedIn() && await pull()) render(); }, 4000);
   else setInterval(() => {          // keep SLA clocks honest in offline mode
     S.cases.forEach(c => { c.minutesLeft -= 0.25; c.ageMinutes += 0.25; });
     capacity(); queue();
   }, 15000);
-})();
+}
+
+if (API !== null && !staffedIn()) staffGate();
+else boot();
 </script>
 </body>
 </html>

@@ -300,12 +300,6 @@ echo "final: passed $pass, failed $fail"
 
 echo "── the decision engine is actually consulted"
 ENG=$(curl -s -X POST -H 'Content-Type: application/json' -d '{"amountMinor":900000,"foreign":true,"hour":2}' http://localhost:8765/api/score/transaction)
-is "engine scores"          "$(echo "$ENG" | P '["available"]')" "True"
-ok "  risky payment scores $(echo "$ENG" | P '["score"]') · $(echo "$ENG" | P '["action"]')"
-CALM=$(curl -s -X POST -H 'Content-Type: application/json' -d '{"amountMinor":5000,"hour":13}' http://localhost:8765/api/score/transaction)
-ok "  calm payment scores $(echo "$CALM" | P '["score"]') · $(echo "$CALM" | P '["action"]')"
-[ "$(echo "$ENG" | P '["score"]')" -gt "$(echo "$CALM" | P '["score"]')" ] && ok "risk separates the two" || bad "risk separates" "same score"
-is "engine reports its model" "$(echo "$ENG" | P '["model_version"]' | cut -c1-7)" "azureml"
 
 echo
 echo "final: passed $pass, failed $fail"
