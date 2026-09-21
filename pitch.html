@@ -19,8 +19,12 @@
   html,body{height:100%;background:#0A1826;overflow:hidden;-webkit-font-smoothing:antialiased}
   /* The slides are drawn on a fixed 1920x1080 canvas and scaled to the window,
      so they look the same on a projector, a laptop and a phone held sideways. */
-  .viewport{position:fixed;inset:0;display:grid;place-items:center}
-  .stage{width:1920px;height:1080px;position:relative;transform-origin:center center;flex:none}
+  /* Positioned by arithmetic, not by grid centring. A 1920px box inside a
+     390px phone overflows its grid cell, Safari then aligns it to the start
+     instead of the centre, and scaling it around its own middle put the slide
+     off the right edge of the screen — a blank page on every phone. */
+  .viewport{position:fixed;inset:0;overflow:hidden}
+  .stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0}
   .slide{position:absolute;inset:0;width:1920px;height:1080px;overflow:hidden;
     opacity:0;visibility:hidden;transition:opacity .45s ease,visibility .45s}
   .slide.on{opacity:1;visibility:visible}
@@ -30,6 +34,8 @@
     font:500 13px 'IBM Plex Sans',Arial,sans-serif;color:#A7BAC8;
     background:linear-gradient(transparent,rgba(6,16,26,.72));opacity:0;transition:opacity .3s}
   body:hover .chrome,.chrome:focus-within,body.touch .chrome{opacity:1}
+  /* no hover on a touch screen, so the controls stay visible there */
+  @media (hover:none){.chrome{opacity:1}}
   .chrome button{background:rgba(255,255,255,.1);border:0;color:#EAF1F4;font:inherit;
     width:38px;height:38px;border-radius:10px;cursor:pointer}
   .chrome button:hover{background:rgba(255,255,255,.2)}
@@ -37,6 +43,10 @@
   .bar i{display:block;height:100%;background:#45D9C8;transition:width .35s ease}
   .tap{position:fixed;top:0;bottom:64px;width:30%;z-index:2;cursor:pointer}
   .tap.prev{left:0} .tap.next{right:0}
+  /* a 16:9 slide in a portrait phone is a quarter of the screen; say so once */
+  .rotate{position:fixed;left:0;right:0;top:calc(18px + env(safe-area-inset-top));display:none;
+    text-align:center;font:500 14px 'IBM Plex Sans',Arial,sans-serif;color:#A7BAC8}
+  @media (orientation:portrait) and (max-width:700px){.rotate{display:block}}
   @media (prefers-reduced-motion:reduce){.slide,.bar i{transition:none}}
 </style>
 </head>
@@ -61,6 +71,8 @@
 <div class="tap prev" aria-hidden="true"></div>
 <div class="tap next" aria-hidden="true"></div>
 
+<p class="rotate">Turn your phone sideways for a larger view</p>
+
 <nav class="chrome" aria-label="Slide controls">
   <button id="prev" aria-label="Previous slide">‹</button>
   <span id="count">1 / 14</span>
@@ -77,8 +89,14 @@
   let at = Math.min(total - 1, Math.max(0, (parseInt(location.hash.slice(1), 10) || 1) - 1));
 
   function fit(){
-    const s = Math.min(innerWidth / 1920, innerHeight / 1080);
-    stage.style.transform = 'scale(' + s + ')';
+    // visualViewport is the part of the screen actually showing, which on a
+    // phone excludes the browser's own toolbars
+    const vw = (window.visualViewport && visualViewport.width) || innerWidth;
+    const vh = (window.visualViewport && visualViewport.height) || innerHeight;
+    const s = Math.min(vw / 1920, vh / 1080);
+    const x = (vw - 1920 * s) / 2;
+    const y = (vh - 1080 * s) / 2;
+    stage.style.transform = 'translate(' + x + 'px,' + y + 'px) scale(' + s + ')';
   }
 
   function show(i){
@@ -115,6 +133,8 @@
   });
 
   addEventListener('resize', fit);
+  addEventListener('orientationchange', () => setTimeout(fit, 150));
+  if (window.visualViewport) visualViewport.addEventListener('resize', fit);
   fit(); show(at);
 })();
 </script>
