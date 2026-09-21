@@ -33,3 +33,10 @@ tower = tpl.replace("__SNAPSHOT_JSON__", data)
 pathlib.Path("control-tower.html").write_text(tower)
 (public/"control-tower.html").write_text(tower)
 print(f"{'control-tower.html':26} rebuilt from the engine export")
+
+# The pitch deck is self-contained and needs nothing injected; it is copied
+# through so pokzbank.org/pitch serves it from the same build as everything else.
+_pitch = (src/"pitch.html").read_text()
+pathlib.Path("pitch.html").write_text(_pitch)
+(public/"pitch.html").write_text(_pitch)
+print("pitch.html                 copied")
