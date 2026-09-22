@@ -75,9 +75,22 @@ app.use('/api', compatRouter);
 
 // serve the website, web banking and app shell from the same origin
 // the built front ends (index, web, app, reviewer console, control tower)
-app.use(express.static(join(here, '../../public'), { extensions: ['html'], maxAge: '5m' }));
+/* No browser caching of the pages. A five-minute cache meant every deploy was
+   followed by five minutes of the previous version — which looked, from the
+   outside, like fixes that had not landed. A banking page should also never be
+   restored from the back-forward cache showing a balance from before. */
+const noStore = (res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+};
+app.use(express.static(join(here, '../../public'), {
+  extensions: ['html'], etag: false, lastModified: false, setHeaders: noStore
+}));
 // the leaner API-native pages, kept reachable for testing the raw surface
-app.use('/v2', express.static(join(here, '../../api-web'), { extensions: ['html'], maxAge: '5m' }));
+app.use('/v2', express.static(join(here, '../../api-web'), {
+  extensions: ['html'], etag: false, lastModified: false, setHeaders: noStore
+}));
 app.get('/api/*', (_req, res) => res.status(404).json({ error: { code: 'not_found', message: 'Unknown endpoint' } }));
 app.use(errorHandler(logger));
 

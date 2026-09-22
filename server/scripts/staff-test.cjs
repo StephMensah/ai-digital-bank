@@ -11,7 +11,8 @@ function boot(file, signedIn){
   const dom = new JSDOM(html,{runScripts:'dangerously',url:'https://pokzbank.org/'+file,
     beforeParse(w){
       w.matchMedia=()=>({matches:false,addEventListener(){},removeEventListener(){}});
-      Object.defineProperty(w,'localStorage',{value:{getItem:k=>store[k]??null,setItem:(k,v)=>{store[k]=v},removeItem:k=>{delete store[k]}}});
+      Object.defineProperty(w,'sessionStorage',{value:{getItem:k=>store[k]??null,setItem:(k,v)=>{store[k]=v},removeItem:k=>{delete store[k]}}});
+      Object.defineProperty(w,'localStorage',{value:{getItem:()=>null,setItem(){},removeItem(){}}});
       w.fetch=(u,o={})=>{calls.push((o.method||'GET')+' '+String(u).replace('https://pokzbank.org',''));
         const send=b=>Promise.resolve({ok:true,status:200,json:()=>Promise.resolve(b)});
         if(String(u).includes('/reviewer/cases')) return send({cases:[{id:'c1',case_number:12,case_type:'transaction',customer_name:'Ama Boateng',amount_minor:450000,currency:'GHS',risk_score:72,summary:'Large amount to a new payee',sla_due_at:new Date(Date.now()+900000).toISOString(),status:'open'}]});

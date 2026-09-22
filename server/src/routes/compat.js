@@ -75,6 +75,11 @@ compatRouter.get('/accounts/:entity', authenticate('customer'), async (req, res,
     res.json({
       entity: req.params.entity,
       mustChangePin: Boolean(req.customer.must_change_pin),
+      kycStatus: req.customer.kyc_status,
+      /* Finished means verified or awaiting a reviewer, with a PIN. Anything
+         short of that is an abandoned signup, and the app restarts it. */
+      onboardingComplete: !req.customer.must_change_pin &&
+        ['verified', 'in_review', 'approved'].includes(req.customer.kyc_status),
       goals: products.goals.map((g) => ({
         id: g.id, name: g.name, icon: g.icon, due: g.due,
         target: asMajor(g.target_minor), saved: asMajor(g.saved_minor),

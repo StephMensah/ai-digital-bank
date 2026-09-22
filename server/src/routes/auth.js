@@ -11,7 +11,13 @@ import { audit, auditFrom } from '../middleware/audit.js';
 
 export const authRouter = Router();
 
-const loginLimiter = rateLimit({ windowMs: 15 * 60_000, limit: 10, standardHeaders: true, legacyHeaders: false });
+/* Ten attempts per fifteen minutes in production. The test suite registers a
+   dozen customers in seconds and would trip it, so AUTH_RATE_LIMIT can raise
+   it there — never set it on the live service. */
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60_000, limit: Number(process.env.AUTH_RATE_LIMIT || 10),
+  standardHeaders: true, legacyHeaders: false
+});
 
 /* Accepts 0241234567, 241234567 or +233241234567 and hands on the canonical
    +233 form, so the number a customer types is never the number we store. */
@@ -56,15 +62,18 @@ authRouter.post('/register',
         [phone, email || null]
       );
       const prior = existing[0];
-      const incomplete = prior && !prior.pin_hash &&
-        Number(prior.accounts) === 0 && prior.kyc_status === 'pending';
+      /* Unfinished means no account and verification never submitted. Whether a
+         PIN was set along the way no longer matters: someone who set a PIN and
+         then walked away was locked out of starting again, which is the exact
+         case the restart exists for. */
+      const incomplete = prior && Number(prior.accounts) === 0 && prior.kyc_status === 'pending';
       if (prior && !incomplete) throw conflict('An account already exists for that number or email');
 
       const { rows } = incomplete
         ? await query(
             `UPDATE customers
                 SET full_name=$2, email=$3, date_of_birth=$4, password_hash=$5,
-                    must_change_pin=true, updated_at=now()
+                    pin_hash=NULL, must_change_pin=true, updated_at=now()
               WHERE id=$1
               RETURNING id, msisdn, email, full_name, kyc_status, kyc_tier, created_at`,
             [prior.id, fullName, email || null, dateOfBirth || null, hashSecret(pw)]

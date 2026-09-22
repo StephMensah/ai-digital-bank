@@ -5,13 +5,17 @@
    should be behind a login even when the API is already refusing. */
 
 const STAFF_STORE = 'adb.staff';
-let staff = (() => { try { return JSON.parse(localStorage.getItem(STAFF_STORE) || 'null'); } catch { return null; } })();
+/* Staff sessions are tab-scoped too: a console holding customers' held
+   payments should not stay signed in after the browser closes. */
+const staffBox = (() => { try { return window.sessionStorage; } catch { return null; } })();
+try { localStorage.removeItem(STAFF_STORE); } catch {}
+let staff = (() => { try { return JSON.parse((staffBox && staffBox.getItem(STAFF_STORE)) || 'null'); } catch { return null; } })();
 const staffedIn = () => Boolean(staff && staff.accessToken);
 const staffHeaders = () => (staffedIn() ? { Authorization: 'Bearer ' + staff.accessToken } : {});
 
 function keepStaff(next) {
   staff = next;
-  try { next ? localStorage.setItem(STAFF_STORE, JSON.stringify(next)) : localStorage.removeItem(STAFF_STORE); }
+  try { next ? staffBox.setItem(STAFF_STORE, JSON.stringify(next)) : staffBox.removeItem(STAFF_STORE); }
   catch { /* private window: the session lasts the tab */ }
 }
 
