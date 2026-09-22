@@ -303,3 +303,19 @@ ENG=$(curl -s -X POST -H 'Content-Type: application/json' -d '{"amountMinor":900
 
 echo
 echo "final: passed $pass, failed $fail"
+
+echo "── restarting an unfinished signup"
+MR="$(gh)"
+TR1=$(curl -s -X POST -H 'Content-Type: application/json' -d "{\"fullName\":\"Half Done\",\"msisdn\":\"$MR\",\"email\":\"h$RANDOM@x.com\",\"password\":\"FirstPass1234\"}" "$B/api/v1/auth/register" | P '["tokens"]["accessToken"]')
+CH=$(curl -s -X POST -H "Authorization: Bearer $TR1" -H 'Content-Type: application/json' -d '{"purpose":"pin_change"}' "$B/api/otp/request")
+SU=$(curl -s -X POST -H "Authorization: Bearer $TR1" -H 'Content-Type: application/json' -d "{\"challengeId\":$(echo "$CH" | python3 -c 'import sys,json;print(json.dumps(json.load(sys.stdin)["challengeId"]))'),\"code\":\"$(echo "$CH" | P '["demoCode"]')\"}" "$B/api/otp/verify" | P '["stepUpToken"]')
+curl -s -o /dev/null -X POST -H "Authorization: Bearer $TR1" -H 'Content-Type: application/json' -d "{\"newPin\":\"4321\",\"stepUpToken\":\"$SU\"}" "$B/api/pin/set"
+is "set a PIN, never verified: flagged unfinished" "$(curl -s -H "Authorization: Bearer $TR1" "$B/api/accounts/personal" | P '["onboardingComplete"]')" "False"
+RR=$(curl -s -X POST -H 'Content-Type: application/json' -d "{\"fullName\":\"Half Done Again\",\"msisdn\":\"$MR\",\"email\":\"h2$RANDOM@x.com\",\"password\":\"SecondPass1234\"}" "$B/api/v1/auth/register")
+is "can start again despite the PIN" "$(echo "$RR" | P '["nextStep"]')" "verify_identity"
+TR2=$(echo "$RR" | P '["tokens"]["accessToken"]')
+is "and the old PIN is gone" "$(curl -s -H "Authorization: Bearer $TR2" "$B/api/accounts/personal" | P '["mustChangePin"]')" "True"
+is "a finished customer is flagged complete" "$(curl -s -H "Authorization: Bearer $T1" "$B/api/accounts/personal" | P '["onboardingComplete"]')" "True"
+
+echo
+echo "final: passed $pass, failed $fail"

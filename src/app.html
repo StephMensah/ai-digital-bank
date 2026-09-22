@@ -863,7 +863,7 @@ function vYou(){
     <div class="surface" style="display:flex;gap:14px;align-items:center">
       <div class="av o" style="width:54px;height:54px;border-radius:18px;font-size:17px">${initials(e.holder)}</div>
       <div style="flex:1"><b style="font-size:16px">${e.holder}</b>
-        <div class="tiny">Customer since ${e.since} · ${e.accounts[0].num}</div></div>
+        <div class="tiny">Customer since ${e.since} · ${(e.accounts[0] || FID.NOACCT).num}</div></div>
       <span class="badge j">${k.label}</span></div>
 
     <div class="surface" style="display:flex;gap:12px;align-items:center;margin-top:10px">
@@ -1630,6 +1630,27 @@ async function gateOpen(){
   }
 }
 
+
+/* ---------------------------------------------------------- unfinished signup
+   Someone who opened the app, registered, and left before verification used to
+   come back to a half-open account with nothing in it — which is where the
+   crash was. On arrival, an unfinished signup is signed out and sent back to
+   the start. This runs only when the page loads, never mid-flow, so it cannot
+   interrupt someone who is on their way through verification right now. */
+async function restartIfUnfinished(){
+  if (!FID.live || !FID.signedIn) return false;
+  try {
+    const data = await FID.fetchAccount('personal');
+    if (data && data.onboardingComplete === false) {
+      FID.signOut();
+      FID.blankProfile();
+      showGate('open', 'Your account opening was not finished, so we have started it again. It only takes a few minutes.');
+      return true;
+    }
+  } catch { /* a network blip is not a reason to throw someone out */ }
+  return false;
+}
+
 function signInSheet(message){
   openSheet(`<h3>Sign in</h3>
     <p class="sub">Your accounts, your payments, your history.</p>
@@ -2346,8 +2367,8 @@ function flowPayroll(){
 
 /* ---------------------------------------------------------------- support */
 const REPLY = {
-  balance_enquiry: e => ({English:`Your available balance is ${m2(e.accounts[0].balance)}.`,
-                          Twi:`Wo sika a ɛwɔ hɔ yɛ ${m2(e.accounts[0].balance)}.`}),
+  balance_enquiry: e => ({English:`Your available balance is ${m2((e.accounts[0] || FID.NOACCT).balance)}.`,
+                          Twi:`Wo sika a ɛwɔ hɔ yɛ ${m2((e.accounts[0] || FID.NOACCT).balance)}.`}),
   card_block: () => ({English:'Card ending 3391 is frozen. Nothing new can be charged to it. Order a replacement?',
                       Twi:'Wo card 3391 no, yɛasi ano. Yɛnyɛ foforɔ mma wo?'}),
   branch_locator: () => ({English:'Nearest branch: Ridge, 1.2 km, opens 08:30. Nearest ATM: Farrar Avenue, 400 m.',
@@ -2959,6 +2980,7 @@ applyGate();
 /* Gated means signed out, and there is nothing behind the gate worth drawing.
    Skipping it also avoids rendering a home screen that has no account in it. */
 const gated = FID.live && !FID.signedIn;
+restartIfUnfinished();
 
 if (!gated) render();
 tickClock();

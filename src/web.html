@@ -926,7 +926,7 @@ function vStatements(){
   const maxCat = top[0] ? top[0][1] : 1;
 
   return `<div class="phead"><h2>Statement</h2>
-      <p>Every movement on ${e.accounts[0].name}, with the merchant it went to and the balance it left behind.</p></div>
+      <p>Every movement on ${(e.accounts[0] || FID.NOACCT).name}, with the merchant it went to and the balance it left behind.</p></div>
     <div class="grid g3" style="margin-bottom:18px">
       <div class="surface"><span class="eyebrow">Money out</span>
         <div class="money" style="font-size:26px;margin-top:6px">${m0(spent)}</div>
@@ -935,8 +935,8 @@ function vStatements(){
         <div class="money" style="font-size:26px;margin-top:6px;color:var(--pos)">${m0(got)}</div>
         <div class="tiny">${rows.filter(t=>t.a>0).length} receipts</div></div>
       <div class="surface"><span class="eyebrow">Balance now</span>
-        <div class="money" style="font-size:26px;margin-top:6px">${m0(e.accounts[0].balance)}</div>
-        <div class="tiny">${e.accounts[0].num}</div></div>
+        <div class="money" style="font-size:26px;margin-top:6px">${m0((e.accounts[0] || FID.NOACCT).balance)}</div>
+        <div class="tiny">${(e.accounts[0] || FID.NOACCT).num}</div></div>
     </div>
     <div class="grid g2" style="align-items:start">
       <div>
@@ -1674,6 +1674,27 @@ async function gateOpen(){
   }
 }
 
+
+/* ---------------------------------------------------------- unfinished signup
+   Someone who opened the app, registered, and left before verification used to
+   come back to a half-open account with nothing in it — which is where the
+   crash was. On arrival, an unfinished signup is signed out and sent back to
+   the start. This runs only when the page loads, never mid-flow, so it cannot
+   interrupt someone who is on their way through verification right now. */
+async function restartIfUnfinished(){
+  if (!FID.live || !FID.signedIn) return false;
+  try {
+    const data = await FID.fetchAccount('personal');
+    if (data && data.onboardingComplete === false) {
+      FID.signOut();
+      FID.blankProfile();
+      showGate('open', 'Your account opening was not finished, so we have started it again. It only takes a few minutes.');
+      return true;
+    }
+  } catch { /* a network blip is not a reason to throw someone out */ }
+  return false;
+}
+
 function signInSheet(message){
   openSheet(`<h3 class="d2">Sign in</h3>
     <p class="sub">Your accounts, your payments, your history.</p>
@@ -2118,8 +2139,8 @@ function sheets(k){
 
 /* --------------------------------------------------------------- support */
 const REPLY = {
-  balance_enquiry: e => ({English:`Your available balance is ${m2(e.accounts[0].balance)}.`,
-                          Twi:`Wo sika a ɛwɔ hɔ yɛ ${m2(e.accounts[0].balance)}.`}),
+  balance_enquiry: e => ({English:`Your available balance is ${m2((e.accounts[0] || FID.NOACCT).balance)}.`,
+                          Twi:`Wo sika a ɛwɔ hɔ yɛ ${m2((e.accounts[0] || FID.NOACCT).balance)}.`}),
   card_block: () => ({English:'Card ending 3391 is frozen. Nothing new can be charged to it. Order a replacement?',
                       Twi:'Wo card 3391 no, yɛasi ano. Yɛnyɛ foforɔ mma wo?'}),
   branch_locator: () => ({English:'Nearest branch: Ridge, 1.2 km, opens 08:30. Nearest ATM: Farrar Avenue, 400 m.',
@@ -2549,6 +2570,7 @@ applyGate();
 /* Gated means signed out, and there is nothing behind the gate worth drawing.
    Skipping it also avoids rendering a home screen that has no account in it. */
 const gated = FID.live && !FID.signedIn;
+restartIfUnfinished();
 
 if (!gated) { render(); loadInvest(); loadLinkedCards(); }
 syncAccountsFromServer();

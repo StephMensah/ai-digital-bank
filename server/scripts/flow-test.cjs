@@ -37,9 +37,9 @@ function boot(file, { mustChangePin = false } = {}) {
     url: 'https://pokzbank.org/' + file,
     beforeParse(w) {
       w.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
-      Object.defineProperty(w, 'localStorage', {
-        value: { getItem: (k) => store[k] ?? null, setItem: (k, v) => { store[k] = v; }, removeItem: (k) => { delete store[k]; } }
-      });
+      const api = { getItem: (k) => store[k] ?? null, setItem: (k, v) => { store[k] = v; }, removeItem: (k) => { delete store[k]; } };
+      Object.defineProperty(w, 'sessionStorage', { value: api });
+      Object.defineProperty(w, 'localStorage', { value: { getItem: () => null, setItem() {}, removeItem() {} } });
       w.fetch = (url, opts = {}) => {
         const u = String(url);
         calls.push(`${opts.method || 'GET'} ${u.replace('https://pokzbank.org', '')}`);

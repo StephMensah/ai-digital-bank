@@ -78,6 +78,11 @@ const FID = (() => {
      inherited: no borrowed cards, no borrowed payees. */
   let availableEntities = ['personal'];
 
+  /* A customer with no account is an ordinary state: signed up, verification not
+     yet cleared. Every screen that reaches for the first account uses this
+     rather than assuming one exists — five of them did, and each crashed. */
+  const NOACCT = Object.freeze({name:'No account yet', num:'—', accountNumber:'', balance:0, type:'current'});
+
   /* The bundled entities are for a page with no API behind it — a file opened
      from disk. On the live site they must never reach the screen, not even for
      the instant before the gate covers them, because what they show is
@@ -315,13 +320,19 @@ const FID = (() => {
   const localMsisdn = v => { const n = normaliseMsisdn(v); return n ? '0' + n.slice(4) : String(v || ''); };
 
   const STORE = 'adb.session';
+  /* Session lives for the browser tab, not indefinitely. localStorage kept a
+     customer signed in across restarts, which is how an unfinished signup came
+     back as a half-open account instead of a fresh start. A reload keeps you
+     signed in; closing the tab signs you out, as a banking app should. */
+  const box = (() => { try { return window.sessionStorage; } catch { return null; } })();
+  try { localStorage.removeItem(STORE); } catch {}   // clear anything the old build left behind
   let session = (() => {
-    try { return JSON.parse(localStorage.getItem(STORE) || 'null'); } catch { return null; }
+    try { return JSON.parse((box && box.getItem(STORE)) || 'null'); } catch { return null; }
   })();
   const signedIn = () => Boolean(session && session.accessToken);
   function keepSession(next){
     session = next;
-    try { next ? localStorage.setItem(STORE, JSON.stringify(next)) : localStorage.removeItem(STORE); }
+    try { next ? box.setItem(STORE, JSON.stringify(next)) : box.removeItem(STORE); }
     catch { /* private browsing — the session simply does not outlive the tab */ }
   }
   const authHeaders = () =>
@@ -541,7 +552,7 @@ const FID = (() => {
   return { CCY, money, money0, pct, seed, ENTITIES, LANG, FLOOR, get live(){ return apiUp; },
            signIn, signOut, register, topUp, primaryAccountId, submitGhanaCard, kycStatus,
            apiReady, get apiMissing(){ return apiMissing; }, APP_URL,
-           applyLiveProfile, blankProfile, get entitiesAvailable(){ return availableEntities; },
+           applyLiveProfile, blankProfile, NOACCT, get entitiesAvailable(){ return availableEntities; },
            nameEnquiry, savePayee, banks, walletToBank, transferInternal, normaliseMsisdn, localMsisdn, authHeaders,
            get liveGoals(){ return liveGoals; },
            get signedIn(){ return signedIn(); },
