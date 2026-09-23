@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS transactions (
   account_id       uuid REFERENCES accounts(id),
   counterparty     jsonb NOT NULL DEFAULT '{}'::jsonb,
   direction        text NOT NULL CHECK (direction IN ('credit','debit')),
-  kind             text NOT NULL CHECK (kind IN ('deposit','withdrawal','transfer','bill','airtime','loan_disbursement','loan_repayment','fee','reversal')),
+  kind             text NOT NULL CHECK (kind IN ('deposit','withdrawal','transfer','bill','airtime','loan_disbursement','loan_repayment','fee','reversal','remittance')),
   amount_minor     bigint NOT NULL CHECK (amount_minor > 0),
   fee_minor        bigint NOT NULL DEFAULT 0,
   currency         char(3) NOT NULL DEFAULT 'GHS',
@@ -400,3 +400,13 @@ CREATE TABLE IF NOT EXISTS asset_loans (
   created_at     timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS asset_loans_customer_idx ON asset_loans(customer_id, status);
+
+-- Cross-border sends are their own kind, not a transfer with a note. Regulatory
+-- returns and reconciliation both need to count them separately, and a kind is
+-- the only field that survives every later edit to metadata. The table exists
+-- before this line runs on an already-deployed database, so the constraint is
+-- replaced rather than declared.
+ALTER TABLE transactions DROP CONSTRAINT IF EXISTS transactions_kind_check;
+ALTER TABLE transactions ADD CONSTRAINT transactions_kind_check
+  CHECK (kind IN ('deposit','withdrawal','transfer','bill','airtime',
+                  'loan_disbursement','loan_repayment','fee','reversal','remittance'));

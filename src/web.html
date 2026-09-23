@@ -308,7 +308,8 @@ function vTransfers(){
           <span>${b.bank} · ${b.acct}</span></div><span class="tiny">last ${b.last}</span><span class="go">${I('chevron',17)}</span></button>`).join('')}
         <div style="display:flex;gap:8px;margin-top:14px">
           <button class="btn quiet sm" data-sheet="newben">+ New beneficiary</button>
-          <button class="btn quiet sm" data-sheet="swift">International (SWIFT)</button></div></div>
+          <button class="btn quiet sm" data-sheet="swift">International (SWIFT)</button>
+          ${FID.features?.remittance ? '<button class="btn quiet sm" data-act="remit">Send abroad</button>' : ''}</div></div>
       <div>
         <div class="surface"><span class="eyebrow">Standing orders</span>
           ${FID.STANDING.map(o=>`<div class="item static"><div class="av">${I('repeat',21,2.2)}</div>
@@ -1191,20 +1192,96 @@ function startPinChange(resume){
   pinChangeSheet();
 }
 
+/* ------------------------------------------------- what you typed stays typed
+   Re-rendering a sheet to show one error used to wipe every field in it. Every
+   input is remembered by id as it is typed; every sheet renders what it
+   remembers. Cleared on success, never held longer than the form. */
+const FORM = {};
+const fv = id => FORM[id] || '';
+const escv = v => String(v ?? '').replace(/[&<>"']/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+const forget = (...ids) => ids.forEach(id => delete FORM[id]);
+
 const pinField = (label = '4-digit PIN', maxlen = 4) =>
   `<label class="field" style="margin-top:18px"><span>${label}</span>
     <input id="authInput" inputmode="numeric" maxlength="${maxlen}" type="password"
       style="letter-spacing:.4em;text-align:center" autofocus></label>`;
 
-function pinChangeSheet(){
+/* ------------------------------------------------------- moving between steps
+   Each step answers the same three questions: how do I go on, how do I go back
+   and change what I just typed, and how do I stop. Back appears only where
+   there is a step to return to. authPrevStage is the one place that knows. */
+function authPrevStage(){
+  const a = S.auth;
+  if (!a) return null;
+  if (a.stage === 'setpin2') return 'setpin1';
+  if (a.stage === 'setpin1') return a.currentPin !== null ? 'currentpin' : null;
+  if (a.stage === 'otp') return a.otpPurpose === 'pin_change' ? 'setpin1' : 'pin';
+  if (a.stage === 'pin') return (typeof SEND !== 'undefined' && SEND.resolved) ? 'send' : null;
+  return null;
+}
+
+function authBack(){
+  const prev = authPrevStage();
+  if (!prev) return;
+  const a = S.auth;
+  if (prev === 'send'){ S.auth = null; return sendConfirmSheet(); }
+  if (prev === 'setpin1'){ a.newPin = ''; a.challenge = null; }
+  a.stage = prev;
+  return prev === 'pin' ? authPinSheet() : pinChangeSheet();
+}
+
+/* Stopping halfway through the first PIN abandons an account that is not open
+   yet, and an unfinished signup starts over. Say so before it happens. */
+function authCancel(){
+  if (S.afterPin === 'verify' && S.auth){
+    return openSheet(`<span class="badge r">Not finished</span>
+      <h3 class="d2" style="margin-top:12px">Leave before your account is open?</h3>
+      <p class="sub">Your account is not open yet. If you leave now, opening it starts again
+        from the beginning — your details are not kept.</p>
+      <div style="display:flex;gap:8px;margin-top:18px">
+        <button class="btn primary" style="flex:1" data-act="authkeepgoing">Keep going</button>
+        <button class="btn quiet" data-act="authleavesetup">Leave setup</button></div>`);
+  }
+  S.auth = null; closeSheet(); render();
+}
+
+function authResume(){
+  if (!S.auth) return closeSheet();
+  return S.auth.stage === 'otp' ? otpSheet()
+       : S.auth.stage === 'pin' ? authPinSheet()
+       : pinChangeSheet();
+}
+
+function authLeaveSetup(){
+  S.auth = null; S.afterPin = null;
+  FID.signOut(); FID.blankProfile();
+  closeSheet(); render();
+  showGate('open', 'Nothing was saved. You can open your account whenever you are ready.');
+}
+
+/* A code that never arrives is the commonest reason for being stuck here. */
+async function authResend(){
+  if (!S.auth || S.auth.stage !== 'otp') return;
+  try {
+    const {challengeId, demoCode} = await FID.requestOtp(S.entity, S.auth.otpPurpose);
+    S.auth.challenge = {challengeId, demoCode};
+    otpSheet();
+  } catch (e){ authError(e); }
+}
+
+function pinChangeSheet(message){
   const copy = {
     currentpin: ['Enter your current PIN', 'Confirms it is you before setting a new one.'],
     setpin1: ['Set a new PIN', 'You need a PIN before you can send money, pay a bill, or move funds.'],
     setpin2: ['Confirm your new PIN', 'Enter it again to make sure it matches.'],
   }[S.auth.stage];
+  const back = authPrevStage();
   openSheet(`<h3 class="d2">${copy[0]}</h3><p class="sub">${copy[1]}</p>
+    ${message ? `<span class="badge r">${message}</span>` : ''}
     ${pinField()}
     <div style="display:flex;gap:8px"><button class="btn primary" style="flex:1" data-act="authsubmit">Continue</button>
+      ${back ? '<button class="btn quiet" data-act="authback">Back</button>' : ''}
       <button class="btn quiet" data-act="authcancel">Cancel</button></div>`);
 }
 
@@ -1212,10 +1289,12 @@ function openAccountSheet(message){
   openSheet(`<h3 class="d2">Open an account</h3>
     <p class="sub">Your name, your number, and a password. The account is created on the spot.</p>
     ${message ? `<span class="badge r">${message}</span>` : ''}
-    <label class="field" style="margin-top:18px"><span>Full name</span><input id="oaName" autofocus></label>
+    <label class="field" style="margin-top:18px"><span>Full name</span>
+      <input id="oaName" value="${escv(fv('oaName'))}" autofocus></label>
     <label class="field" style="margin-top:12px"><span>Phone number</span>
-      <input id="oaMsisdn" inputmode="tel" placeholder="024 123 4567"></label>
-    <label class="field" style="margin-top:12px"><span>Email</span><input id="oaEmail" type="email"></label>
+      <input id="oaMsisdn" inputmode="tel" placeholder="024 123 4567" value="${escv(fv('oaMsisdn'))}"></label>
+    <label class="field" style="margin-top:12px"><span>Email</span>
+      <input id="oaEmail" type="email" value="${escv(fv('oaEmail'))}"></label>
     <label class="field" style="margin-top:12px"><span>Password</span>
       <input id="oaPass" type="password" autocomplete="new-password"></label>
     <p class="sub" style="margin-top:6px">At least 10 characters.</p>
@@ -1224,15 +1303,37 @@ function openAccountSheet(message){
       <button class="btn quiet" data-act="close">Cancel</button></div>`);
 }
 
-async function doOpenAccount(){
+/* Checked, then shown back before anything is created: the number here is where
+   every code goes afterwards, so this is the last useful moment to fix it. */
+function doOpenAccount(){
   const fullName = ($('oaName')?.value || '').trim();
   const msisdn = ($('oaMsisdn')?.value || '').trim();
   const password = $('oaPass')?.value || '';
   if (fullName.length < 3) return openAccountSheet('Enter your full name');
   if (!FID.normaliseMsisdn(msisdn)) return openAccountSheet('Enter a Ghana mobile number, for example 024 123 4567');
   if (password.length < 10) return openAccountSheet('Passwords need at least 10 characters');
+  confirmDetailsSheet();
+}
+
+function confirmDetailsSheet(){
+  const rows = [['Name', fv('oaName')], ['Phone number', fv('oaMsisdn')],
+                ['Email', fv('oaEmail') || 'Not given'], ['Password', '•'.repeat(8)]];
+  openSheet(`<h3 class="d2">Check your details</h3>
+    <p class="sub">Your codes come to this number. Nothing is created until you confirm.</p>
+    <div class="slip" style="margin-top:14px"><dl>${
+      rows.map(([k,v]) => `<dt>${k}</dt><dd>${escv(v)}</dd>`).join('')}</dl></div>
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <button class="btn primary" style="flex:1" data-act="openaccountcreate">Create my account</button>
+      <button class="btn quiet" data-act="openaccount">Back</button>
+      <button class="btn quiet" data-act="close">Cancel</button></div>`);
+}
+
+async function doOpenAccountCreate(){
+  const fullName = fv('oaName').trim(), msisdn = fv('oaMsisdn').trim();
+  const password = $('oaPass')?.value || fv('oaPass'), email = fv('oaEmail').trim();
   try {
-    await FID.register({fullName, msisdn, email: ($('oaEmail')?.value || '').trim(), password});
+    await FID.register({fullName, msisdn, email, password});
+    forget('oaName','oaMsisdn','oaEmail','oaPass');
     closeSheet();
     render();
     S.afterPin = 'verify';
@@ -1251,9 +1352,9 @@ function verifySheet(message, kind){
       is issued as soon as it clears.</p>
     ${message ? `<span class="badge ${kind || 'r'}">${message}</span>` : ''}
     <label class="field" style="margin-top:18px"><span>Ghana Card number</span>
-      <input id="kycNo" placeholder="GHA-123456789-1" autofocus></label>
+      <input id="kycNo" placeholder="GHA-123456789-1" value="${escv(fv('kycNo'))}" autofocus></label>
     <label class="field" style="margin-top:12px"><span>Date of birth</span>
-      <input id="kycDob" type="date"></label>
+      <input id="kycDob" type="date" value="${escv(fv('kycDob'))}"></label>
     <div style="display:flex;gap:8px;margin-top:18px">
       <button class="btn primary" style="flex:1" data-act="verifysubmit">Submit for verification</button>
       <button class="btn quiet" data-act="close">Later</button></div>`);
@@ -1583,20 +1684,23 @@ function gateMarkup(mode, message){
     ${message ? `<div class="err">${message}</div>` : ''}
     ${login ? `
       <label class="field"><span>Phone number</span>
-        <input id="gMsisdn" inputmode="tel" placeholder="024 123 4567" autocomplete="username"></label>
+        <input id="gMsisdn" inputmode="tel" placeholder="024 123 4567" value="${escv(fv('gMsisdn'))}"
+          autocomplete="username"></label>
       <label class="field" style="margin-top:12px"><span>Password</span>
-        <input id="gPass" type="password" autocomplete="current-password"></label>
+        <input id="gPass" type="password" value="${escv(fv('gPass'))}" autocomplete="current-password"></label>
       <button class="btn primary wide" style="margin-top:18px" data-gate="login">Log in</button>
       <div class="alt">New here? <button data-gate="mode-open">Open an account</button></div>`
     : `
-      <label class="field"><span>Full name</span><input id="gName" placeholder="Ama Boateng"></label>
+      <label class="field"><span>Full name</span>
+        <input id="gName" placeholder="Ama Boateng" value="${escv(fv('gName'))}"></label>
       <label class="field" style="margin-top:12px"><span>Phone number</span>
-        <input id="gMsisdn2" inputmode="tel" placeholder="024 123 4567"></label>
-      <label class="field" style="margin-top:12px"><span>Email</span><input id="gEmail" type="email"></label>
+        <input id="gMsisdn2" inputmode="tel" placeholder="024 123 4567" value="${escv(fv('gMsisdn2'))}"></label>
+      <label class="field" style="margin-top:12px"><span>Email</span>
+        <input id="gEmail" type="email" value="${escv(fv('gEmail'))}"></label>
       <label class="field" style="margin-top:12px"><span>Password</span>
-        <input id="gPass2" type="password" autocomplete="new-password"></label>
+        <input id="gPass2" type="password" value="${escv(fv('gPass2'))}" autocomplete="new-password"></label>
       <p class="sub" style="margin:6px 0 0">At least 10 characters.</p>
-      <button class="btn primary wide" style="margin-top:16px" data-gate="open">Open my account</button>
+      <button class="btn primary wide" style="margin-top:16px" data-gate="open">Continue</button>
       <div class="alt">Already with us? <button data-gate="mode-login">Log in</button></div>`}
   </div>
   <button class="back" data-gate="home">Back to the website</button>`;
@@ -1626,12 +1730,14 @@ document.addEventListener('click', ev => {
   if (what === 'mode-login') return showGate('login');
   if (what === 'login') return gateLogin();
   if (what === 'open') return gateOpen();
+  if (what === 'confirm-open') return gateCreate();
 });
 
 document.addEventListener('keydown', ev => {
   if (ev.key === 'Enter' && document.querySelector('.gate')){
     ev.preventDefault();
-    document.getElementById('gPass') ? gateLogin() : gateOpen();
+    document.getElementById('gPass') ? gateLogin()
+      : document.getElementById('gName') ? gateOpen() : gateCreate();
   }
 });
 
@@ -1652,15 +1758,41 @@ async function gateLogin(){
   }
 }
 
-async function gateOpen(){
+/* Details are checked, then shown back. Creating the account is the next
+   button, so a wrong digit can still be fixed. */
+function gateOpen(){
   const fullName = (document.getElementById('gName')?.value || '').trim();
   const msisdn = (document.getElementById('gMsisdn2')?.value || '').trim();
   const password = document.getElementById('gPass2')?.value || '';
   if (fullName.length < 3) return showGate('open', 'Enter your full name.');
   if (!FID.normaliseMsisdn(msisdn)) return showGate('open', 'Enter a Ghana mobile number, for example 024 123 4567.');
   if (password.length < 10) return showGate('open', 'Passwords need at least 10 characters.');
+  showGateReview();
+}
+
+function showGateReview(){
+  let el = document.querySelector('.gate');
+  if (!el){ el = document.createElement('div'); el.className = 'gate'; document.body.appendChild(el); }
+  const rows = [['Name', fv('gName')], ['Phone number', fv('gMsisdn2')],
+                ['Email', fv('gEmail') || 'Not given'], ['Password', '•'.repeat(8)]];
+  el.innerHTML = `<div class="panel">
+    <h2>Check your details</h2>
+    <p class="sub">Every code we send goes to this number. Nothing is created until you confirm.</p>
+    <div class="slip" style="margin:14px 0"><dl>${
+      rows.map(([k,v]) => `<dt>${k}</dt><dd>${escv(v)}</dd>`).join('')}</dl></div>
+    <button class="btn primary wide" data-gate="confirm-open">Create my account</button>
+    <button class="btn quiet wide" style="margin-top:8px" data-gate="mode-open">Back</button>
+    <div class="alt">Already with us? <button data-gate="mode-login">Log in</button></div>
+  </div>
+  <button class="back" data-gate="home">Back to the website</button>`;
+}
+
+async function gateCreate(){
+  const fullName = fv('gName').trim(), msisdn = fv('gMsisdn2').trim();
+  const password = fv('gPass2'), email = fv('gEmail').trim();
   try {
-    await FID.register({fullName, msisdn, email: (document.getElementById('gEmail')?.value || '').trim(), password});
+    await FID.register({fullName, msisdn, email, password});
+    forget('gName','gMsisdn2','gEmail','gPass2','gPass');
     hideGate();
     render();
     S.afterPin = 'verify';
@@ -1700,7 +1832,8 @@ function signInSheet(message){
     <p class="sub">Your accounts, your payments, your history.</p>
     ${message ? `<span class="badge r">${message}</span>` : ''}
     <label class="field" style="margin-top:18px"><span>Phone number</span>
-      <input id="siMsisdn" inputmode="tel" placeholder="024 123 4567" autocomplete="username" autofocus></label>
+      <input id="siMsisdn" inputmode="tel" placeholder="024 123 4567" value="${escv(fv('siMsisdn'))}"
+        autocomplete="username" autofocus></label>
     <label class="field" style="margin-top:12px"><span>Password</span>
       <input id="siPass" type="password" autocomplete="current-password"></label>
     <div style="display:flex;gap:8px;margin-top:18px">
@@ -1724,10 +1857,98 @@ async function doSignIn(){
   }
 }
 
+/* ------------------------------------------------- send abroad (feature flag)
+   Absent unless the server says the flag is on, and refused by the server in
+   any case. Details, then the priced quote, then PIN and code — each step can
+   be gone back to with everything still filled in. */
+const REMIT = {corridors: null, quote: null};
+
+async function remitSheet(message){
+  if (!REMIT.corridors){
+    try { REMIT.corridors = await FID.remitCorridors(); }
+    catch { return openSheet(`<h3 class="d2">Not available</h3>
+      <p class="sub">Sending abroad is not switched on for this account yet.</p>
+      <button class="btn quiet wide" style="margin-top:16px" data-act="close">Close</button>`); }
+  }
+  const opts = REMIT.corridors.map(c =>
+    `<option value="${c.code}" ${fv('rmTo') === c.code ? 'selected' : ''}>${c.country} · ${c.currency}</option>`).join('');
+  openSheet(`<h3 class="d2">Send abroad</h3>
+    <p class="sub">The rate, the fee and what they receive are all shown before you confirm.</p>
+    ${message ? `<span class="badge r">${message}</span>` : ''}
+    <label class="field" style="margin-top:18px"><span>Destination</span>
+      <select id="rmTo">${opts}</select></label>
+    <label class="field" style="margin-top:12px"><span>Amount to send (GHS)</span>
+      <input id="rmAmt" inputmode="decimal" placeholder="500" value="${escv(fv('rmAmt'))}"></label>
+    <label class="field" style="margin-top:12px"><span>Recipient's full name</span>
+      <input id="rmName" placeholder="As it appears on their ID" value="${escv(fv('rmName'))}"></label>
+    <label class="field" style="margin-top:12px"><span>Their phone or account number</span>
+      <input id="rmDest" value="${escv(fv('rmDest'))}"></label>
+    <label class="field" style="margin-top:12px"><span>Reason for sending</span>
+      <input id="rmWhy" placeholder="Family support" value="${escv(fv('rmWhy'))}"></label>
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <button class="btn primary" style="flex:1" data-act="remitquote">See the rate</button>
+      <button class="btn quiet" data-act="close">Cancel</button></div>`);
+}
+
+async function remitQuote(){
+  const amount = parseFloat(fv('rmAmt'));
+  if (!amount || amount <= 0) return remitSheet('Enter how much you want to send');
+  if (fv('rmName').trim().length < 2) return remitSheet('Enter the recipient’s full name');
+  if (fv('rmDest').trim().length < 4) return remitSheet('Enter their phone or account number');
+  if (fv('rmWhy').trim().length < 2) return remitSheet('Say what the money is for');
+  try {
+    const {quote} = await FID.remitQuote(fv('rmTo') || REMIT.corridors[0].code, Math.round(amount * 100));
+    REMIT.quote = quote;
+    remitQuoteSheet();
+  } catch (e){
+    remitSheet(e.code === 'feature_disabled' ? 'Sending abroad is not available right now' : e.message);
+  }
+}
+
+function remitQuoteSheet(){
+  const q = REMIT.quote;
+  const rows = [
+    ['They receive', `${q.currency} ${q.receives.toLocaleString('en-GB', {minimumFractionDigits:2})}`],
+    ['Rate', `1 ${q.currency} = ${FID.money(q.rate)}`],
+    ['Fee', FID.money(q.feeMinor / 100)],
+    ['Leaves your account', FID.money(q.debitMinor / 100)],
+    ['Arrives', q.deliveryMinutes >= 1440 ? 'Within 1 working day' : `In about ${q.deliveryMinutes} minutes`],
+    ['To', `${escv(fv('rmName'))} · ${q.country}`]];
+  openSheet(`<h3 class="d2">Check the rate</h3>
+    <p class="sub">Held for ten minutes. Nothing has left your account.</p>
+    <div class="slip" style="margin-top:14px"><dl>${
+      rows.map(([k,v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl></div>
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <button class="btn primary" style="flex:1" data-act="remitsend">Send</button>
+      <button class="btn quiet" data-act="remitback">Back</button>
+      <button class="btn quiet" data-act="close">Cancel</button></div>`);
+}
+
+function remitSend(){
+  const q = REMIT.quote;
+  const dest = fv('rmDest').trim();
+  const recipient = {name: fv('rmName').trim()};
+  if (/^[0-9+\s]+$/.test(dest)) recipient.msisdn = dest; else recipient.accountNumber = dest;
+  requireAuth(
+    (pin, stepUpToken) => FID.remitSend({quoteId: q.id, recipient, purpose: fv('rmWhy').trim(), pin, stepUpToken}),
+    (out) => {
+      forget('rmAmt','rmName','rmDest','rmWhy');
+      REMIT.quote = null;
+      syncAccountsFromServer();
+      const held = out.next && out.next.type === 'in_review';
+      openSheet(`<h3 class="d2">${held ? 'With our team for a check' : 'On its way'}</h3>
+        <p class="sub">${held ? out.next.message
+          : `${recipient.name} receives ${q.currency} ${q.receives.toLocaleString('en-GB', {minimumFractionDigits:2})}.`}</p>
+        <div class="tiny" style="margin-top:10px">Reference ${out.transaction?.reference || '—'}</div>
+        <button class="btn primary wide" style="margin-top:18px" data-act="close">Done</button>`);
+    }, 'commit');
+}
+
 function authPinSheet(){
   openSheet(`<h3 class="d2">Enter your PIN</h3><p class="sub">Confirms it is you before anything moves.</p>
     ${pinField()}
     <div style="display:flex;gap:8px"><button class="btn primary" style="flex:1" data-act="authsubmit">Continue</button>
+      ${authPrevStage() ? '<button class="btn quiet" data-act="authback">Back</button>' : ''}
       <button class="btn quiet" data-act="authcancel">Cancel</button></div>`);
 }
 
@@ -1738,7 +1959,9 @@ function otpSheet(){
       Your verification code is <span class="code">${S.auth.challenge.demoCode || '——————'}</span></div>
     ${pinField('6-digit code', 6)}
     <div style="display:flex;gap:8px"><button class="btn primary" style="flex:1" data-act="authsubmit">Confirm</button>
-      <button class="btn quiet" data-act="authcancel">Cancel</button></div>`);
+      <button class="btn quiet" data-act="authback">Back</button>
+      <button class="btn quiet" data-act="authcancel">Cancel</button></div>
+    <button class="btn quiet wide" style="margin-top:8px" data-act="authresend">Send a new code</button>`);
 }
 
 async function authSubmit(){
@@ -1749,9 +1972,7 @@ async function authSubmit(){
     if (S.auth.stage === 'setpin2'){
       if (v !== S.auth.newPin){
         S.auth.stage = 'setpin1'; S.auth.newPin = '';
-        return openSheet(`<span class="badge r">Didn’t match</span>
-          <h3 class="d2" style="margin-top:14px">Try again</h3><p class="sub">Enter your new 4-digit PIN.</p>
-          ${pinField()}<button class="btn primary wide" data-act="authsubmit">Continue</button>`);
+        return pinChangeSheet('Those two PINs did not match. Set it again.');
       }
       const {challengeId, demoCode} = await FID.requestOtp(S.entity, 'pin_change');
       S.auth.stage = 'otp'; S.auth.otpPurpose = 'pin_change'; S.auth.challenge = {challengeId, demoCode};
@@ -2306,6 +2527,7 @@ document.addEventListener('click', ev => {
     case 'signin': signInSheet(); break;
     case 'openaccount': openAccountSheet(); break;
     case 'openaccountsubmit': doOpenAccount(); break;
+    case 'openaccountcreate': doOpenAccountCreate(); break;
     case 'send-internal': SEND.method='internal'; sendWhoSheet(); break;
     case 'send-bank': SEND.method='bank'; sendDetailSheet(); break;
     case 'send-momo': SEND.method='mobile_money'; sendDetailSheet(); break;
@@ -2339,7 +2561,15 @@ document.addEventListener('click', ev => {
     case 'signinsubmit': doSignIn(); break;
     case 'signout': FID.signOut(); FID.blankProfile(); closeSheet(); render(); applyGate(); break;
     case 'authsubmit': authSubmit(); break;
-    case 'authcancel': S.auth = null; closeSheet(); render(); break;
+    case 'remit': remitSheet(); break;
+    case 'remitquote': remitQuote(); break;
+    case 'remitback': remitSheet(); break;
+    case 'remitsend': remitSend(); break;
+    case 'authback': authBack(); break;
+    case 'authresend': authResend(); break;
+    case 'authkeepgoing': authResume(); break;
+    case 'authleavesetup': authLeaveSetup(); break;
+    case 'authcancel': authCancel(); break;
     case 'authcontinue': { const r = S.pendingResume; S.pendingResume = null; if (r) r(); break; }
     case 'stepupcontinue': paySendAuthorize(); break;
     case 'airtimebuy': { const amount = +($('airAmount')?.value || 0);
@@ -2503,6 +2733,8 @@ document.addEventListener('click', ev => {
 });
 
 document.addEventListener('input', ev => {
+  if (ev.target.id && ev.target.id !== 'authInput'
+      && ['INPUT','SELECT','TEXTAREA'].includes(ev.target.tagName)) FORM[ev.target.id] = ev.target.value;
   if (ev.target.id === 'stmtQ'){ S.stmtQuery = ev.target.value; const pos = ev.target.selectionStart;
     render(); const box = $('stmtQ'); if (box){ box.focus(); box.setSelectionRange(pos,pos); } }
   if (ev.target.id === 'loanRange'){ S.loan.amount = +ev.target.value; render(); }

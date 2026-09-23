@@ -319,3 +319,41 @@ is "a finished customer is flagged complete" "$(curl -s -H "Authorization: Beare
 
 echo
 echo "final: passed $pass, failed $fail"
+
+echo "── sending abroad (feature flag on)"
+# A quote is priced and held by the server; the client returns its id, never a
+# price of its own. Everything here runs against the flag switched on; the
+# switched-off case is a separate server, checked by the deploy script.
+RMC=$(curl -s -H "Authorization: Bearer $T1" "$B/api/v1/remittance/corridors")
+is "corridors are listed when the flag is on" "$(echo "$RMC" | P '["corridors"][0]["country"]')" "Nigeria"
+RMQ=$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' \
+  -d '{"corridor":"NG","amountMinor":50000}' "$B/api/v1/remittance/quotes")
+QID=$(echo "$RMQ" | P '["quote"]["id"]')
+is "a quote prices the fee" "$(echo "$RMQ" | P '["quote"]["feeMinor"]')" "1500"
+[ -n "$(echo "$RMQ" | P '["quote"]["receives"]')" ] && ok "a quote says what they receive" || bad "a quote says what they receive" "missing"
+is "an unknown country is refused" "$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -d '{"corridor":"ZZ","amountMinor":50000}' "$B/api/v1/remittance/quotes" | P '["error"]["code"]')" "not_found"
+is "less than the fee is refused" "$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -d '{"corridor":"NG","amountMinor":500}' "$B/api/v1/remittance/quotes" | P '["error"]["code"]')" "bad_request"
+
+# PIN and step-up are both enforced here, not merely asked for by the screen.
+CH=$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -d '{"purpose":"commit"}' "$B/api/otp/request")
+SU=$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' \
+  -d "{\"challengeId\":$(echo "$CH" | python3 -c 'import sys,json;print(json.dumps(json.load(sys.stdin)["challengeId"]))'),\"code\":\"$(echo "$CH" | P '["demoCode"]')\"}" \
+  "$B/api/otp/verify" | P '["stepUpToken"]')
+is "a wrong PIN moves nothing" "$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -H "Idempotency-Key: $(IDK)" \
+  -d "{\"quoteId\":\"$QID\",\"recipient\":{\"name\":\"Chidi Okeke\",\"accountNumber\":\"0123456789\"},\"purpose\":\"Family support\",\"pin\":\"0000\",\"stepUpToken\":\"$SU\"}" \
+  "$B/api/v1/remittance/transfers" | P '["error"]["code"]')" "invalid_pin"
+is "a missing code moves nothing" "$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -H "Idempotency-Key: $(IDK)" \
+  -d "{\"quoteId\":\"$QID\",\"recipient\":{\"name\":\"Chidi Okeke\",\"accountNumber\":\"0123456789\"},\"purpose\":\"Family support\",\"pin\":\"1111\",\"stepUpToken\":\"not-a-token\"}" \
+  "$B/api/v1/remittance/transfers" | P '["error"]["code"]')" "invalid_step_up"
+RMS=$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -H "Idempotency-Key: $(IDK)" \
+  -d "{\"quoteId\":\"$QID\",\"recipient\":{\"name\":\"Chidi Okeke\",\"accountNumber\":\"0123456789\"},\"purpose\":\"Family support\",\"pin\":\"1111\",\"stepUpToken\":\"$SU\"}" \
+  "$B/api/v1/remittance/transfers")
+RMREF=$(echo "$RMS" | P '["transaction"]["reference"]')
+[ -n "$RMREF" ] && ok "the transfer is accepted and referenced" || bad "the transfer is accepted" "$(echo "$RMS" | head -c 120)"
+is "the same quote cannot be spent twice" "$(curl -s -X POST -H "Authorization: Bearer $T1" -H 'Content-Type: application/json' -H "Idempotency-Key: $(IDK)" \
+  -d "{\"quoteId\":\"$QID\",\"recipient\":{\"name\":\"Chidi Okeke\",\"accountNumber\":\"0123456789\"},\"purpose\":\"Family support\",\"pin\":\"1111\",\"stepUpToken\":\"$SU\"}" \
+  "$B/api/v1/remittance/transfers" | P '["error"]["code"]')" "not_found"
+is "the transfer can be looked up" "$(curl -s -H "Authorization: Bearer $T1" "$B/api/v1/remittance/transfers/$RMREF" | P '["transaction"]["reference"]')" "$RMREF"
+
+echo
+echo "final: passed $pass, failed $fail"

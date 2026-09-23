@@ -1,11 +1,19 @@
 import { Router } from 'express';
 import { pool } from '../db/pool.js';
-import { isConfigured } from '../config.js';
+import { config, isConfigured } from '../config.js';
 
 export const healthRouter = Router();
 
 healthRouter.get('/health', (_req, res) =>
   res.json({ status: 'ok', version: 'v1', uptime: Math.round(process.uptime()) }));
+
+/**
+ * What this deployment has switched on. The front ends read this at boot so a
+ * flagged feature is absent from the screen, not merely refused when tapped.
+ * Public and deliberately thin: flag names only, no configuration, no secrets.
+ */
+healthRouter.get('/config', (_req, res) =>
+  res.json({ features: config.features }));
 
 healthRouter.get('/livez', (_req, res) => res.json({ status: 'ok', uptime: process.uptime() }));
 

@@ -95,6 +95,23 @@ config.mockProviders = process.env.MOCK_PROVIDERS
   ? process.env.MOCK_PROVIDERS === 'true'
   : !(process.env.HUBTEL_CLIENT_ID || process.env.MOMO_API_KEY || process.env.PAYSTACK_SECRET_KEY);
 
+/* ---------------------------------------------------------------- features
+   A feature flag is a switch with a default, not a mystery. Every flag is off
+   unless its variable is exactly "true", so an unset, misspelt or empty value
+   fails closed; nothing half-built can be reached by accident in production.
+   Read config.features.<name> — never process.env — so every reader agrees. */
+const flag = (name, fallback = false) => {
+  const raw = process.env[name];
+  if (raw === undefined || raw === '') return fallback;
+  return raw === 'true';
+};
+
+config.features = {
+  /* Cross-border remittance: corridors, quotes and payouts. Off by default —
+     it needs a licensed partner and a sanctions screen before it goes live. */
+  remittance: flag('FEATURE_REMITTANCE')
+};
+
 export const isConfigured = {
   mambu: () => Boolean(config.mambu.baseUrl && config.mambu.apiKey),
   momo: () => Boolean(config.momo.collection.key && config.momo.collection.userId),

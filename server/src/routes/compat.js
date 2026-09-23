@@ -147,7 +147,7 @@ compatRouter.post('/accounts/open',
 const signStepUp = (customerId, purpose) =>
   jwt.sign({ sub: customerId, purpose, kind: 'step_up' }, config.jwt.secret, { expiresIn: '5m' });
 
-function readStepUp(token, customerId, purpose) {
+export function readStepUp(token, customerId, purpose) {
   try {
     const claims = jwt.verify(token, config.jwt.secret);
     return claims.kind === 'step_up' && claims.sub === customerId && claims.purpose === purpose;

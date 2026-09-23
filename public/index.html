@@ -1358,6 +1358,17 @@ const FID = (() => {
     .then(b => { apiMissing = !b || b.status !== 'ok'; return !apiMissing; })
     .catch(() => { apiMissing = true; return false; });
 
+  /* ------------------------------------------------------------- feature flags
+     What this deployment has switched on, read once at boot. A feature that is
+     off is absent from the screen rather than refused when tapped, and the
+     server refuses it too — this only decides what is worth showing. */
+  let features = {};
+  const featuresReady = API === null ? Promise.resolve({}) :
+    fetch(API + '/api/config')
+      .then(r => r.ok ? r.json() : null)
+      .then(b => { features = (b && b.features) || {}; return features; })
+      .catch(() => ({}));
+
   /* Ghana mobile numbers, entered the way people say them: 024 123 4567.
      The canonical +233 form is what travels to the API, so the customer never
      has to know it exists. */
@@ -1563,6 +1574,31 @@ const FID = (() => {
     if (!res.ok) throw Object.assign(new Error('offline'), {code:'offline'});
     return res.json();
   }
+  /* ----------------------------------------------------------- remittance
+     Behind the remittance flag. The quote is priced and held by the server; the
+     client sends back its id, never a price of its own. */
+  async function remitCorridors(){
+    const res = await fetch(API + '/api/v1/remittance/corridors', {headers: authHeaders()});
+    if (!res.ok) throw Object.assign(new Error('unavailable'), {code:'feature_disabled'});
+    return (await res.json()).corridors;
+  }
+  const remitQuote = (corridor, amountMinor) =>
+    apiCall('/api/v1/remittance/quotes', {corridor, amountMinor});
+  async function remitSend(payload){
+    if (!apiUp) throw Object.assign(new Error('offline'), {code:'offline'});
+    const res = await fetch(API + '/api/v1/remittance/transfers', {
+      method:'POST',
+      headers:{'Content-Type':'application/json',
+        'Idempotency-Key':'rmt-' + Date.now() + '-' + Math.random().toString(36).slice(2), ...authHeaders()},
+      body: JSON.stringify(payload)});
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok){
+      const code = (json.error && json.error.code) || 'request_failed';
+      throw Object.assign(new Error((json.error && json.error.message) || 'That did not go through'), {code});
+    }
+    return json;
+  }
+
   const requestOtp = (customerId, purpose) => apiCall('/api/otp/request', {customerId, purpose});
   const verifyOtp = (challengeId, code) => apiCall('/api/otp/verify', {challengeId, code});
   const setPin = (customerId, currentPin, newPin, stepUpToken) =>
@@ -1616,6 +1652,8 @@ const FID = (() => {
            assessPayment, screenBeneficiary, preapprove, parse,
            forecastCashflow, verifyDocument, categorise,
            ledger, onDecision, decide, slip, columns,
+           featuresReady, get features(){ return features; },
+           remitCorridors, remitQuote, remitSend,
            fetchAccount, requestOtp, verifyOtp, setPin, verifyPinOnly, commitTransaction, openAccount };
 })();
 
