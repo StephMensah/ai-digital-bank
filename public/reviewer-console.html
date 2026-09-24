@@ -1396,6 +1396,11 @@ async function pull(){
         kind: c.case_type === 'kyc' ? 'kyc_review'
             : c.case_type === 'dispute' ? 'dispute' : 'transaction_hold',
         customer: c.customer_name || 'Customer',
+        /* Live cases come from the API, which does not carry a model use case.
+           Anything missing renders as a dash — a reviewer should never be shown
+           the word "undefined" on a case they are deciding. */
+        channel: c.channel || null,
+        useCase: null,
         amount: c.amount_minor ? Number(c.amount_minor) / 100 : null,
         currency: c.currency || 'GHS',
         confidence: c.risk_score != null ? 1 - Number(c.risk_score) / 100 : null,
@@ -1485,7 +1490,7 @@ function queue(){
     <button class="qitem" data-ref="${c.ref}" aria-current="${S.sel===c.ref}">
       <div class="r1"><b>${c.customer}</b>
         <span class="sla ${slaClass(c.minutesLeft)}">${mins(c.minutesLeft)}</span></div>
-      <div class="r2">${KINDS[c.kind]?.label || c.kind}${c.amount ? ' · ' + FID.money0(c.amount) : ''} · ${c.channel}</div>
+      <div class="r2">${KINDS[c.kind]?.label || c.kind}${c.amount ? ' · ' + FID.money0(c.amount) : ''}${c.channel ? ' · ' + c.channel : ''}</div>
       <div class="r3">${c.explanation}</div>
     </button>`).join('')
     : `<div class="qempty">Nothing in this queue.</div>`;
@@ -1514,7 +1519,7 @@ function caseView(){
     <div class="casehead">
       <div><span class="eyebrow">${k.team} · ${c.ref}</span>
         <h2>${k.label}</h2>
-        <div class="who">${c.customer}${c.amount ? ' · ' + FID.money0(c.amount) : ''} · via ${c.channel}</div></div>
+        <div class="who">${c.customer}${c.amount ? ' · ' + FID.money0(c.amount) : ''}${c.channel ? ' · via ' + c.channel : ''}</div></div>
       <div class="clock"><span class="v ${slaClass(c.minutesLeft)}">${mins(c.minutesLeft)}</span>
         <span class="l">${late ? 'SLA breached' : 'to decide'}</span></div>
     </div>
@@ -1529,7 +1534,8 @@ function caseView(){
             <dl class="ev">${ev.map(([a,b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl>` : ''}
           <button class="why" data-slip="c">The record the customer sees</button>
           <div id="slip-c" hidden>${FID.slip('DECISION RECORD', [
-            ['Reference', c.ref], ['Model', c.useCase], ['Confidence', (+c.confidence).toFixed(2)],
+            ['Reference', c.ref], ['Model', c.useCase || '—'],
+            ['Confidence', c.confidence == null ? '—' : (+c.confidence).toFixed(2)],
             ['Outcome', 'sent to a person'], ['Told the customer', 'yes, at the time']],
             'The customer already has this slip. Whatever you decide is appended to it, with your name.')}</div>
         </div>

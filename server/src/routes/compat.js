@@ -320,8 +320,18 @@ compatRouter.post('/transactions',
       }
 
       // On-us movement settles immediately; nothing waits on an external rail.
+      // The counterparty is the rail the money faces. It must not be the
+      // customer's own deposit code, or the two lines cancel on one account.
+      const method = String(req.body.method || '').toLowerCase();
+      const counterGl = /momo|mobile|wallet/.test(method) ? GL.MOMO_SETTLEMENT
+                      : /card/.test(method)               ? GL.CARD_SETTLEMENT
+                      : /bank|ghipss|gip/.test(method)    ? GL.BANK_SETTLEMENT
+                      /* Rail unknown on this surface: suspense is what an
+                         unidentified counterparty is for. Transfer clearing is
+                         reserved for on-us pairs, which must net to zero. */
+                      : GL.SUSPENSE;
       const settled = await settleTransaction({
-        transactionId: transaction.id, glCounterparty: GL.CUSTOMER_DEPOSITS
+        transactionId: transaction.id, glCounterparty: counterGl
       });
       const { rows: after } = await query('SELECT available_minor FROM accounts WHERE id=$1', [account.id]);
       const balanceMinor = Number(after[0].available_minor);

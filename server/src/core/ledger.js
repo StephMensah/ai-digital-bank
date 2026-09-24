@@ -4,10 +4,24 @@ import { conflict, notFound, unprocessable } from '../lib/errors.js';
 
 // GL codes for the shadow ledger. Mambu holds the authoritative books; these
 // entries exist so the platform can prove its own view and reconcile daily.
+/*
+ * Both lines of a settlement are written against the SAME account row (see
+ * settleTransaction). So the counterparty GL must never be CUSTOMER_DEPOSITS:
+ * that posts a DR and a CR of equal size on one account's own deposit code,
+ * which nets to zero on the ledger while the balance really moves. Every such
+ * payment then shows for ever as a reconciliation break. The counterparty is
+ * whatever the money actually faces — a rail, a clearing account, an asset.
+ */
 export const GL = {
   CUSTOMER_DEPOSITS: '2010',
   MOMO_SETTLEMENT: '1210',
   CARD_SETTLEMENT: '1220',
+  BANK_SETTLEMENT: '1230',
+  REMITTANCE_SETTLEMENT: '1240',
+  INVESTMENTS: '1300',
+  /* Both legs of an on-us transfer face this, so it nets to zero across the
+     pair while each customer's own deposit balance stays true. */
+  TRANSFER_CLEARING: '1910',
   FEE_INCOME: '4010',
   SUSPENSE: '1900'
 };

@@ -163,7 +163,7 @@ investRouter.post('/buy', requireIdempotencyKey, validate(orderBody), async (req
       metadata: { narration: `Bought ${bought} ${symbol}`, symbol, side: 'buy' },
       idempotencyKey: req.get('Idempotency-Key'), reference, status: 'processing'
     });
-    await settleTransaction({ transactionId: transaction.id, glCounterparty: GL.CUSTOMER_DEPOSITS });
+    await settleTransaction({ transactionId: transaction.id, glCounterparty: GL.INVESTMENTS });
 
     await withReversal(transaction.id, async () => {
       await query(
@@ -219,7 +219,7 @@ investRouter.post('/redeem', requireIdempotencyKey, validate(orderBody), async (
         metadata: { narration: `Redeemed ${sell} ${symbol}`, symbol, side: 'redeem' },
         idempotencyKey: req.get('Idempotency-Key'), reference, status: 'processing'
       });
-      await settleTransaction({ transactionId: transaction.id, glCounterparty: GL.CUSTOMER_DEPOSITS });
+      await settleTransaction({ transactionId: transaction.id, glCounterparty: GL.INVESTMENTS });
 
       // Cost basis reduces proportionally, so the gain on what is left stays honest.
       const share = sell / Number(holding.units);
@@ -280,7 +280,7 @@ investRouter.post('/finance', requireIdempotencyKey,
           metadata: { narration: `Advance against ${pledge} ${symbol}`, symbol },
           idempotencyKey: req.get('Idempotency-Key'), reference, status: 'processing'
         });
-        await settleTransaction({ transactionId: transaction.id, glCounterparty: GL.CUSTOMER_DEPOSITS });
+        await settleTransaction({ transactionId: transaction.id, glCounterparty: GL.INVESTMENTS });
 
         await query(
           'UPDATE asset_holdings SET pledged_units = pledged_units + $3, updated_at = now() WHERE customer_id=$1 AND symbol=$2',
@@ -323,7 +323,7 @@ investRouter.post('/repay', requireIdempotencyKey,
           metadata: { narration: 'Repaying advance', loanId: loan.id },
           idempotencyKey: req.get('Idempotency-Key'), reference, status: 'processing'
         });
-        await settleTransaction({ transactionId: transaction.id, glCounterparty: GL.CUSTOMER_DEPOSITS });
+        await settleTransaction({ transactionId: transaction.id, glCounterparty: GL.INVESTMENTS });
 
         const left = Number(loan.outstanding_minor) - pay;
         // Clearing the loan releases the pledge; a partial payment does not,

@@ -62,6 +62,11 @@ app.use('/api/v1/payments', paymentsRouter);
 app.use('/api/v1/transfers', transfersRouter);
 app.use('/api/v1/kyc', kycRouter);
 app.use('/api/v1/reviewer', reviewerRouter);
+/* The console calls /api/v1/tower/*. It was mounted only at /api/v1/control-tower,
+   so every live panel 404'd and the page quietly fell back to its simulated
+   snapshot — the dashboard looked fine and showed nothing real. Both paths are
+   served now; /tower is the one in use. */
+app.use('/api/v1/tower', towerRouter);
 app.use('/api/v1/control-tower', towerRouter);
 app.use('/api/v1/webhooks', webhooksRouter);
 app.use('/api/v1/payees', payeesRouter);

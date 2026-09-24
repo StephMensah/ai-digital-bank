@@ -414,7 +414,7 @@ paymentsRouter.post('/transfers',
           message: 'Held for a quick check. The money is still yours and we will confirm shortly.' });
       }
 
-      await settleTransaction({ transactionId: debit.id, glCounterparty: GL.CUSTOMER_DEPOSITS });
+      await settleTransaction({ transactionId: debit.id, glCounterparty: GL.TRANSFER_CLEARING });
 
       try {
         const credited = await loadAccount(to.id, to.customer_id);
@@ -425,7 +425,7 @@ paymentsRouter.post('/transfers',
           metadata: { narration, onUs: true, pairedWith: debit.reference },
           idempotencyKey: `${req.get('Idempotency-Key')}-CR`, status: 'processing'
         });
-        await settleTransaction({ transactionId: credit.id, glCounterparty: GL.CUSTOMER_DEPOSITS });
+        await settleTransaction({ transactionId: credit.id, glCounterparty: GL.TRANSFER_CLEARING });
       } catch (err) {
         await failTransaction({ transactionId: debit.id, reason: 'Reversed: the recipient could not be credited' })
           .catch(() => {});

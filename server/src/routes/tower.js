@@ -67,6 +67,26 @@ towerRouter.get('/throughput',
     } catch (err) { next(err); }
   });
 
+/**
+ * The rails as last probed. The console polls this every 30 seconds, so it reads
+ * the stored result rather than re-probing every rail on each poll; use
+ * POST /health-check to force a fresh probe.
+ */
+towerRouter.get('/health', async (_req, res, next) => {
+  try {
+    const { rows } = await query(
+      `SELECT DISTINCT ON (component) component, status, latency_ms, detail, checked_at
+         FROM service_health ORDER BY component, checked_at DESC`
+    );
+    res.json({
+      components: rows.map((r) => ({
+        component: r.component, status: r.status,
+        latencyMs: r.latency_ms, detail: r.detail, checkedAt: r.checked_at
+      }))
+    });
+  } catch (err) { next(err); }
+});
+
 /** Re-probe every rail on demand and store the result. */
 towerRouter.post('/health-check', async (_req, res, next) => {
   try {

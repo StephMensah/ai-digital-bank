@@ -28,7 +28,7 @@ reviewerRouter.get('/cases',
                 rc.summary, rc.sla_due_at, rc.created_at, rc.model_rationale,
                 rc.sla_due_at < now() AS breached,
                 c.full_name AS customer_name, c.msisdn, c.kyc_status,
-                t.reference, t.amount_minor, t.currency, t.counterparty, t.kind,
+                t.reference, t.amount_minor, t.currency, t.counterparty, t.kind, t.channel,
                 s.full_name AS assignee
            FROM review_cases rc
            LEFT JOIN customers c ON c.id = rc.customer_id

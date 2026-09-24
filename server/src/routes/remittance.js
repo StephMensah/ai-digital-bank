@@ -163,16 +163,25 @@ remittanceRouter.post('/transfers',
         });
       }
 
-      const out = await remit.payout({ reference: transaction.reference, quote: held, recipient: req.body.recipient });
-      if (!out.accepted) {
-        await failTransaction({ transactionId: transaction.id, reason: out.reason || 'partner_rejected' });
-        return res.status(502).json({ error: { code: 'upstream_error', message: 'Our partner could not accept this transfer. Nothing has moved.' } });
+      /* Money is reserved from here on. Anything that throws before the
+         transfer settles must release the reservation: an unhandled error used
+         to leave the transaction in 'processing' for ever, with the customer's
+         money neither sent nor returned. */
+      let out, settled;
+      try {
+        out = await remit.payout({ reference: transaction.reference, quote: held, recipient: req.body.recipient });
+        if (!out.accepted) {
+          await failTransaction({ transactionId: transaction.id, reason: out.reason || 'partner_rejected' });
+          return res.status(502).json({ error: { code: 'upstream_error', message: 'Our partner could not accept this transfer. Nothing has moved.' } });
+        }
+        QUOTES.delete(held.id);
+        settled = await settleTransaction({
+          transactionId: transaction.id, providerRef: out.providerRef, glCounterparty: GL.REMITTANCE_SETTLEMENT
+        });
+      } catch (err) {
+        await failTransaction({ transactionId: transaction.id, reason: 'send_failed' }).catch(() => {});
+        throw err;
       }
-
-      QUOTES.delete(held.id);
-      const settled = await settleTransaction({
-        transactionId: transaction.id, providerRef: out.providerRef, glCounterparty: GL.CUSTOMER_DEPOSITS
-      });
       await audit({ ...auditFrom(req), action: 'remittance.sent', entity: 'transaction', entityId: transaction.id });
 
       res.status(202).json({

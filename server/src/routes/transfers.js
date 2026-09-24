@@ -74,7 +74,7 @@ transfersRouter.post('/',
         );
       });
 
-      const posted = await settleTransaction({ transactionId: transaction.id, glCounterparty: GL.CUSTOMER_DEPOSITS });
+      const posted = await settleTransaction({ transactionId: transaction.id, glCounterparty: GL.TRANSFER_CLEARING });
 
       if (isConfigured.mambu() && from.mambu_account_key && dest[0].mambu_account_key) {
         await enqueue('mambu.post_transfer', {
